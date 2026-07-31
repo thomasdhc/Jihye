@@ -2,8 +2,6 @@
 
 A personal, installable collection of extensions and skills for the [Pi coding agent](https://pi.dev).
 
-*Extensio* is Latin for extension or expansion.
-
 ## Extensions
 
 | Extension | Purpose |
