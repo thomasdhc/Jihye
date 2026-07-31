@@ -48,14 +48,14 @@ All projects use:
 1. Find the matching `- [ ]` line in `project.md`
 2. Remove it from `project.md`
 3. Append `- [x] <item>` to `done.md` under the matching section (create section if needed)
-4. Show both changes before committing
-5. Commit: `git add docs/todo/project.md docs/todo/done.md && git commit -m "todo: complete <item>"`
+4. Show both changes to the user
+5. Do not commit unless the user explicitly asks you to commit
 
-### Commit changes
+### Hand off changes
 
-```bash
-git add docs/todo/project.md docs/todo/done.md && git commit -m "todo: <brief description>"
-```
+- Show the relevant diff or clearly summarize the changed items.
+- If the project workflow requires staging, stage only the todo files.
+- Provide a suggested commit command when useful, but do not run it unless the user explicitly asks.
 
 ## Format conventions
 
@@ -74,7 +74,7 @@ Sub-items nested with two-space indent:
 
 ## Behaviour notes
 
-- Always show the user the change before committing
+- Always show the user the change before handing it off
 - When adding, infer the section from context — don't always ask
 - When marking done, be liberal with matching (partial text match is fine)
 - Keep item text concise but specific enough to be actionable

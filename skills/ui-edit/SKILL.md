@@ -53,8 +53,8 @@ After writing, grep or read a section to confirm the change landed:
 grep -n "changed-class" ui/style.css
 ```
 
-### Step 5 -- Commit
-Always commit UI changes immediately after verifying they work.
+### Step 5 -- Hand off
+Show the verified changes and relevant diff. Do not commit unless the user explicitly asks you to commit. If the project workflow requires staging, stage only the files changed for the UI task and provide a suggested commit command.
 
 ## CSS conventions
 
