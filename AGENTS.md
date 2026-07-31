@@ -1,6 +1,6 @@
 # Pi Extensio
 
-Personal Pi extensions packaged for installation across workstations.
+Personal Pi extensions and skills packaged for installation across workstations.
 
 ## Development
 
@@ -15,4 +15,5 @@ Personal Pi extensions packaged for installation across workstations.
 ## Layout
 
 - `extensions/` — Pi extensions loaded by the package manifest.
+- `skills/` — Pi skills loaded by the package manifest.
 - `tests/` — Node test-runner coverage for extension logic and event behavior.

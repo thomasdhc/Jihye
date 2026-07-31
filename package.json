@@ -1,21 +1,33 @@
 {
   "name": "pi-extensio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "A personal collection of extensions for the Pi coding agent",
+  "description": "A personal collection of extensions and skills for the Pi coding agent",
   "type": "module",
   "keywords": [
     "pi-package"
   ],
   "scripts": {
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node scripts/test.mjs"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "linkedom": "^0.16.0",
+    "shell-quote": "^1.8.3",
+    "turndown": "^7.2.0",
+    "unpdf": "^1.4.0"
   },
   "pi": {
     "extensions": [
-      "./extensions/*.ts"
+      "./extensions"
+    ],
+    "skills": [
+      "./skills"
     ]
   }
 }

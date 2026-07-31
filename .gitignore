@@ -1,5 +1,14 @@
+# npm dependencies
+**/node_modules/
+
+# Python virtual envs
+**/.venv/
+
+# Real API keys
+**/auth.json
+
+# misc
 .DS_Store
-node_modules/
 coverage/
 *.log
 tmp/
