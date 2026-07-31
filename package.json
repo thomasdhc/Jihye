@@ -16,7 +16,7 @@
     "typebox": "*"
   },
   "dependencies": {
-    "@mozilla/readability": "^0.5.0",
+    "@mozilla/readability": "^0.6.0",
     "linkedom": "^0.16.0",
     "shell-quote": "^1.8.3",
     "turndown": "^7.2.0",
