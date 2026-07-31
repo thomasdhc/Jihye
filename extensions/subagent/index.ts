@@ -9,6 +9,7 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { getAgentDir, getMarkdownTheme, parseFrontmatter, truncateHead, withFileMutationQueue, DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES } from "@earendil-works/pi-coding-agent";
 import { Container, Markdown, Spacer, Text, visibleWidth } from "@earendil-works/pi-tui";
@@ -93,7 +94,8 @@ interface ExtensionConfig {
 	maxConcurrency?: number;
 }
 
-const EXT_DIR = path.dirname(new URL(import.meta.url).pathname);
+const EXT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const EXTENSIONS_DIR = path.dirname(EXT_DIR);
 const AGENTS_DIR = path.join(getAgentDir(), "agents");
 const TOOLS_DIR = path.join(EXT_DIR, "tools");
 const CONFIG_PATH = path.join(EXT_DIR, "config.json");
@@ -111,11 +113,13 @@ function loadConfig(): ExtensionConfig {
 // Built-in tools that pi provides natively (no extension needed)
 const BUILTIN_TOOLS = new Set(["read", "write", "edit", "bash", "grep", "find", "ls"]);
 
-// Custom tools that require loading an extension into the subagent process
-const EXT_BASE = path.join(process.env.HOME || "~", ".pi", "agent", "extensions");
+// Custom tools that require loading an extension into the subagent process.
+// Resolve package-owned extensions relative to this file so local, Git, and npm
+// package installations all work without workstation-specific paths.
+const BASH_GUARD_EXTENSION = path.join(EXTENSIONS_DIR, "bash-guard", "index.ts");
 const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
-	web_search: path.join(EXT_BASE, "web-search", "index.ts"),
-	web_fetch: path.join(EXT_BASE, "web-fetch", "index.ts"),
+	web_search: path.join(EXTENSIONS_DIR, "web-search", "index.ts"),
+	web_fetch: path.join(EXTENSIONS_DIR, "web-fetch", "index.ts"),
 	safe_bash: path.join(TOOLS_DIR, "safe-bash.ts"),
 	// `subagent` is the tool this very extension registers. Listing it here lets
 	// a parent agent grant it to a child agent — the child pi process loads this
@@ -274,11 +278,11 @@ function truncLine(text: string, maxWidth: number): string {
 
 // ── Subagent Execution ────────────────────────────────────────────────
 
-async function buildPiArgs(
+export async function buildPiArgs(
 	agent: AgentConfig,
 	task: string,
 	cwd: string,
-): Promise<{ args: string[]; tempDir: string; childEnv: NodeJS.ProcessEnv | undefined }> {
+): Promise<{ args: string[]; tempDir: string; childEnv: NodeJS.ProcessEnv }> {
 	const piBin = resolvePiBinary();
 	const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "pi-sub-"));
 
@@ -295,6 +299,7 @@ async function buildPiArgs(
 	for (const tool of agent.tools) {
 		if (BUILTIN_TOOLS.has(tool)) {
 			allowlist.push(tool);
+			if (tool === "bash") extensionPaths.add(BASH_GUARD_EXTENSION);
 		} else if (CUSTOM_TOOL_EXTENSIONS[tool]) {
 			allowlist.push(tool);
 			extensionPaths.add(CUSTOM_TOOL_EXTENSIONS[tool]);
@@ -313,7 +318,7 @@ async function buildPiArgs(
 		args.push("--extension", extPath);
 	}
 
-	args.push("--models", agent.model);
+	args.push("--model", agent.model);
 	args.push("--thinking", agent.thinking);
 	args.push("--append-system-prompt", promptPath);
 
@@ -328,9 +333,17 @@ async function buildPiArgs(
 		args.push(`Task: ${task}`);
 	}
 
-	let childEnv: NodeJS.ProcessEnv | undefined;
+	const currentDepth = Number(process.env.PI_SUBAGENT_DEPTH ?? "0");
+	const normalizedDepth = Number.isFinite(currentDepth) && currentDepth >= 0
+		? Math.trunc(currentDepth)
+		: 0;
+	const childEnv: NodeJS.ProcessEnv = {
+		...process.env,
+		PI_SUBAGENT_DEPTH: String(normalizedDepth + 1),
+	};
+	delete childEnv.PI_SUBAGENT_ALLOWED;
 	if (agent.tools.includes("subagent") && agent.subagentAgents && agent.subagentAgents.length > 0) {
-		childEnv = { ...process.env, PI_SUBAGENT_ALLOWED: agent.subagentAgents.join(",") };
+		childEnv.PI_SUBAGENT_ALLOWED = agent.subagentAgents.join(",");
 	}
 
 	return { args: [piBin.command, ...args], tempDir, childEnv };
@@ -413,7 +426,7 @@ async function runSubagent(
 		const proc = spawn(command, spawnArgs, {
 			cwd,
 			stdio: ["ignore", "pipe", "pipe"],
-			...(childEnv ? { env: childEnv } : {}),
+			env: childEnv,
 		});
 
 		let buf = "";
