@@ -2,18 +2,23 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { DynamicBorder, isToolCallEventType } from "@earendil-works/pi-coding-agent";
 import type { SelectItem } from "@earendil-works/pi-tui";
 import { Container, SelectList, Text } from "@earendil-works/pi-tui";
-import { parse as shellParse } from "shell-quote";
+import { parse as shellParse, quote as shellQuote } from "shell-quote";
 
 export type Severity = "high" | "medium";
 
-export type Risk = {
+type RiskDetails = {
 	severity: Severity;
 	reasons: string[];
 };
 
-type OpToken = { op: string; [k: string]: unknown };
+export type Risk = RiskDetails & {
+	flaggedCommands: string[];
+};
 
-type Token = string | OpToken;
+type OpToken = { op: string; [k: string]: unknown };
+type CommentToken = { comment: string };
+
+type Token = string | OpToken | CommentToken;
 
 function isOpToken(t: Token): t is OpToken {
 	return typeof t === "object" && t !== null && "op" in t;
@@ -38,6 +43,20 @@ function splitOnOps(tokens: Token[], splitOps: string[]): Token[][] {
 	return out;
 }
 
+function formatSegment(tokens: Token[]): string {
+	return tokens
+		.map((token) => {
+			if (typeof token === "string") {
+				return /^[A-Za-z0-9_@%+=:,./-]+$/.test(token) ? token : shellQuote([token]);
+			}
+			if (isOpToken(token)) {
+				return token.op === "glob" && typeof token.pattern === "string" ? token.pattern : token.op;
+			}
+			return `#${token.comment}`;
+		})
+		.join(" ");
+}
+
 function hasFlag(args: string[], flag: string): boolean {
 	return args.includes(flag) || args.some((a) => a.startsWith(flag) && flag.length === 2 && a.startsWith("-"));
 }
@@ -46,7 +65,7 @@ function anyArgStartsWith(args: string[], prefix: string): boolean {
 	return args.some((a) => a.startsWith(prefix));
 }
 
-function analyzeSegment(seg: Token[]): Risk | null {
+function analyzeSegment(seg: Token[]): RiskDetails | null {
 	const reasons: string[] = [];
 	let severity: Severity = "medium";
 
@@ -57,7 +76,13 @@ function analyzeSegment(seg: Token[]): Risk | null {
 	const cmd = args[0];
 	const rest = args.slice(1);
 
-	// Shell redirection / pipes are handled on the whole command, but keep some segment checks too.
+	const systemTarget = redirectsToSystemPath(seg);
+	if (systemTarget) {
+		reasons.push(`output redirected to system path: ${systemTarget}`);
+		severity = "high";
+	}
+
+	// Shell pipe checks.
 	if (ops.includes("|") && (args.includes("sh") || args.includes("bash") || args.includes("zsh") || args.includes("fish"))) {
 		reasons.push("pipe to a shell (possible remote code execution)");
 		severity = "high";
@@ -256,20 +281,17 @@ export function analyzeBashCommand(command: string): Risk | null {
 	try {
 		tokens = shellParse(command) as Token[];
 	} catch {
-		// Fallback: if we can't parse, treat it as questionable
-		return { severity: "medium", reasons: ["unparsed shell command (unable to analyze safely)"] };
+		// Fallback: if we can't parse, treat the full command as questionable.
+		return {
+			severity: "medium",
+			reasons: ["unparsed shell command (unable to analyze safely)"],
+			flaggedCommands: [command],
+		};
 	}
 
 	const reasons: string[] = [];
+	const flaggedCommands: string[] = [];
 	let severity: Severity = "medium";
-
-	// Whole-command operator checks — only flag redirections to system/device paths
-	const ops = tokens.filter(isOpToken).map((t) => t.op);
-	const systemTarget = redirectsToSystemPath(tokens);
-	if (systemTarget) {
-		reasons.push(`output redirected to system path: ${systemTarget}`);
-		severity = "high";
-	}
 
 	// Segment analysis (split on &&, ||, ;)
 	const segments = splitOnOps(tokens, ["&&", "||", ";"]);
@@ -278,20 +300,17 @@ export function analyzeBashCommand(command: string): Risk | null {
 		if (!segRisk) continue;
 		if (segRisk.severity === "high") severity = "high";
 		for (const r of segRisk.reasons) reasons.push(r);
+		flaggedCommands.push(formatSegment(seg));
 	}
 
-	// De-duplicate reasons
+	// De-duplicate reasons and flagged command segments.
 	const uniq = [...new Set(reasons)];
 	if (uniq.length === 0) return null;
-	return { severity, reasons: uniq };
+	return { severity, reasons: uniq, flaggedCommands: [...new Set(flaggedCommands)] };
 }
 
 async function promptRunOrAbort(ctx: any, command: string, risk: Risk): Promise<"run" | "abort"> {
 	if (!ctx.hasUI) return "abort";
-
-	const reasonsText = risk.reasons.map((r) => `• ${r}`).join("\n");
-	const header = `Command flagged as ${risk.severity.toUpperCase()} risk:`;
-	const body = `${header}\n\n${reasonsText}\n\nCommand:\n${command}`;
 
 	const items: SelectItem[] = [
 		{ value: "run", label: "Run", description: "Execute the command" },
@@ -299,6 +318,25 @@ async function promptRunOrAbort(ctx: any, command: string, risk: Risk): Promise<
 	];
 
 	const choice = await ctx.ui.custom<"run" | "abort">((tui, theme, _kb, done) => {
+		const reasonsText = risk.reasons.map((reason) => `• ${reason}`).join("\n");
+		const flaggedLabel = risk.flaggedCommands.length === 1 ? "Problematic command" : "Problematic commands";
+		const flaggedText = risk.flaggedCommands
+			.map((flaggedCommand) => theme.fg("error", theme.bold(`⚠ ${flaggedCommand}`)))
+			.join("\n");
+		const fullCommandText = command
+			.split("\n")
+			.map((line) => theme.fg("muted", line))
+			.join("\n");
+		const body = [
+			theme.fg("warning", `Command flagged as ${risk.severity.toUpperCase()} risk`),
+			"",
+			`${theme.bold(`${flaggedLabel}:`)}\n${flaggedText}`,
+			"",
+			`${theme.bold("Reasons:")}\n${reasonsText}`,
+			"",
+			`${theme.bold("Full command:")}\n${fullCommandText}`,
+		].join("\n");
+
 		const container = new Container();
 		container.addChild(new DynamicBorder((s: string) => theme.fg("warning", s)));
 		container.addChild(new Text(theme.fg("warning", theme.bold("Potentially destructive bash command")), 1, 0));

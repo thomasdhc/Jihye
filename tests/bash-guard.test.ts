@@ -20,6 +20,19 @@ test("detects destructive filesystem commands", () => {
 	}
 });
 
+test("identifies destructive segments within command chains", () => {
+	const cases = [
+		["source .venv/bin/activate && printf 'safe'; rm -rf 'tmp dir'; git status", ["rm -rf 'tmp dir'"]],
+		["echo data > /etc/example && git status --short", ["echo data > /etc/example"]],
+	] as const;
+
+	for (const [command, expectedCommands] of cases) {
+		const risk = analyzeBashCommand(command);
+		assert.ok(risk, command);
+		assert.deepEqual(risk.flaggedCommands, expectedCommands, command);
+	}
+});
+
 test("allows commands outside the guard rules", () => {
 	const commands = [
 		"ls -la",
@@ -64,4 +77,59 @@ test("blocks guarded commands when manual approval is unavailable", async () => 
 
 	assert.equal(result?.block, true);
 	assert.match(result?.reason ?? "", /Blocked by user via bash-guard/);
+});
+
+test("highlights the destructive segment in the approval prompt", async () => {
+	type ToolCallHandler = (
+		event: { type: "tool_call"; toolCallId: string; toolName: "bash"; input: { command: string } },
+		ctx: never,
+	) => Promise<{ block?: boolean; reason?: string } | undefined>;
+	type PromptFactory = (
+		tui: { requestRender(): void },
+		theme: {
+			fg(color: string, text: string): string;
+			bold(text: string): string;
+		},
+		keybindings: object,
+		done: (choice: "run" | "abort") => void,
+	) => { render(width: number): string[] };
+
+	let handler: ToolCallHandler | undefined;
+	bashGuard({
+		registerFlag() {},
+		on(event: string, callback: ToolCallHandler) {
+			if (event === "tool_call") handler = callback;
+		},
+	} as never);
+
+	assert.ok(handler);
+	let rendered = "";
+	const command = "printf safe && rm -rf tmp && git status --short";
+	const result = await handler(
+		{ type: "tool_call", toolCallId: "test-call", toolName: "bash", input: { command } },
+		{
+			hasUI: true,
+			ui: {
+				async custom(factory: PromptFactory) {
+					const component = factory(
+						{ requestRender() {} },
+						{
+							fg: (color, text) => `<${color}>${text}</${color}>`,
+							bold: (text) => `<bold>${text}</bold>`,
+						},
+						{},
+						() => {},
+					);
+					rendered = component.render(240).join("\n");
+					return "abort" as const;
+				},
+			},
+		} as never,
+	);
+
+	assert.equal(result?.block, true);
+	assert.match(rendered, /<error><bold>⚠ rm -rf tmp<\/bold><\/error>/);
+	assert.doesNotMatch(rendered, /<error><bold>⚠ printf safe/);
+	assert.match(rendered, /Full command:/);
+	assert.match(rendered, /printf safe && rm -rf tmp && git status --short/);
 });
