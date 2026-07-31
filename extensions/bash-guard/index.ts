@@ -4,9 +4,9 @@ import type { SelectItem } from "@earendil-works/pi-tui";
 import { Container, SelectList, Text } from "@earendil-works/pi-tui";
 import { parse as shellParse } from "shell-quote";
 
-type Severity = "high" | "medium";
+export type Severity = "high" | "medium";
 
-type Risk = {
+export type Risk = {
 	severity: Severity;
 	reasons: string[];
 };
@@ -251,7 +251,7 @@ function redirectsToSystemPath(tokens: Token[]): string | null {
 	return null;
 }
 
-function analyzeBashCommand(command: string): Risk | null {
+export function analyzeBashCommand(command: string): Risk | null {
 	let tokens: Token[];
 	try {
 		tokens = shellParse(command) as Token[];
