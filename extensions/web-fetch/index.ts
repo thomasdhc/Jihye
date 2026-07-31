@@ -1,4 +1,11 @@
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import {
+	DEFAULT_MAX_BYTES,
+	DEFAULT_MAX_LINES,
+	truncateHead,
+} from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { Text } from "@earendil-works/pi-tui";
 import { Readability } from "@mozilla/readability";
@@ -13,15 +20,187 @@ const MAX_PDF_SIZE = 20 * 1024 * 1024;
 const MIN_USEFUL_CONTENT = 500;
 const JINA_READER_BASE = "https://r.jina.ai/";
 const JINA_TIMEOUT_MS = 30000;
+const MAX_REDIRECTS = 5;
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 const turndown = new TurndownService({
 	headingStyle: "atx",
 	codeBlockStyle: "fenced",
 });
 
+export class ResponseTooLargeError extends Error {
+	constructor(limit: number) {
+		super(`Response too large (limit: ${Math.round(limit / 1024 / 1024)}MB)`);
+		this.name = "ResponseTooLargeError";
+	}
+}
+
+function parseIpv6Words(address: string): number[] | null {
+	let value = address;
+	if (value.includes(".")) {
+		const lastColon = value.lastIndexOf(":");
+		const ipv4 = value.slice(lastColon + 1).split(".").map(Number);
+		if (ipv4.length !== 4 || ipv4.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return null;
+		value = `${value.slice(0, lastColon)}:${((ipv4[0]! << 8) | ipv4[1]!).toString(16)}:${((ipv4[2]! << 8) | ipv4[3]!).toString(16)}`;
+	}
+
+	const halves = value.split("::");
+	if (halves.length > 2) return null;
+	const parseHalf = (half: string) => half ? half.split(":").map((word) => Number.parseInt(word, 16)) : [];
+	const left = parseHalf(halves[0]!);
+	const right = parseHalf(halves[1] ?? "");
+	if ([...left, ...right].some((word) => !Number.isInteger(word) || word < 0 || word > 0xffff)) return null;
+	if (halves.length === 1) return left.length === 8 ? left : null;
+	const missing = 8 - left.length - right.length;
+	if (missing < 1) return null;
+	return [...left, ...Array<number>(missing).fill(0), ...right];
+}
+
+export function isNonPublicIp(address: string): boolean {
+	const normalized = address.toLowerCase().split("%")[0]!.replace(/^\[|\]$/g, "");
+	const version = isIP(normalized);
+
+	if (version === 4) {
+		const octets = normalized.split(".").map(Number);
+		const [a, b] = octets;
+		return (
+			a === 0 ||
+			a === 10 ||
+			a === 127 ||
+			(a === 100 && b >= 64 && b <= 127) ||
+			(a === 169 && b === 254) ||
+			(a === 172 && b >= 16 && b <= 31) ||
+			(a === 192 && b === 168) ||
+			(a === 198 && (b === 18 || b === 19)) ||
+			a >= 224
+		);
+	}
+
+	if (version === 6) {
+		const words = parseIpv6Words(normalized);
+		if (!words) return true;
+		if (words.every((word) => word === 0)) return true;
+		if (words.slice(0, 7).every((word) => word === 0) && words[7] === 1) return true;
+
+		const mappedIpv4 = words.slice(0, 5).every((word) => word === 0) && words[5] === 0xffff;
+		const compatibleIpv4 = words.slice(0, 6).every((word) => word === 0);
+		if (mappedIpv4 || compatibleIpv4) {
+			const ipv4 = `${words[6]! >> 8}.${words[6]! & 0xff}.${words[7]! >> 8}.${words[7]! & 0xff}`;
+			return isNonPublicIp(ipv4);
+		}
+
+		const first = words[0]!;
+		return (
+			(first & 0xfe00) === 0xfc00 ||
+			(first & 0xffc0) === 0xfe80 ||
+			(first & 0xff00) === 0xff00 ||
+			(first === 0x2001 && words[1] === 0x0db8)
+		);
+	}
+
+	return false;
+}
+
+export function validatePublicHttpUrl(rawUrl: string): URL {
+	if (rawUrl.length > 8192) throw new Error("URL is too long");
+
+	let url: URL;
+	try {
+		url = new URL(rawUrl);
+	} catch {
+		throw new Error("Invalid URL");
+	}
+
+	if (url.protocol !== "http:" && url.protocol !== "https:") {
+		throw new Error("Only HTTP and HTTPS URLs are supported");
+	}
+	if (url.username || url.password) {
+		throw new Error("URLs containing credentials are not allowed");
+	}
+
+	const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+	if (
+		hostname === "localhost" ||
+		hostname.endsWith(".localhost") ||
+		hostname.endsWith(".local") ||
+		hostname.endsWith(".internal") ||
+		hostname.endsWith(".home.arpa") ||
+		(isIP(hostname) !== 0 && isNonPublicIp(hostname))
+	) {
+		throw new Error("Private or local network URLs are not allowed");
+	}
+
+	return url;
+}
+
+async function assertPublicResolution(url: URL): Promise<void> {
+	const hostname = url.hostname.replace(/^\[|\]$/g, "");
+	if (isIP(hostname) !== 0) return;
+
+	const addresses = await lookup(hostname, { all: true, verbatim: true });
+	if (addresses.length === 0) throw new Error(`Could not resolve host: ${hostname}`);
+	if (addresses.some(({ address }) => isNonPublicIp(address))) {
+		throw new Error("URL resolves to a private or local network address");
+	}
+}
+
+async function fetchPublicUrl(rawUrl: string, init: RequestInit): Promise<{ response: Response; url: string }> {
+	let current = validatePublicHttpUrl(rawUrl);
+
+	for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
+		await assertPublicResolution(current);
+		const response = await fetch(current, { ...init, redirect: "manual" });
+		if (!REDIRECT_STATUSES.has(response.status)) {
+			return { response, url: current.toString() };
+		}
+
+		const location = response.headers.get("location");
+		if (!location) return { response, url: current.toString() };
+		await response.body?.cancel();
+		if (redirects === MAX_REDIRECTS) throw new Error(`Too many redirects (>${MAX_REDIRECTS})`);
+		current = validatePublicHttpUrl(new URL(location, current).toString());
+	}
+
+	throw new Error(`Too many redirects (>${MAX_REDIRECTS})`);
+}
+
+export async function readResponseBytes(response: Response, maxBytes: number): Promise<Uint8Array> {
+	if (!response.body) return new Uint8Array();
+
+	const reader = response.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let total = 0;
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			total += value.byteLength;
+			if (total > maxBytes) {
+				await reader.cancel();
+				throw new ResponseTooLargeError(maxBytes);
+			}
+			chunks.push(value);
+		}
+	} finally {
+		reader.releaseLock();
+	}
+
+	const output = new Uint8Array(total);
+	let offset = 0;
+	for (const chunk of chunks) {
+		output.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return output;
+}
+
+async function readResponseText(response: Response, maxBytes: number): Promise<string> {
+	return new TextDecoder().decode(await readResponseBytes(response, maxBytes));
+}
+
 // ── Types ────────────────────────────────────────────────────────────
 
-interface FetchResult {
+export interface FetchResult {
 	url: string;
 	title: string;
 	content: string;
@@ -40,11 +219,11 @@ function isPDF(url: string, contentType?: string): boolean {
 }
 
 async function extractPDF(
-	buffer: ArrayBuffer,
+	buffer: Uint8Array,
 	url: string,
 ): Promise<FetchResult> {
 	const { getDocumentProxy } = await import("unpdf");
-	const pdf = await getDocumentProxy(new Uint8Array(buffer));
+	const pdf = await getDocumentProxy(buffer);
 
 	const metadata = await pdf.getMetadata();
 	const metadataInfo =
@@ -339,16 +518,16 @@ async function extractWithJinaReader(
 	signal?: AbortSignal,
 ): Promise<FetchResult | null> {
 	try {
-		const res = await fetch(JINA_READER_BASE + url, {
+		const { response } = await fetchPublicUrl(JINA_READER_BASE + url, {
 			headers: { Accept: "text/markdown", "X-No-Cache": "true" },
 			signal: AbortSignal.any([
 				AbortSignal.timeout(JINA_TIMEOUT_MS),
 				...(signal ? [signal] : []),
 			]),
 		});
-		if (!res.ok) return null;
+		if (!response.ok) return null;
 
-		const content = await res.text();
+		const content = await readResponseText(response, MAX_RESPONSE_SIZE);
 		const contentStart = content.indexOf("Markdown Content:");
 		if (contentStart < 0) return null;
 
@@ -383,7 +562,7 @@ async function extractViaHttp(
 	signal?.addEventListener("abort", onAbort);
 
 	try {
-		const response = await fetch(url, {
+		const fetched = await fetchPublicUrl(url, {
 			signal: controller.signal,
 			headers: {
 				"User-Agent": USER_AGENT,
@@ -397,8 +576,11 @@ async function extractViaHttp(
 				"Upgrade-Insecure-Requests": "1",
 			},
 		});
+		const response = fetched.response;
+		url = fetched.url;
 
 		if (!response.ok) {
+			await response.body?.cancel();
 			return {
 				url, title: "", content: "",
 				error: `HTTP ${response.status}: ${response.statusText}`,
@@ -413,6 +595,7 @@ async function extractViaHttp(
 		if (contentLengthHeader) {
 			const contentLength = parseInt(contentLengthHeader, 10);
 			if (contentLength > maxSize) {
+				await response.body?.cancel();
 				return {
 					url, title: "", content: "",
 					error: `Response too large (${Math.round(contentLength / 1024 / 1024)}MB)`,
@@ -420,25 +603,28 @@ async function extractViaHttp(
 			}
 		}
 
-		if (isPDFContent) {
-			const buffer = await response.arrayBuffer();
-			return await extractPDF(buffer, url);
-		}
-
 		if (
-			contentType.includes("application/octet-stream") ||
-			contentType.includes("image/") ||
-			contentType.includes("audio/") ||
-			contentType.includes("video/") ||
-			contentType.includes("application/zip")
+			!isPDFContent && (
+				contentType.includes("application/octet-stream") ||
+				contentType.includes("image/") ||
+				contentType.includes("audio/") ||
+				contentType.includes("video/") ||
+				contentType.includes("application/zip")
+			)
 		) {
+			await response.body?.cancel();
 			return {
 				url, title: "", content: "",
 				error: `Unsupported content type: ${contentType.split(";")[0]}`,
 			};
 		}
 
-		const text = await response.text();
+		const body = await readResponseBytes(response, maxSize);
+		if (isPDFContent) {
+			return await extractPDF(body, url);
+		}
+
+		const text = new TextDecoder().decode(body);
 		const isHTML =
 			contentType.includes("text/html") ||
 			contentType.includes("application/xhtml+xml");
@@ -508,15 +694,17 @@ async function extractViaHttp(
 async function fetchAndExtract(
 	url: string,
 	signal?: AbortSignal,
+	allowJinaFallback = false,
 ): Promise<FetchResult> {
 	if (signal?.aborted) {
 		return { url, title: "", content: "", error: "Aborted" };
 	}
 
 	try {
-		new URL(url);
-	} catch {
-		return { url, title: "", content: "", error: "Invalid URL" };
+		validatePublicHttpUrl(url);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return { url, title: "", content: "", error: message };
 	}
 
 	const httpResult = await extractViaHttp(url, signal);
@@ -531,25 +719,52 @@ async function fetchAndExtract(
 		return httpResult;
 	}
 
-	const jinaResult = await extractWithJinaReader(url, signal);
-	if (jinaResult) return jinaResult;
-	if (signal?.aborted)
-		return { url, title: "", content: "", error: "Aborted" };
+	if (allowJinaFallback) {
+		const jinaResult = await extractWithJinaReader(url, signal);
+		if (jinaResult) return jinaResult;
+		if (signal?.aborted)
+			return { url, title: "", content: "", error: "Aborted" };
+	}
 
 	return {
 		...httpResult,
-		error: `${httpResult.error}\n\nThe page may be JavaScript-rendered. Try:\n  • A different URL for the same content\n  • web_search to find cached/alternative versions`,
+		error: `${httpResult.error}\n\nThe page may be JavaScript-rendered. Try:\n  • A different URL for the same content\n  • web_search to find cached/alternative versions${allowJinaFallback ? "" : "\n  • Restart Pi with --web-fetch-jina to opt into the third-party Jina Reader fallback"}`,
+	};
+}
+
+export function formatFetchOutput(result: FetchResult): { text: string; truncated: boolean } {
+	const title = result.title.slice(0, 500);
+	const source = result.url.length > 2048 ? `${result.url.slice(0, 2045)}...` : result.url;
+	const header = title
+		? `# ${title}\n\nSource: ${source}\n\n---\n\n`
+		: "";
+	const body = truncateHead(result.content, {
+		maxBytes: Math.max(1024, DEFAULT_MAX_BYTES - Buffer.byteLength(header) - 256),
+		maxLines: Math.max(1, DEFAULT_MAX_LINES - header.split("\n").length - 2),
+	});
+	const truncationNotice = body.truncated
+		? "\n\n[Content truncated to Pi's tool-output limit.]"
+		: "";
+	return {
+		text: header + body.content + truncationNotice,
+		truncated: body.truncated,
 	};
 }
 
 // ── Extension Registration ───────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {
+	pi.registerFlag("web-fetch-jina", {
+		description: "Allow web-fetch to send failed public URLs to the third-party Jina Reader service.",
+		type: "boolean",
+		default: false,
+	});
+
 	pi.registerTool({
 		name: "web_fetch",
 		label: "Web Fetch",
 		description:
-			"Fetch a web page and extract readable content as clean markdown. Uses Readability + Turndown for high-quality HTML→markdown conversion. Handles PDFs, plain text, and falls back to Jina Reader for JS-rendered pages.",
+			"Fetch a public HTTP(S) page and extract readable content as clean markdown. Handles HTML, PDFs, and plain text with bounded response and tool-output sizes. The third-party Jina Reader fallback is disabled unless Pi starts with --web-fetch-jina.",
 		promptSnippet:
 			"Fetch a URL and extract readable content as markdown. Supports HTML pages, PDFs, and plain text.",
 
@@ -558,26 +773,26 @@ export default function (pi: ExtensionAPI) {
 		}),
 
 		async execute(_toolCallId, params, signal) {
-			const result = await fetchAndExtract(params.url, signal);
+			const allowJinaFallback = pi.getFlag("web-fetch-jina") === true;
+			const result = await fetchAndExtract(params.url, signal, allowJinaFallback);
 
 			if (result.error) {
 				throw new Error(`${params.url}: ${result.error}`);
 			}
 
-			const header = result.title
-				? `# ${result.title}\n\nSource: ${result.url}\n\n---\n\n`
-				: "";
+			const output = formatFetchOutput(result);
 			return {
 				content: [
 					{
 						type: "text" as const,
-						text: header + result.content,
+						text: output.text,
 					},
 				],
 				details: {
 					url: result.url,
 					title: result.title,
 					chars: result.content.length,
+					truncated: output.truncated,
 				},
 			};
 		},

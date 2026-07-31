@@ -57,6 +57,16 @@ A local-path installation loads changes directly from the checkout; run `/reload
 
 ## Setup
 
+### `web-fetch` third-party fallback
+
+`web-fetch` directly extracts public HTTP(S) content by default. Private and local network URLs are blocked, and response and tool-output sizes are bounded.
+
+The optional Jina Reader fallback sends failed public URLs to a third-party service, so it requires explicit opt-in when starting Pi:
+
+```bash
+pi --web-fetch-jina
+```
+
 ### `web-search` credentials
 
 `web-search` reads credentials from `SERPER_API_KEY` or a local `extensions/web-search/auth.json` file:
