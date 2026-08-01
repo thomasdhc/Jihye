@@ -24,7 +24,14 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `todo` | Manage a project todo list |
 | `ui-edit` | Reliable HTML/CSS/JS editing workflow |
 
+## Requirements
+
+- Pi coding agent `0.83.0` or newer.
+- Node.js with TypeScript type stripping support for development and local-path installs.
+
 ## Install
+
+> **Migration note:** `pi install` does not replace extensions manually copied into `~/.pi/agent/extensions/`. Remove or back up old manual copies before installing this package to avoid duplicate tool/flag conflicts. Keep any local config you still need, such as `web-search/auth.json`.
 
 ### From GitHub
 
@@ -49,11 +56,13 @@ Run `/reload` in an existing Pi session after installing or updating.
 ### From a local checkout
 
 ```bash
-git clone git@github.com:thomasdhc/pi-extensio.git ~/Workspace/pi-extensio
-pi install ~/Workspace/pi-extensio
+git clone git@github.com:thomasdhc/pi-extensio.git
+cd pi-extensio
+npm install
+pi install .
 ```
 
-A local-path installation loads changes directly from the checkout; run `/reload` after editing.
+A local-path installation loads changes directly from the checkout; run `/reload` after editing. Run `npm install` in the checkout before loading the package.
 
 ## Setup
 
