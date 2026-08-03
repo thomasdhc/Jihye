@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import bashGuard, { analyzeBashCommand, analyzeGitHubCliCommand } from "../extensions/bash-guard/index.ts";
+import { TERMINAL_NOTIFY_EVENT } from "../extensions/terminal-notify.ts";
 
 test("detects destructive filesystem commands", () => {
 	const cases = [
@@ -165,6 +166,51 @@ test("blocks guarded commands when manual approval is unavailable", async () => 
 
 	assert.equal(result?.block, true);
 	assert.match(result?.reason ?? "", /Blocked by user via bash-guard/);
+});
+
+test("requests a terminal alert before showing an approval prompt", async () => {
+	type ToolCallHandler = (
+		event: { type: "tool_call"; toolCallId: string; toolName: "bash"; input: { command: string } },
+		ctx: never,
+	) => Promise<{ block?: boolean; reason?: string } | undefined>;
+
+	let handler: ToolCallHandler | undefined;
+	let emittedEvent = "";
+	let emittedData: unknown;
+	bashGuard({
+		registerFlag() {},
+		on(event: string, callback: ToolCallHandler) {
+			if (event === "tool_call") handler = callback;
+		},
+		events: {
+			emit(event: string, data: unknown) {
+				emittedEvent = event;
+				emittedData = data;
+			},
+		},
+	} as never);
+
+	assert.ok(handler);
+	await handler(
+		{ type: "tool_call", toolCallId: "test-call", toolName: "bash", input: { command: "rm file.txt" } },
+		{
+			hasUI: true,
+			mode: "tui",
+			ui: {
+				async custom() {
+					return "abort" as const;
+				},
+			},
+		} as never,
+	);
+
+	assert.equal(emittedEvent, TERMINAL_NOTIFY_EVENT);
+	assert.deepEqual(emittedData, {
+		mode: "tui",
+		title: "Pi",
+		body: "Bash approval required (high risk)",
+		ringBell: true,
+	});
 });
 
 test("highlights the destructive segment in the approval prompt", async () => {

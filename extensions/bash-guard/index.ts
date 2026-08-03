@@ -4,6 +4,8 @@ import type { SelectItem } from "@earendil-works/pi-tui";
 import { Container, SelectList, Text } from "@earendil-works/pi-tui";
 import { parse as shellParse, quote as shellQuote } from "shell-quote";
 
+import { TERMINAL_NOTIFY_EVENT, type TerminalNotificationRequest } from "../terminal-notify.ts";
+
 export type Severity = "high" | "medium";
 
 type RiskDetails = {
@@ -681,6 +683,16 @@ export default function (pi: ExtensionAPI) {
 		if (!ctx.hasUI && pi.getFlag("--bash-guard-auto-allow")) {
 			// Non-interactive mode: allow when explicitly requested.
 			return;
+		}
+
+		if (ctx.hasUI && ctx.mode === "tui") {
+			const request: TerminalNotificationRequest = {
+				mode: ctx.mode,
+				title: "Pi",
+				body: `Bash approval required (${risk.severity} risk)`,
+				ringBell: true,
+			};
+			pi.events.emit(TERMINAL_NOTIFY_EVENT, request);
 		}
 
 		const choice = await promptRunOrAbort(ctx, command, risk);

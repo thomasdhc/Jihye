@@ -121,6 +121,8 @@ Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to
 
 Unknown terminals quietly receive no notification. Override detection when needed with `PI_TERMINAL_NOTIFY=iterm`, `kitty`, `tilix`, or `osc777`; disable alerts with `PI_TERMINAL_NOTIFY=off`.
 
+When `bash-guard` opens an approval prompt, it also requests an urgent native notification and rings the terminal bell. In iTerm2, enable **Profiles → Terminal → Show bell icon in tabs** so the exact Pi tab is marked while iTerm2 is in the foreground.
+
 Remove any older manually installed notification extension from `~/.pi/agent/extensions/` before reloading Pi to avoid duplicate alerts. iTerm2 notification permissions and the Linux desktop notification service must also allow notifications. Some Tilix builds lack the downstream OSC 777 notification patch; forcing `tilix` cannot add support when the terminal itself does not implement it.
 
 ## Development

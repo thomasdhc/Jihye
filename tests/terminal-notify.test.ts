@@ -4,7 +4,9 @@ import test from "node:test";
 import {
 	createTerminalNotifyExtension,
 	detectNotificationProtocol,
+	notificationRequestSequence,
 	notificationSequence,
+	TERMINAL_NOTIFY_EVENT,
 } from "../extensions/terminal-notify.ts";
 
 test("detects terminal notification protocols with explicit precedence", () => {
@@ -47,6 +49,7 @@ test("notifies exactly once when the agent settles in TUI mode", () => {
 			eventName = event;
 			handler = callback;
 		},
+		events: { on() {} },
 	} as never);
 
 	assert.equal(eventName, "agent_settled");
@@ -65,9 +68,50 @@ test("does nothing for an unsupported terminal", () => {
 		on(_event: string, callback: typeof handler) {
 			handler = callback;
 		},
+		events: { on() {} },
 	} as never);
 
 	assert.ok(handler);
 	handler({}, { mode: "tui" });
 	assert.deepEqual(writes, []);
+});
+
+test("rings the terminal bell and posts an urgent notification on request", () => {
+	let eventName = "";
+	let requestHandler: ((data: unknown) => void) | undefined;
+	const writes: string[] = [];
+
+	createTerminalNotifyExtension({
+		env: { TERM_PROGRAM: "iTerm.app" },
+		write: (value) => writes.push(value),
+	})({
+		on() {},
+		events: {
+			on(event: string, callback: (data: unknown) => void) {
+				eventName = event;
+				requestHandler = callback;
+			},
+		},
+	} as never);
+
+	assert.equal(eventName, TERMINAL_NOTIFY_EVENT);
+	assert.ok(requestHandler);
+	requestHandler({
+		mode: "tui",
+		title: "Pi",
+		body: "Bash approval required (high risk)",
+		ringBell: true,
+	});
+	assert.deepEqual(writes, ["\x07\x1b]9;Pi: Bash approval required (high risk)\x1b\\"]);
+
+	requestHandler({ mode: "rpc", title: "Pi", body: "Ignored", ringBell: true });
+	assert.equal(writes.length, 1);
+
+	assert.equal(
+		notificationRequestSequence(
+			{ mode: "tui", title: "Pi", body: "Ignored", ringBell: true },
+			{ PI_TERMINAL_NOTIFY: "off" },
+		),
+		"",
+	);
 });
