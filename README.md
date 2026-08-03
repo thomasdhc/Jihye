@@ -12,6 +12,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
+| `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
 | `web-search` | Search the web via Serper (Google results) |
 
@@ -106,6 +107,21 @@ Portable default definitions are tracked in `agents/`:
 | `worker` | `openai-codex/gpt-5.6-sol` | high |
 
 Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override a bundled agent. A user definition replaces the complete bundled definition, including its prompt, tools, model, and thinking level. User-only agent names are also loaded.
+
+### Terminal notifications
+
+`terminal-notify` detects the current terminal at runtime, so the same package works across workstations:
+
+| Terminal | Detection | Protocol |
+|---|---|---|
+| iTerm2 | `TERM_PROGRAM=iTerm.app` | OSC 9 |
+| Tilix | `TILIX_ID` | OSC 777 |
+| Kitty | `KITTY_WINDOW_ID` or `TERM=xterm-kitty` | OSC 99 |
+| Ghostty / WezTerm | terminal-specific environment | OSC 777 |
+
+Unknown terminals quietly receive no notification. Override detection when needed with `PI_TERMINAL_NOTIFY=iterm`, `kitty`, `tilix`, or `osc777`; disable alerts with `PI_TERMINAL_NOTIFY=off`.
+
+Remove any older manually installed notification extension from `~/.pi/agent/extensions/` before reloading Pi to avoid duplicate alerts. iTerm2 notification permissions and the Linux desktop notification service must also allow notifications. Some Tilix builds lack the downstream OSC 777 notification patch; forcing `tilix` cannot add support when the terminal itself does not implement it.
 
 ## Development
 
