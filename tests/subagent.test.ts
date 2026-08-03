@@ -27,8 +27,20 @@ test("loads portable bundled agent model specifications", () => {
 	}
 	assert.equal(byName.get("scout")?.thinking, "medium");
 	assert.equal(byName.get("researcher")?.thinking, "medium");
-	assert.equal(byName.get("reviewer")?.thinking, "high");
+	assert.equal(byName.get("reviewer")?.thinking, "medium");
 	assert.equal(byName.get("worker")?.thinking, "high");
+});
+
+test("keeps the bundled reviewer bounded", () => {
+	const reviewer = loadAgentsFromDirectories([join(REPO_ROOT, "agents")])
+		.find((agent) => agent.name === "reviewer");
+
+	assert.ok(reviewer);
+	assert.match(reviewer.systemPrompt, /Treat that scope as a hard boundary/);
+	assert.match(reviewer.systemPrompt, /at most three falsifiable/);
+	assert.match(reviewer.systemPrompt, /no more than six tool calls total/);
+	assert.match(reviewer.systemPrompt, /verify only the listed fixes and their immediate regression surface/);
+	assert.match(reviewer.systemPrompt, /at most 300 words/);
 });
 
 test("loads user agents as full overrides of bundled defaults", () => {

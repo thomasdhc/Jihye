@@ -103,10 +103,10 @@ Portable default definitions are tracked in `agents/`:
 |---|---|---|
 | `scout` | `openai-codex/gpt-5.6-sol` | medium |
 | `researcher` | `openai-codex/gpt-5.6-sol` | medium |
-| `reviewer` | `openai-codex/gpt-5.6-sol` | high |
+| `reviewer` | `openai-codex/gpt-5.6-sol` | medium |
 | `worker` | `openai-codex/gpt-5.6-sol` | high |
 
-Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override a bundled agent. A user definition replaces the complete bundled definition, including its prompt, tools, model, and thinking level. User-only agent names are also loaded.
+Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override a bundled agent. A user definition replaces the complete bundled definition, including its prompt, tools, model, and thinking level. Remove the user definition to return to the bundled agent. User-only agent names are also loaded.
 
 ### Terminal notifications
 
