@@ -6,7 +6,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 
 | Extension | Purpose |
 |---|---|
-| `bash-guard` | Interactive prompt for destructive bash commands; headless hard-block in subagents |
+| `bash-guard` | Interactive prompt for destructive bash and GitHub/GitLab CLI commands; headless hard-block in subagents |
 | `ctx-manager` | Context usage status bar + auto-compaction at 65% |
 | `custom-header` | Custom Pi startup header |
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |

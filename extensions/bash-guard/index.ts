@@ -22,6 +22,12 @@ type CommentToken = { comment: string };
 
 type Token = string | OpToken | CommentToken;
 
+function parseShellCommand(command: string): Token[] {
+	// Preserve environment references so policy checks can distinguish dynamic
+	// arguments from literal empty strings without expanding user data.
+	return shellParse(command, (name) => `$${name}`) as Token[];
+}
+
 function isOpToken(t: Token): t is OpToken {
 	return typeof t === "object" && t !== null && "op" in t;
 }
@@ -71,7 +77,27 @@ function hasOption(args: string[], option: string): boolean {
 	return args.some((arg) => arg === option || (option.startsWith("--") && arg.startsWith(`${option}=`)));
 }
 
-type GitHubCliRule = RiskDetails & {
+function isDynamicShellToken(value: string | undefined): boolean {
+	return value === "$" || value?.includes("$(") === true || value?.includes("`") === true || /^\$[A-Za-z_]/.test(value ?? "");
+}
+
+function enabledBooleanOption(args: string[], options: readonly string[]): boolean {
+	let enabled: boolean | undefined;
+	for (const arg of args) {
+		for (const option of options) {
+			if (arg === option) {
+				enabled = true;
+				continue;
+			}
+			if (!arg.startsWith(`${option}=`)) continue;
+			const value = arg.slice(option.length + 1).toLowerCase();
+			enabled = ["1", "t", "true"].includes(value) ? true : ["0", "f", "false"].includes(value) ? false : undefined;
+		}
+	}
+	return enabled === true;
+}
+
+type HostedCliRule = RiskDetails & {
 	command: readonly string[];
 	anyOptions?: readonly string[];
 	excludedOptions?: readonly string[];
@@ -79,7 +105,7 @@ type GitHubCliRule = RiskDetails & {
 
 // Keep this policy narrow: ordinary GitHub writes such as creating issues, editing
 // descriptions, and posting comments are intentionally not guarded.
-const DANGEROUS_GITHUB_CLI_COMMANDS: readonly GitHubCliRule[] = [
+const DANGEROUS_GITHUB_CLI_COMMANDS: readonly HostedCliRule[] = [
 	{ command: ["repo", "delete"], severity: "high", reasons: ["gh repo delete (repository deletion)"] },
 	{ command: ["repo", "archive"], severity: "high", reasons: ["gh repo archive (repository archival)"] },
 	{ command: ["repo", "rename"], severity: "high", reasons: ["gh repo rename (repository identity change)"] },
@@ -135,6 +161,129 @@ const DANGEROUS_GITHUB_CLI_COMMANDS: readonly GitHubCliRule[] = [
 	{ command: ["label", "delete"], severity: "high", reasons: ["gh label delete (repository label deletion)"] },
 ];
 
+// Mirror the GitHub policy for GitLab while covering GitLab-specific CI schedules,
+// access credentials, and destructive project operations. Ordinary writes such as
+// creating issues, posting notes, and approving merge requests remain unguarded.
+const DANGEROUS_GITLAB_CLI_COMMANDS: readonly HostedCliRule[] = [
+	{ command: ["repo", "delete"], severity: "high", reasons: ["glab repo delete (project deletion)"] },
+	{ command: ["repo", "transfer"], severity: "high", reasons: ["glab repo transfer (project ownership change)"] },
+	{ command: ["repo", "mirror"], severity: "high", reasons: ["glab repo mirror (repository mirroring change)"] },
+	{
+		command: ["repo", "update"],
+		anyOptions: ["--archive"],
+		severity: "high",
+		reasons: ["glab repo update --archive (project archival state change)"],
+	},
+	{
+		command: ["repo", "update"],
+		anyOptions: ["--defaultBranch"],
+		severity: "high",
+		reasons: ["glab repo update --defaultBranch (default branch change)"],
+	},
+	{ command: ["repo", "members", "add"], severity: "high", reasons: ["glab repo members add (project access change)"] },
+	{ command: ["repo", "members", "remove"], severity: "high", reasons: ["glab repo members remove (project access change)"] },
+	{ command: ["repo", "publish", "catalog"], severity: "high", reasons: ["glab repo publish catalog (catalog publication)"] },
+	{ command: ["mr", "merge"], severity: "high", reasons: ["glab mr merge (merge request merge)"] },
+	{ command: ["mr", "accept"], severity: "high", reasons: ["glab mr accept (merge request merge)"] },
+	{ command: ["mr", "close"], severity: "medium", reasons: ["glab mr close (merge request closure)"] },
+	{ command: ["mr", "delete"], severity: "high", reasons: ["glab mr delete (merge request deletion)"] },
+	{ command: ["mr", "del"], severity: "high", reasons: ["glab mr del (merge request deletion)"] },
+	{ command: ["mr", "rebase"], severity: "high", reasons: ["glab mr rebase (remote source branch rewrite)"] },
+	{ command: ["mr", "note", "delete"], severity: "high", reasons: ["glab mr note delete (merge request note deletion)"] },
+	{ command: ["issue", "close"], severity: "medium", reasons: ["glab issue close (issue closure)"] },
+	{ command: ["issue", "delete"], severity: "high", reasons: ["glab issue delete (issue deletion)"] },
+	{ command: ["issue", "del"], severity: "high", reasons: ["glab issue del (issue deletion)"] },
+	{ command: ["incident", "close"], severity: "medium", reasons: ["glab incident close (incident closure)"] },
+	{ command: ["work-items", "delete"], severity: "high", reasons: ["glab work-items delete (work item deletion)"] },
+	{ command: ["release", "delete"], severity: "high", reasons: ["glab release delete (release deletion)"] },
+	{
+		command: ["ci", "cancel"],
+		excludedOptions: ["--dry-run"],
+		severity: "medium",
+		reasons: ["glab ci cancel (pipeline or job cancellation)"],
+	},
+	{
+		command: ["ci", "delete"],
+		excludedOptions: ["--dry-run"],
+		severity: "high",
+		reasons: ["glab ci delete (pipeline deletion)"],
+	},
+	{
+		command: ["ci", "run"],
+		excludedOptions: ["-w", "--web"],
+		severity: "medium",
+		reasons: ["glab ci run (remote pipeline execution)"],
+	},
+	{ command: ["ci", "run-trig"], severity: "medium", reasons: ["glab ci run-trig (remote pipeline execution)"] },
+	{ command: ["ci", "retry"], severity: "medium", reasons: ["glab ci retry (remote job execution)"] },
+	{ command: ["ci", "trigger"], severity: "medium", reasons: ["glab ci trigger (remote job execution)"] },
+	{ command: ["schedule", "create"], severity: "high", reasons: ["glab schedule create (recurring pipeline configuration)"] },
+	{ command: ["schedule", "delete"], severity: "high", reasons: ["glab schedule delete (pipeline schedule deletion)"] },
+	{
+		command: ["schedule", "update"],
+		anyOptions: [
+			"--active",
+			"--cron",
+			"--cronTimeZone",
+			"--ref",
+			"--create-variable",
+			"--update-variable",
+			"--delete-variable",
+		],
+		severity: "high",
+		reasons: ["glab schedule update (recurring pipeline configuration change)"],
+	},
+	{ command: ["schedule", "run"], severity: "medium", reasons: ["glab schedule run (remote pipeline execution)"] },
+	{ command: ["variable", "set"], severity: "high", reasons: ["glab variable set (CI/CD configuration change)"] },
+	{ command: ["variable", "update"], severity: "high", reasons: ["glab variable update (CI/CD configuration change)"] },
+	{ command: ["variable", "delete"], severity: "high", reasons: ["glab variable delete (CI/CD configuration change)"] },
+	{ command: ["deploy-key", "add"], severity: "high", reasons: ["glab deploy-key add (project access change)"] },
+	{ command: ["deploy-key", "delete"], severity: "high", reasons: ["glab deploy-key delete (project access change)"] },
+	{ command: ["ssh-key", "add"], severity: "high", reasons: ["glab ssh-key add (account access change)"] },
+	{ command: ["ssh-key", "delete"], severity: "high", reasons: ["glab ssh-key delete (account access change)"] },
+	{ command: ["gpg-key", "add"], severity: "high", reasons: ["glab gpg-key add (account signing-key change)"] },
+	{ command: ["gpg-key", "delete"], severity: "high", reasons: ["glab gpg-key delete (account signing-key change)"] },
+	{ command: ["token", "create"], severity: "high", reasons: ["glab token create (access token creation)"] },
+	{ command: ["token", "revoke"], severity: "high", reasons: ["glab token revoke (access token revocation)"] },
+	{ command: ["token", "rm"], severity: "high", reasons: ["glab token rm (access token revocation)"] },
+	{ command: ["token", "rotate"], severity: "high", reasons: ["glab token rotate (access token rotation)"] },
+	{ command: ["securefile", "create"], severity: "high", reasons: ["glab securefile create (secure CI file upload)"] },
+	{ command: ["securefile", "upload"], severity: "high", reasons: ["glab securefile upload (secure CI file upload)"] },
+	{ command: ["securefile", "remove"], severity: "high", reasons: ["glab securefile remove (secure CI file deletion)"] },
+	{ command: ["securefile", "delete"], severity: "high", reasons: ["glab securefile delete (secure CI file deletion)"] },
+	{ command: ["securefile", "rm"], severity: "high", reasons: ["glab securefile rm (secure CI file deletion)"] },
+	{ command: ["label", "delete"], severity: "high", reasons: ["glab label delete (project label deletion)"] },
+	{ command: ["milestone", "delete"], severity: "high", reasons: ["glab milestone delete (milestone deletion)"] },
+	{ command: ["runner", "assign"], severity: "high", reasons: ["glab runner assign (runner assignment change)"] },
+	{ command: ["runner", "unassign"], severity: "high", reasons: ["glab runner unassign (runner assignment change)"] },
+	{ command: ["runner", "delete"], severity: "high", reasons: ["glab runner delete (runner deletion)"] },
+	{
+		command: ["runner", "update"],
+		anyOptions: ["--pause"],
+		severity: "medium",
+		reasons: ["glab runner update --pause (runner disruption)"],
+	},
+	{ command: ["cluster", "agent", "bootstrap"], severity: "high", reasons: ["glab cluster agent bootstrap (cluster and repository mutation)"] },
+	{ command: ["cluster", "agent", "get-token"], severity: "high", reasons: ["glab cluster agent get-token (access token creation)"] },
+	{ command: ["cluster", "agent", "token", "revoke"], severity: "high", reasons: ["glab cluster agent token revoke (agent token revocation)"] },
+	{ command: ["cluster", "agent", "token-cache", "clear"], severity: "high", reasons: ["glab cluster agent token-cache clear (cached token revocation)"] },
+	{ command: ["opentofu", "state", "delete"], severity: "high", reasons: ["glab opentofu state delete (infrastructure state deletion)"] },
+	{ command: ["runner-controller", "create"], severity: "high", reasons: ["glab runner-controller create (runner infrastructure creation)"] },
+	{ command: ["runner-controller", "delete"], severity: "high", reasons: ["glab runner-controller delete (runner controller deletion)"] },
+	{
+		command: ["runner-controller", "update"],
+		anyOptions: ["--state"],
+		severity: "high",
+		reasons: ["glab runner-controller update --state (runner infrastructure state change)"],
+	},
+	{ command: ["runner-controller", "scope", "create"], severity: "high", reasons: ["glab runner-controller scope create (runner controller access change)"] },
+	{ command: ["runner-controller", "scope", "delete"], severity: "high", reasons: ["glab runner-controller scope delete (runner controller access change)"] },
+	{ command: ["runner-controller", "token", "create"], severity: "high", reasons: ["glab runner-controller token create (access token creation)"] },
+	{ command: ["runner-controller", "token", "revoke"], severity: "high", reasons: ["glab runner-controller token revoke (access token revocation)"] },
+	{ command: ["runner-controller", "token", "rotate"], severity: "high", reasons: ["glab runner-controller token rotate (access token rotation)"] },
+	{ command: ["changelog", "generate"], severity: "high", reasons: ["glab changelog generate (remote repository write)"] },
+];
+
 function optionValues(args: string[], shortOption: string, longOption: string): string[] {
 	const values: string[] = [];
 	for (let i = 0; i < args.length; i++) {
@@ -154,40 +303,57 @@ function optionValues(args: string[], shortOption: string, longOption: string): 
 	return values;
 }
 
-function analyzeGitHubApi(args: string[]): RiskDetails | null {
+function analyzeHostedApi(
+	args: string[],
+	cli: "gh" | "glab",
+	options: { formImpliesPost?: boolean; safeMethods?: readonly string[] } = {},
+): RiskDetails | null {
 	const explicitMethod = optionValues(args, "-X", "--method").at(-1)?.toUpperCase();
 	const rawFields = optionValues(args, "-f", "--raw-field");
 	const typedFields = optionValues(args, "-F", "--field");
 	const fields = [...rawFields, ...typedFields];
 	const hasInput = hasOption(args, "--input");
-	const effectiveMethod = explicitMethod ?? (fields.length > 0 || hasInput ? "POST" : "GET");
+	const hasForm = options.formImpliesPost === true && hasOption(args, "--form");
+	const effectiveMethod = explicitMethod ?? (fields.length > 0 || hasInput || hasForm ? "POST" : "GET");
+	const safeMethods = options.safeMethods ?? ["GET", "HEAD"];
 
-	if (effectiveMethod === "GET" || effectiveMethod === "HEAD") return null;
+	if (safeMethods.includes(effectiveMethod)) return null;
 
 	if (args.includes("graphql")) {
 		const queries = fields
 			.filter((field) => field.startsWith("query="))
 			.map((field) => field.slice("query=".length));
 		if (queries.some((query) => /\bmutation\b/i.test(query))) {
-			return { severity: "high", reasons: ["gh api GraphQL mutation (authenticated remote mutation)"] };
+			return { severity: "high", reasons: [`${cli} api GraphQL mutation (authenticated remote mutation)`] };
 		}
+		const hasDynamicQuery = queries.some(
+			(query) => query.includes("$(") || query.includes("`") || /^\$[A-Za-z_]/.test(query),
+		);
 		const typedQueries = typedFields
 			.filter((field) => field.startsWith("query="))
 			.map((field) => field.slice("query=".length));
-		if (hasInput || typedQueries.some((query) => query.startsWith("@"))) {
+		if (hasInput || hasForm || hasDynamicQuery || typedQueries.some((query) => query.startsWith("@"))) {
 			return {
 				severity: "high",
-				reasons: ["gh api GraphQL request from external input (mutation cannot be verified)"],
+				reasons: [`${cli} api GraphQL request from external input (mutation cannot be verified)`],
 			};
 		}
-		// GraphQL queries use POST as their transport but do not mutate GitHub state.
+		// GraphQL queries use POST as their transport but do not mutate remote state.
 		if (effectiveMethod === "POST") return null;
 	}
 
 	return {
 		severity: "high",
-		reasons: [`gh api ${effectiveMethod} (authenticated API request may mutate remote state)`],
+		reasons: [`${cli} api ${effectiveMethod} (authenticated API request may mutate remote state)`],
 	};
+}
+
+function analyzeGitHubApi(args: string[]): RiskDetails | null {
+	return analyzeHostedApi(args, "gh");
+}
+
+function analyzeGitLabApi(args: string[]): RiskDetails | null {
+	return analyzeHostedApi(args, "glab", { formImpliesPost: true, safeMethods: ["GET", "HEAD", "OPTIONS"] });
 }
 
 const SHELL_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
@@ -218,7 +384,7 @@ function unwrapShellCommand(args: string[]): string[] {
 	return args.slice(index);
 }
 
-function withoutGitHubContextOptions(args: string[]): string[] {
+function withoutHostedCliContextOptions(args: string[]): string[] {
 	const out: string[] = [];
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
@@ -232,17 +398,39 @@ function withoutGitHubContextOptions(args: string[]): string[] {
 	return out;
 }
 
+function analyzeDynamicHostedCliCommand(
+	args: string[],
+	rules: readonly HostedCliRule[],
+	cli: "gh" | "glab",
+): RiskDetails | null {
+	for (const rule of rules) {
+		for (let index = 0; index < rule.command.length; index++) {
+			if (args[index] === rule.command[index]) continue;
+			if (isDynamicShellToken(args[index])) {
+				return {
+					severity: "high",
+					reasons: [`${cli} dynamic command or subcommand (may resolve to a guarded remote operation)`],
+				};
+			}
+			break;
+		}
+	}
+	return null;
+}
+
 function analyzeGitHubCliArgs(rawArgs: string[]): RiskDetails | null {
 	const args = unwrapShellCommand(rawArgs);
 	if (args[0] !== "gh" && !args[0]?.endsWith("/gh")) return null;
 	const ghArgs = args.slice(1);
-	if (ghArgs[0] === "api") return analyzeGitHubApi(ghArgs.slice(1));
+	const commandArgs = withoutHostedCliContextOptions(ghArgs);
+	if (commandArgs[0] === "api") return analyzeGitHubApi(commandArgs.slice(1));
 
-	const commandArgs = withoutGitHubContextOptions(ghArgs);
+	const dynamicCommandRisk = analyzeDynamicHostedCliCommand(commandArgs, DANGEROUS_GITHUB_CLI_COMMANDS, "gh");
+	if (dynamicCommandRisk) return dynamicCommandRisk;
 	for (const rule of DANGEROUS_GITHUB_CLI_COMMANDS) {
 		if (!rule.command.every((part, index) => commandArgs[index] === part)) continue;
 		if (rule.anyOptions && !rule.anyOptions.some((option) => hasOption(ghArgs, option))) continue;
-		if (rule.excludedOptions?.some((option) => hasOption(ghArgs, option))) continue;
+		if (rule.excludedOptions && enabledBooleanOption(ghArgs, rule.excludedOptions)) continue;
 		return { severity: rule.severity, reasons: rule.reasons };
 	}
 	return null;
@@ -251,6 +439,36 @@ function analyzeGitHubCliArgs(rawArgs: string[]): RiskDetails | null {
 function analyzeGitHubCliSegment(seg: Token[]): RiskDetails | null {
 	const risks = splitOnOps(seg, ["|", "|&", "&", "(", ")"])
 		.map((commandTokens) => analyzeGitHubCliArgs(tokensToStrings(commandTokens)))
+		.filter((risk): risk is RiskDetails => risk !== null);
+	if (risks.length === 0) return null;
+	return {
+		severity: risks.some((risk) => risk.severity === "high") ? "high" : "medium",
+		reasons: risks.flatMap((risk) => risk.reasons),
+	};
+}
+
+function analyzeGitLabCliArgs(rawArgs: string[]): RiskDetails | null {
+	const args = unwrapShellCommand(rawArgs);
+	if (args[0] !== "glab" && !args[0]?.endsWith("/glab")) return null;
+	const glabArgs = args.slice(1);
+	const commandArgs = withoutHostedCliContextOptions(glabArgs);
+	if (commandArgs[0] === "api") return analyzeGitLabApi(commandArgs.slice(1));
+
+	if (commandArgs[0] === "pipe" || commandArgs[0] === "pipeline") commandArgs[0] = "ci";
+	const dynamicCommandRisk = analyzeDynamicHostedCliCommand(commandArgs, DANGEROUS_GITLAB_CLI_COMMANDS, "glab");
+	if (dynamicCommandRisk) return dynamicCommandRisk;
+	for (const rule of DANGEROUS_GITLAB_CLI_COMMANDS) {
+		if (!rule.command.every((part, index) => commandArgs[index] === part)) continue;
+		if (rule.anyOptions && !rule.anyOptions.some((option) => hasOption(glabArgs, option))) continue;
+		if (rule.excludedOptions && enabledBooleanOption(glabArgs, rule.excludedOptions)) continue;
+		return { severity: rule.severity, reasons: rule.reasons };
+	}
+	return null;
+}
+
+function analyzeGitLabCliSegment(seg: Token[]): RiskDetails | null {
+	const risks = splitOnOps(seg, ["|", "|&", "&", "(", ")"])
+		.map((commandTokens) => analyzeGitLabCliArgs(tokensToStrings(commandTokens)))
 		.filter((risk): risk is RiskDetails => risk !== null);
 	if (risks.length === 0) return null;
 	return {
@@ -270,10 +488,10 @@ function analyzeSegment(seg: Token[]): RiskDetails | null {
 	const cmd = args[0];
 	const rest = args.slice(1);
 
-	const githubCliRisk = analyzeGitHubCliSegment(seg);
-	if (githubCliRisk) {
-		reasons.push(...githubCliRisk.reasons);
-		if (githubCliRisk.severity === "high") severity = "high";
+	for (const hostedCliRisk of [analyzeGitHubCliSegment(seg), analyzeGitLabCliSegment(seg)]) {
+		if (!hostedCliRisk) continue;
+		reasons.push(...hostedCliRisk.reasons);
+		if (hostedCliRisk.severity === "high") severity = "high";
 	}
 
 	const systemTarget = redirectsToSystemPath(seg);
@@ -500,7 +718,7 @@ function analyzeParsedCommand(tokens: Token[], segmentAnalyzer: (segment: Token[
 export function analyzeBashCommand(command: string): Risk | null {
 	let tokens: Token[];
 	try {
-		tokens = shellParse(command) as Token[];
+		tokens = parseShellCommand(command);
 	} catch {
 		// Fallback: if we can't parse, treat the full command as questionable.
 		return {
@@ -514,7 +732,15 @@ export function analyzeBashCommand(command: string): Risk | null {
 
 export function analyzeGitHubCliCommand(command: string): Risk | null {
 	try {
-		return analyzeParsedCommand(shellParse(command) as Token[], analyzeGitHubCliSegment);
+		return analyzeParsedCommand(parseShellCommand(command), analyzeGitHubCliSegment);
+	} catch {
+		return null;
+	}
+}
+
+export function analyzeGitLabCliCommand(command: string): Risk | null {
+	try {
+		return analyzeParsedCommand(parseShellCommand(command), analyzeGitLabCliSegment);
 	} catch {
 		return null;
 	}
@@ -627,13 +853,16 @@ export default function (pi: ExtensionAPI) {
 		pi.on("tool_call", async (event) => {
 			if (!isToolCallEventType("bash", event)) return;
 			const command = event.input.command;
-			const githubCliRisk = analyzeGitHubCliCommand(command);
-			if (githubCliRisk) {
+			for (const [platform, hostedCliRisk] of [
+				["GitHub", analyzeGitHubCliCommand(command)],
+				["GitLab", analyzeGitLabCliCommand(command)],
+			] as const) {
+				if (!hostedCliRisk) continue;
 				return {
 					block: true,
 					reason:
-						`Blocked by bash-guard: ${githubCliRisk.reasons.join("; ")}. ` +
-						"This is a non-interactive subagent session — dangerous GitHub operations are not permitted. " +
+						`Blocked by bash-guard: ${hostedCliRisk.reasons.join("; ")}. ` +
+						`This is a non-interactive subagent session — dangerous ${platform} operations are not permitted. ` +
 						"Ask the parent agent to perform the operation with user approval.",
 				};
 			}
