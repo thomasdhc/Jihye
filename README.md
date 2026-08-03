@@ -11,7 +11,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `custom-header` | Custom Pi startup header |
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
-| `subagent` | Run Pi subagents as tools; supports agent definitions in `~/.pi/agent/agents/` |
+| `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
 | `web-search` | Search the web via Serper (Google results) |
 
@@ -96,7 +96,16 @@ python3 -m venv .venv
 
 ### `subagent` agent definitions
 
-Agent definition files live outside this repo in `~/.pi/agent/agents/`.
+Portable default definitions are tracked in `agents/`:
+
+| Agent | Model | Thinking |
+|---|---|---|
+| `scout` | `openai-codex/gpt-5.6-sol` | medium |
+| `researcher` | `openai-codex/gpt-5.6-sol` | medium |
+| `reviewer` | `openai-codex/gpt-5.6-sol` | high |
+| `worker` | `openai-codex/gpt-5.6-sol` | high |
+
+Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override a bundled agent. A user definition replaces the complete bundled definition, including its prompt, tools, model, and thinking level. User-only agent names are also loaded.
 
 ## Development
 

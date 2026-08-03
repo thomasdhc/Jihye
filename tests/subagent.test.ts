@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { type AgentConfig, buildPiArgs } from "../extensions/subagent/index.ts";
+import { type AgentConfig, buildPiArgs, loadAgentsFromDirectories } from "../extensions/subagent/index.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -15,6 +16,81 @@ function extensionArgs(args: string[]): string[] {
 	}
 	return paths;
 }
+
+test("loads portable bundled agent model specifications", () => {
+	const bundledAgents = loadAgentsFromDirectories([join(REPO_ROOT, "agents")]);
+	const byName = new Map(bundledAgents.map((agent) => [agent.name, agent]));
+
+	assert.deepEqual([...byName.keys()].sort(), ["researcher", "reviewer", "scout", "worker"]);
+	for (const agent of bundledAgents) {
+		assert.equal(agent.model, "openai-codex/gpt-5.6-sol");
+	}
+	assert.equal(byName.get("scout")?.thinking, "medium");
+	assert.equal(byName.get("researcher")?.thinking, "medium");
+	assert.equal(byName.get("reviewer")?.thinking, "high");
+	assert.equal(byName.get("worker")?.thinking, "high");
+});
+
+test("loads user agents as full overrides of bundled defaults", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "pi-extensio-subagents-"));
+	const userDir = join(tempDir, "agents");
+	mkdirSync(userDir);
+	writeFileSync(join(userDir, "scout.md"), `---
+name: scout
+description: User scout
+tools: read
+model: anthropic/claude-sonnet-4-6
+thinking: low
+---
+
+User-specific scout prompt.
+`);
+	writeFileSync(join(userDir, "specialist.md"), `---
+name: specialist
+description: User-only specialist
+tools: read
+---
+
+Specialist prompt.
+`);
+
+	try {
+		const bundledDir = join(REPO_ROOT, "agents");
+		const withoutUserOverrides = loadAgentsFromDirectories([bundledDir, join(tempDir, "missing")]);
+		const agents = loadAgentsFromDirectories([bundledDir, userDir]);
+		const byName = new Map(agents.map((agent) => [agent.name, agent]));
+		const scout = byName.get("scout");
+		const specialist = byName.get("specialist");
+
+		assert.equal(withoutUserOverrides.length, 4);
+		assert.equal(agents.length, 5);
+		assert.equal(scout?.description, "User scout");
+		assert.deepEqual(scout?.tools, ["read"]);
+		assert.equal(scout?.model, "anthropic/claude-sonnet-4-6");
+		assert.equal(scout?.thinking, "low");
+		assert.equal(scout?.systemPrompt.trim(), "User-specific scout prompt.");
+		assert.equal(scout?.filePath, join(userDir, "scout.md"));
+		assert.equal(specialist?.model, "openai-codex/gpt-5.6-sol");
+		assert.equal(specialist?.thinking, "medium");
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("rejects duplicate agent names within one directory", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "pi-extensio-subagents-"));
+	writeFileSync(join(tempDir, "first.md"), "---\nname: duplicate\n---\nFirst\n");
+	writeFileSync(join(tempDir, "second.md"), "---\nname: duplicate\n---\nSecond\n");
+
+	try {
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Duplicate agent name "duplicate"/,
+		);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
 
 test("builds portable child arguments with the requested model and safety guard", async () => {
 	const previousDepth = process.env.PI_SUBAGENT_DEPTH;

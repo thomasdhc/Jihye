@@ -96,10 +96,14 @@ interface ExtensionConfig {
 
 const EXT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSIONS_DIR = path.dirname(EXT_DIR);
-const AGENTS_DIR = path.join(getAgentDir(), "agents");
+const PACKAGE_ROOT = path.dirname(EXTENSIONS_DIR);
+const PACKAGE_AGENTS_DIR = path.join(PACKAGE_ROOT, "agents");
+const USER_AGENTS_DIR = path.join(getAgentDir(), "agents");
 const TOOLS_DIR = path.join(EXT_DIR, "tools");
 const CONFIG_PATH = path.join(EXT_DIR, "config.json");
 const DEFAULT_MAX_CONCURRENCY = 4;
+const DEFAULT_AGENT_MODEL = "openai-codex/gpt-5.6-sol";
+const DEFAULT_AGENT_THINKING = "medium";
 
 function loadConfig(): ExtensionConfig {
 	try {
@@ -157,15 +161,22 @@ export function unregisterAgent(name: string): void {
 // (which creates separate module instances) can access the shared agents array.
 (globalThis as any).__pi_subagents = { registerAgent, unregisterAgent };
 
-function loadAgents(): AgentConfig[] {
-	const agents: AgentConfig[] = [];
-	if (!fs.existsSync(AGENTS_DIR)) return agents;
-	for (const entry of fs.readdirSync(AGENTS_DIR)) {
+function loadAgentDirectory(directory: string): AgentConfig[] {
+	const loadedAgents: AgentConfig[] = [];
+	const seenNames = new Set<string>();
+	if (!fs.existsSync(directory)) return loadedAgents;
+
+	for (const entry of fs.readdirSync(directory).sort()) {
 		if (!entry.endsWith(".md")) continue;
-		const filePath = path.join(AGENTS_DIR, entry);
+		const filePath = path.join(directory, entry);
 		const content = fs.readFileSync(filePath, "utf-8");
 		const { frontmatter, body } = parseFrontmatter<Record<string, string>>(content);
 		if (!frontmatter.name) continue;
+		if (seenNames.has(frontmatter.name)) {
+			throw new Error(`Duplicate agent name "${frontmatter.name}" in ${directory}`);
+		}
+		seenNames.add(frontmatter.name);
+
 		const tools = (frontmatter.tools || "")
 			.split(",")
 			.map((t) => t.trim())
@@ -174,18 +185,32 @@ function loadAgents(): AgentConfig[] {
 		const subagentAgents = rawSubagentAgents
 			? rawSubagentAgents.split(",").map((t) => t.trim()).filter(Boolean)
 			: undefined;
-		agents.push({
+		loadedAgents.push({
 			name: frontmatter.name,
 			description: frontmatter.description || "",
 			tools,
-			model: frontmatter.model || "anthropic/claude-sonnet-4-6",
-			thinking: frontmatter.thinking || "medium",
+			model: frontmatter.model || DEFAULT_AGENT_MODEL,
+			thinking: frontmatter.thinking || DEFAULT_AGENT_THINKING,
 			systemPrompt: body,
 			filePath,
 			subagentAgents,
 		});
 	}
-	return agents;
+	return loadedAgents;
+}
+
+export function loadAgentsFromDirectories(directories: string[]): AgentConfig[] {
+	const mergedAgents = new Map<string, AgentConfig>();
+	for (const directory of directories) {
+		for (const agent of loadAgentDirectory(directory)) {
+			mergedAgents.set(agent.name, agent);
+		}
+	}
+	return [...mergedAgents.values()];
+}
+
+function loadAgents(): AgentConfig[] {
+	return loadAgentsFromDirectories([PACKAGE_AGENTS_DIR, USER_AGENTS_DIR]);
 }
 
 // ── Pi Binary Resolution ──────────────────────────────────────────────

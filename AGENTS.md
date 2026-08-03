@@ -14,6 +14,7 @@ Personal Pi extensions and skills packaged for installation across workstations.
 
 ## Layout
 
+- `agents/` — Portable default subagent definitions loaded by the subagent extension.
 - `extensions/` — Pi extensions loaded by the package manifest.
 - `skills/` — Pi skills loaded by the package manifest.
 - `tests/` — Node test-runner coverage for extension logic and event behavior.

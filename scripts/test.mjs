@@ -26,6 +26,7 @@ if (tests.length === 0) {
 
 const result = spawnSync("node", ["--experimental-strip-types", "--test", ...tests], {
   stdio: "inherit",
+  env: { ...process.env, PI_SUBAGENT_DEPTH: "0" },
 });
 
 process.exit(result.status ?? 1);
