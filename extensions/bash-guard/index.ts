@@ -65,6 +65,198 @@ function anyArgStartsWith(args: string[], prefix: string): boolean {
 	return args.some((a) => a.startsWith(prefix));
 }
 
+function hasOption(args: string[], option: string): boolean {
+	return args.some((arg) => arg === option || (option.startsWith("--") && arg.startsWith(`${option}=`)));
+}
+
+type GitHubCliRule = RiskDetails & {
+	command: readonly string[];
+	anyOptions?: readonly string[];
+	excludedOptions?: readonly string[];
+};
+
+// Keep this policy narrow: ordinary GitHub writes such as creating issues, editing
+// descriptions, and posting comments are intentionally not guarded.
+const DANGEROUS_GITHUB_CLI_COMMANDS: readonly GitHubCliRule[] = [
+	{ command: ["repo", "delete"], severity: "high", reasons: ["gh repo delete (repository deletion)"] },
+	{ command: ["repo", "archive"], severity: "high", reasons: ["gh repo archive (repository archival)"] },
+	{ command: ["repo", "rename"], severity: "high", reasons: ["gh repo rename (repository identity change)"] },
+	{
+		command: ["repo", "edit"],
+		anyOptions: ["--visibility"],
+		severity: "high",
+		reasons: ["gh repo edit --visibility (repository visibility change)"],
+	},
+	{
+		command: ["repo", "sync"],
+		anyOptions: ["--force"],
+		severity: "high",
+		reasons: ["gh repo sync --force (remote branch overwrite)"],
+	},
+	{ command: ["repo", "deploy-key", "add"], severity: "high", reasons: ["gh repo deploy-key add (repository access change)"] },
+	{ command: ["repo", "deploy-key", "delete"], severity: "high", reasons: ["gh repo deploy-key delete (repository access change)"] },
+	{ command: ["repo", "autolink", "delete"], severity: "high", reasons: ["gh repo autolink delete (autolink deletion)"] },
+	{
+		command: ["pr", "merge"],
+		excludedOptions: ["--disable-auto"],
+		severity: "high",
+		reasons: ["gh pr merge (pull request merge)"],
+	},
+	{ command: ["pr", "close"], severity: "medium", reasons: ["gh pr close (pull request closure)"] },
+	{ command: ["pr", "revert"], severity: "high", reasons: ["gh pr revert (remote history change)"] },
+	{ command: ["issue", "close"], severity: "medium", reasons: ["gh issue close (issue closure)"] },
+	{ command: ["issue", "delete"], severity: "high", reasons: ["gh issue delete (issue deletion)"] },
+	{ command: ["issue", "transfer"], severity: "high", reasons: ["gh issue transfer (issue ownership change)"] },
+	{ command: ["release", "delete"], severity: "high", reasons: ["gh release delete (release deletion)"] },
+	{ command: ["release", "delete-asset"], severity: "high", reasons: ["gh release delete-asset (release asset deletion)"] },
+	{ command: ["workflow", "disable"], severity: "high", reasons: ["gh workflow disable (workflow disruption)"] },
+	{ command: ["workflow", "run"], severity: "medium", reasons: ["gh workflow run (remote workflow execution)"] },
+	{ command: ["run", "cancel"], severity: "medium", reasons: ["gh run cancel (workflow run cancellation)"] },
+	{ command: ["run", "delete"], severity: "high", reasons: ["gh run delete (workflow run deletion)"] },
+	{ command: ["run", "rerun"], severity: "medium", reasons: ["gh run rerun (remote workflow execution)"] },
+	{ command: ["cache", "delete"], severity: "high", reasons: ["gh cache delete (Actions cache deletion)"] },
+	{ command: ["secret", "set"], severity: "high", reasons: ["gh secret set (secret configuration change)"] },
+	{ command: ["secret", "delete"], severity: "high", reasons: ["gh secret delete (secret configuration change)"] },
+	{ command: ["variable", "set"], severity: "high", reasons: ["gh variable set (Actions configuration change)"] },
+	{ command: ["variable", "delete"], severity: "high", reasons: ["gh variable delete (Actions configuration change)"] },
+	{ command: ["ssh-key", "add"], severity: "high", reasons: ["gh ssh-key add (account access change)"] },
+	{ command: ["ssh-key", "delete"], severity: "high", reasons: ["gh ssh-key delete (account access change)"] },
+	{ command: ["gpg-key", "add"], severity: "high", reasons: ["gh gpg-key add (account signing-key change)"] },
+	{ command: ["gpg-key", "delete"], severity: "high", reasons: ["gh gpg-key delete (account signing-key change)"] },
+	{ command: ["project", "close"], severity: "medium", reasons: ["gh project close (project closure)"] },
+	{ command: ["project", "delete"], severity: "high", reasons: ["gh project delete (project deletion)"] },
+	{ command: ["project", "field-delete"], severity: "high", reasons: ["gh project field-delete (project field deletion)"] },
+	{ command: ["project", "item-archive"], severity: "medium", reasons: ["gh project item-archive (project item archival)"] },
+	{ command: ["project", "item-delete"], severity: "high", reasons: ["gh project item-delete (project item deletion)"] },
+	{ command: ["gist", "delete"], severity: "high", reasons: ["gh gist delete (gist deletion)"] },
+	{ command: ["codespace", "delete"], severity: "high", reasons: ["gh codespace delete (codespace deletion)"] },
+	{ command: ["label", "delete"], severity: "high", reasons: ["gh label delete (repository label deletion)"] },
+];
+
+function optionValues(args: string[], shortOption: string, longOption: string): string[] {
+	const values: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i];
+		if (arg === shortOption || arg === longOption) {
+			if (i + 1 < args.length) values.push(args[i + 1]);
+			continue;
+		}
+		if (arg.startsWith(`${longOption}=`)) {
+			values.push(arg.slice(longOption.length + 1));
+			continue;
+		}
+		if (arg.startsWith(shortOption) && !arg.startsWith("--") && arg.length > shortOption.length) {
+			values.push(arg.slice(shortOption.length));
+		}
+	}
+	return values;
+}
+
+function analyzeGitHubApi(args: string[]): RiskDetails | null {
+	const explicitMethod = optionValues(args, "-X", "--method").at(-1)?.toUpperCase();
+	const rawFields = optionValues(args, "-f", "--raw-field");
+	const typedFields = optionValues(args, "-F", "--field");
+	const fields = [...rawFields, ...typedFields];
+	const hasInput = hasOption(args, "--input");
+	const effectiveMethod = explicitMethod ?? (fields.length > 0 || hasInput ? "POST" : "GET");
+
+	if (effectiveMethod === "GET" || effectiveMethod === "HEAD") return null;
+
+	if (args.includes("graphql")) {
+		const queries = fields
+			.filter((field) => field.startsWith("query="))
+			.map((field) => field.slice("query=".length));
+		if (queries.some((query) => /\bmutation\b/i.test(query))) {
+			return { severity: "high", reasons: ["gh api GraphQL mutation (authenticated remote mutation)"] };
+		}
+		const typedQueries = typedFields
+			.filter((field) => field.startsWith("query="))
+			.map((field) => field.slice("query=".length));
+		if (hasInput || typedQueries.some((query) => query.startsWith("@"))) {
+			return {
+				severity: "high",
+				reasons: ["gh api GraphQL request from external input (mutation cannot be verified)"],
+			};
+		}
+		// GraphQL queries use POST as their transport but do not mutate GitHub state.
+		if (effectiveMethod === "POST") return null;
+	}
+
+	return {
+		severity: "high",
+		reasons: [`gh api ${effectiveMethod} (authenticated API request may mutate remote state)`],
+	};
+}
+
+const SHELL_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+
+function unwrapShellCommand(args: string[]): string[] {
+	let index = 0;
+	while (SHELL_ASSIGNMENT.test(args[index] ?? "")) index++;
+
+	if (args[index] === "command") {
+		index++;
+		while (args[index] === "--" || args[index] === "-p") index++;
+	} else if (args[index] === "env") {
+		index++;
+		while (index < args.length) {
+			const arg = args[index];
+			if (SHELL_ASSIGNMENT.test(arg) || arg === "--" || arg === "-i" || arg === "--ignore-environment") {
+				index++;
+				continue;
+			}
+			if (["-u", "--unset", "-C", "--chdir", "-S", "--split-string"].includes(arg)) {
+				index += 2;
+				continue;
+			}
+			break;
+		}
+	}
+
+	return args.slice(index);
+}
+
+function withoutGitHubContextOptions(args: string[]): string[] {
+	const out: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i];
+		if (arg === "-R" || arg === "--repo" || arg === "--hostname") {
+			i++;
+			continue;
+		}
+		if (arg.startsWith("-R") || arg.startsWith("--repo=") || arg.startsWith("--hostname=")) continue;
+		out.push(arg);
+	}
+	return out;
+}
+
+function analyzeGitHubCliArgs(rawArgs: string[]): RiskDetails | null {
+	const args = unwrapShellCommand(rawArgs);
+	if (args[0] !== "gh" && !args[0]?.endsWith("/gh")) return null;
+	const ghArgs = args.slice(1);
+	if (ghArgs[0] === "api") return analyzeGitHubApi(ghArgs.slice(1));
+
+	const commandArgs = withoutGitHubContextOptions(ghArgs);
+	for (const rule of DANGEROUS_GITHUB_CLI_COMMANDS) {
+		if (!rule.command.every((part, index) => commandArgs[index] === part)) continue;
+		if (rule.anyOptions && !rule.anyOptions.some((option) => hasOption(ghArgs, option))) continue;
+		if (rule.excludedOptions?.some((option) => hasOption(ghArgs, option))) continue;
+		return { severity: rule.severity, reasons: rule.reasons };
+	}
+	return null;
+}
+
+function analyzeGitHubCliSegment(seg: Token[]): RiskDetails | null {
+	const risks = splitOnOps(seg, ["|", "|&", "&", "(", ")"])
+		.map((commandTokens) => analyzeGitHubCliArgs(tokensToStrings(commandTokens)))
+		.filter((risk): risk is RiskDetails => risk !== null);
+	if (risks.length === 0) return null;
+	return {
+		severity: risks.some((risk) => risk.severity === "high") ? "high" : "medium",
+		reasons: risks.flatMap((risk) => risk.reasons),
+	};
+}
+
 function analyzeSegment(seg: Token[]): RiskDetails | null {
 	const reasons: string[] = [];
 	let severity: Severity = "medium";
@@ -75,6 +267,12 @@ function analyzeSegment(seg: Token[]): RiskDetails | null {
 
 	const cmd = args[0];
 	const rest = args.slice(1);
+
+	const githubCliRisk = analyzeGitHubCliSegment(seg);
+	if (githubCliRisk) {
+		reasons.push(...githubCliRisk.reasons);
+		if (githubCliRisk.severity === "high") severity = "high";
+	}
 
 	const systemTarget = redirectsToSystemPath(seg);
 	if (systemTarget) {
@@ -276,6 +474,27 @@ function redirectsToSystemPath(tokens: Token[]): string | null {
 	return null;
 }
 
+function analyzeParsedCommand(tokens: Token[], segmentAnalyzer: (segment: Token[]) => RiskDetails | null): Risk | null {
+	const reasons: string[] = [];
+	const flaggedCommands: string[] = [];
+	let severity: Severity = "medium";
+
+	// Segment analysis (split on &&, ||, ;)
+	const segments = splitOnOps(tokens, ["&&", "||", ";"]);
+	for (const seg of segments) {
+		const segRisk = segmentAnalyzer(seg);
+		if (!segRisk) continue;
+		if (segRisk.severity === "high") severity = "high";
+		for (const r of segRisk.reasons) reasons.push(r);
+		flaggedCommands.push(formatSegment(seg));
+	}
+
+	// De-duplicate reasons and flagged command segments.
+	const uniq = [...new Set(reasons)];
+	if (uniq.length === 0) return null;
+	return { severity, reasons: uniq, flaggedCommands: [...new Set(flaggedCommands)] };
+}
+
 export function analyzeBashCommand(command: string): Risk | null {
 	let tokens: Token[];
 	try {
@@ -288,25 +507,15 @@ export function analyzeBashCommand(command: string): Risk | null {
 			flaggedCommands: [command],
 		};
 	}
+	return analyzeParsedCommand(tokens, analyzeSegment);
+}
 
-	const reasons: string[] = [];
-	const flaggedCommands: string[] = [];
-	let severity: Severity = "medium";
-
-	// Segment analysis (split on &&, ||, ;)
-	const segments = splitOnOps(tokens, ["&&", "||", ";"]);
-	for (const seg of segments) {
-		const segRisk = analyzeSegment(seg);
-		if (!segRisk) continue;
-		if (segRisk.severity === "high") severity = "high";
-		for (const r of segRisk.reasons) reasons.push(r);
-		flaggedCommands.push(formatSegment(seg));
+export function analyzeGitHubCliCommand(command: string): Risk | null {
+	try {
+		return analyzeParsedCommand(shellParse(command) as Token[], analyzeGitHubCliSegment);
+	} catch {
+		return null;
 	}
-
-	// De-duplicate reasons and flagged command segments.
-	const uniq = [...new Set(reasons)];
-	if (uniq.length === 0) return null;
-	return { severity, reasons: uniq, flaggedCommands: [...new Set(flaggedCommands)] };
 }
 
 async function promptRunOrAbort(ctx: any, command: string, risk: Risk): Promise<"run" | "abort"> {
@@ -416,6 +625,16 @@ export default function (pi: ExtensionAPI) {
 		pi.on("tool_call", async (event) => {
 			if (!isToolCallEventType("bash", event)) return;
 			const command = event.input.command;
+			const githubCliRisk = analyzeGitHubCliCommand(command);
+			if (githubCliRisk) {
+				return {
+					block: true,
+					reason:
+						`Blocked by bash-guard: ${githubCliRisk.reasons.join("; ")}. ` +
+						"This is a non-interactive subagent session — dangerous GitHub operations are not permitted. " +
+						"Ask the parent agent to perform the operation with user approval.",
+				};
+			}
 			for (const { pattern, reason } of HEADLESS_BLOCKED) {
 				if (pattern.test(command)) {
 					return {
