@@ -106,7 +106,7 @@ Portable default definitions are tracked in `agents/`:
 | `reviewer` | `openai-codex/gpt-5.6-sol` | medium |
 | `worker` | `openai-codex/gpt-5.6-sol` | high |
 
-Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override a bundled agent. A user definition replaces the complete bundled definition, including its prompt, tools, model, and thinking level. Remove the user definition to return to the bundled agent. User-only agent names are also loaded.
+Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override a bundled agent across the current user account. For workspace-local overrides, create `<workspace>/.pi/agents/`. Agent directories are merged in order: bundled `agents/`, user-global `~/.pi/agent/agents/`, then workspace-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and workspace-only agent names are also loaded.
 
 ### Terminal notifications
 

@@ -209,8 +209,16 @@ export function loadAgentsFromDirectories(directories: string[]): AgentConfig[] 
 	return [...mergedAgents.values()];
 }
 
-function loadAgents(): AgentConfig[] {
-	return loadAgentsFromDirectories([PACKAGE_AGENTS_DIR, USER_AGENTS_DIR]);
+export function getAgentDirectories(cwd?: string): string[] {
+	const directories = [PACKAGE_AGENTS_DIR, USER_AGENTS_DIR];
+	if (cwd) {
+		directories.push(path.join(cwd, ".pi", "agents"));
+	}
+	return directories;
+}
+
+function loadAgents(cwd?: string): AgentConfig[] {
+	return loadAgentsFromDirectories(getAgentDirectories(cwd));
 }
 
 // ── Pi Binary Resolution ──────────────────────────────────────────────
@@ -776,15 +784,19 @@ export default function (pi: ExtensionAPI) {
 		}),
 
 		async execute(toolCallId, params, signal, onUpdate, ctx) {
-			const cwd = ctx.cwd;
+			const cwd = params.cwd ?? ctx.cwd;
+			const availableAgents = loadAgents(cwd);
+			const scopedAgents = SUBAGENT_ALLOWLIST
+				? availableAgents.filter((a) => SUBAGENT_ALLOWLIST.includes(a.name))
+				: availableAgents;
 
 			if (!params.agent || !params.task) {
 				throw new Error("`subagent` requires both `agent` and `task`. To fan out work, emit multiple `subagent` tool calls in the same turn — they run in parallel.");
 			}
 
-			const agent = agents.find((a) => a.name === params.agent);
+			const agent = scopedAgents.find((a) => a.name === params.agent);
 			if (!agent) {
-				const available = agents.map((a) => a.name).join(", ") || "none";
+				const available = scopedAgents.map((a) => a.name).join(", ") || "none";
 				throw new Error(`Unknown agent: ${params.agent}. Available agents: ${available}`);
 			}
 
@@ -802,7 +814,7 @@ export default function (pi: ExtensionAPI) {
 			};
 
 			const result = await semaphore.run(() =>
-				runSubagent(agent, params.task!, params.cwd ?? cwd, signal, (progress, usage) => {
+				runSubagent(agent, params.task!, cwd, signal, (progress, usage) => {
 					liveResult.progress = progress;
 					liveResult.usage = { ...usage };
 					onUpdate?.({
