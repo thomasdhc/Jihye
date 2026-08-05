@@ -14,14 +14,6 @@ export interface PiPetRuntimeState {
 const WIDGET_ID = "pi-pet";
 const RESET_TO_IDLE_MS = 1500;
 
-const STATE_LABELS: Record<PiPetState, string> = {
-	idle: "idle",
-	thinking: "thinking",
-	working: "working",
-	success: "success",
-	error: "error",
-};
-
 const STATE_MESSAGES: Record<PiPetState, string> = {
 	idle: "ready when you are",
 	thinking: "thinking with pi",
@@ -62,9 +54,12 @@ export function renderPiPetLines(runtime: PiPetRuntimeState, style?: (state: PiP
 	if (!runtime.visible) return [];
 
 	const decorate = style ?? ((_state, text) => text);
-	const label = STATE_LABELS[runtime.state];
-	const frame = PET_FRAMES[runtime.state].map((line) => decorate(runtime.state, line));
-	return [...frame, decorate(runtime.state, `π-pet ${label}: ${runtime.message}`)];
+	const frame = PET_FRAMES[runtime.state];
+	const messageLines = [runtime.message];
+	return frame.map((line, index) => {
+		const message = messageLines[index] ? `  ${messageLines[index]}` : "";
+		return decorate(runtime.state, `${line}${message}`);
+	});
 }
 
 export function applyPiPetEvent(runtime: PiPetRuntimeState, event: string, payload?: { isError?: boolean }): PiPetState {
@@ -107,11 +102,9 @@ function renderWidget(ctx: ExtensionContext, runtime: PiPetRuntimeState): void {
 
 	if (!runtime.visible) {
 		ctx.ui.setWidget(WIDGET_ID, undefined);
-		ctx.ui.setStatus(WIDGET_ID, undefined);
 		return;
 	}
 
-	ctx.ui.setStatus(WIDGET_ID, `π-pet: ${STATE_LABELS[runtime.state]}`);
 	ctx.ui.setWidget(
 		WIDGET_ID,
 		(_tui, theme) => ({
@@ -192,7 +185,6 @@ export function createPiPetExtension(options: { resetToIdleMs?: number } = {}) {
 			clearResetTimer();
 			if (ctx.hasUI) {
 				ctx.ui.setWidget(WIDGET_ID, undefined);
-				ctx.ui.setStatus(WIDGET_ID, undefined);
 			}
 		});
 

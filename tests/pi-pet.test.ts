@@ -36,6 +36,11 @@ test("keeps an error reaction through agent settlement", () => {
 	assert.equal(applyPiPetEvent(runtime, "agent_settled"), "error");
 });
 
+test("renders message next to the pet art without a state label", () => {
+	const runtime = createPiPetRuntimeState();
+	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\  ready when you are", "( o.o )", " > ^ <"]);
+});
+
 test("renders no widget lines when hidden", () => {
 	const runtime = createPiPetRuntimeState();
 	runtime.visible = false;
@@ -47,16 +52,12 @@ test("registers pet command and updates the widget", async () => {
 	const handlers = new Map<string, Handler>();
 	let commandHandler: ((args: string, ctx: FakeContext) => Promise<void>) | undefined;
 	const widgets: unknown[] = [];
-	const statuses: Array<string | undefined> = [];
 	const notifications: string[] = [];
 	const ctx: FakeContext = {
 		hasUI: true,
 		ui: {
 			notify(message: string) {
 				notifications.push(message);
-			},
-			setStatus(_id: string, value: string | undefined) {
-				statuses.push(value);
 			},
 			setWidget(_id: string, value: unknown) {
 				widgets.push(value);
@@ -76,15 +77,12 @@ test("registers pet command and updates the widget", async () => {
 
 	assert.ok(commandHandler);
 	await handlers.get("session_start")?.({}, ctx);
-	assert.equal(statuses.at(-1), "π-pet: idle");
 	assert.equal(typeof widgets.at(-1), "function");
 
 	await commandHandler("react error", ctx);
-	assert.equal(statuses.at(-1), "π-pet: error");
 	assert.match(notifications.at(-1) ?? "", /error/);
 
 	await commandHandler("hide", ctx);
-	assert.equal(statuses.at(-1), undefined);
 	assert.equal(widgets.at(-1), undefined);
 });
 
@@ -92,7 +90,7 @@ interface FakeContext {
 	hasUI: boolean;
 	ui: {
 		notify(message: string, level?: string): void;
-		setStatus(id: string, value: string | undefined): void;
+		setStatus?(id: string, value: string | undefined): void;
 		setWidget(id: string, value: unknown, options?: unknown): void;
 	};
 }
