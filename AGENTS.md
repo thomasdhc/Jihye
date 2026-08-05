@@ -5,6 +5,13 @@ Personal Pi extensions and skills packaged for installation across workstations.
 ## Development
 
 - Read Pi's extension and package documentation before changing extension APIs or package metadata.
+- Use branch workflow for changes: create a branch named `<username>/<feature>`, push it, and open a pull request targeting `main`.
+- Use concise conventional-style commit messages:
+  - `feat: <summary>` for new behavior or capabilities
+  - `fix: <summary>` for bug fixes
+  - `docs: <summary>` for documentation-only changes
+  - `ci: <summary>` for CI, release, or automation changes
+  - Scoped forms are allowed when useful, e.g. `fix(ci): <summary>` or `feat(subagent): <summary>`
 - Keep each extension focused and independently testable.
 - Keep policy configuration separate from interception logic.
 - Prefer narrow, explicit safety rules over broad command classification.
