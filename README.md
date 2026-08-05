@@ -22,7 +22,6 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 |---|---|
 | `pdf-reader` | Read and comprehend PDFs using hybrid text + vision strategy |
 | `session-digest` | Extract and save important session exchanges to markdown |
-| `todo` | Manage a project todo list |
 | `ui-edit` | Reliable HTML/CSS/JS editing workflow |
 
 ## Requirements
