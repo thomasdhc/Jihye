@@ -21,14 +21,30 @@ test("loads portable bundled agent model specifications", () => {
 	const bundledAgents = loadAgentsFromDirectories([join(REPO_ROOT, "agents")]);
 	const byName = new Map(bundledAgents.map((agent) => [agent.name, agent]));
 
-	assert.deepEqual([...byName.keys()].sort(), ["researcher", "reviewer", "scout", "worker"]);
+	assert.deepEqual([...byName.keys()].sort(), ["coordinator", "researcher", "reviewer", "scout", "worker"]);
 	for (const agent of bundledAgents) {
 		assert.equal(agent.model, "openai-codex/gpt-5.6-sol");
 	}
 	assert.equal(byName.get("scout")?.thinking, "medium");
 	assert.equal(byName.get("researcher")?.thinking, "medium");
 	assert.equal(byName.get("reviewer")?.thinking, "medium");
+	assert.equal(byName.get("coordinator")?.thinking, "high");
 	assert.equal(byName.get("worker")?.thinking, "high");
+});
+
+test("keeps the bundled coordinator recursive but bounded", () => {
+	const coordinator = loadAgentsFromDirectories([join(REPO_ROOT, "agents")])
+		.find((agent) => agent.name === "coordinator");
+	const reviewer = loadAgentsFromDirectories([join(REPO_ROOT, "agents")])
+		.find((agent) => agent.name === "reviewer");
+
+	assert.ok(coordinator);
+	assert.deepEqual(coordinator.tools, ["read", "grep", "find", "ls", "safe_bash", "subagent"]);
+	assert.deepEqual(coordinator.subagentAgents, ["scout", "researcher", "reviewer"]);
+	assert.ok(!coordinator.subagentAgents?.includes("coordinator"));
+	assert.ok(!coordinator.subagentAgents?.includes("worker"));
+	assert.ok(reviewer);
+	assert.ok(!reviewer.tools.includes("subagent"));
 });
 
 test("keeps the bundled reviewer bounded", () => {
@@ -95,9 +111,9 @@ Specialist prompt.
 		const scout = byName.get("scout");
 		const specialist = byName.get("specialist");
 
-		assert.equal(withoutUserOverrides.length, 4);
+		assert.equal(withoutUserOverrides.length, 5);
 		assert.equal(withoutUserOverrides.find((agent) => agent.name === "scout")?.description, "Package-local scout");
-		assert.equal(agents.length, 5);
+		assert.equal(agents.length, 6);
 		assert.equal(scout?.description, "Package-local scout");
 		assert.deepEqual(scout?.tools, ["read"]);
 		assert.equal(scout?.model, "openai-codex/gpt-5.5");
