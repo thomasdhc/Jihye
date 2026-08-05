@@ -1,179 +1,220 @@
 /**
- * doc-guardian — keeps AGENTS.md and CLAUDE.md files lean, clean, and current
+ * doc-guardian — keeps loaded context files lean, clean, and current
  *
- * - Scans context files at session start and every N turns
- * - Warns when a file exceeds the line threshold
- * - Reminds you to review after N turns of inactivity
+ * - Uses Pi's authoritative loaded context-file set
+ * - Uses generous size thresholds and warns once when a file is unusually large
+ * - Periodically offers a lightweight review reminder
  * - Status bar shows health at a glance
  *
  * Commands:
- *   /review-docs          — ask Claude to audit all context files now
+ *   /review-docs          — ask the agent to audit loaded context files now
  *   /doc-status           — show file stats without triggering a review
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import * as fs from "node:fs";
-import * as path from "node:path";
 import * as os from "node:os";
+import * as path from "node:path";
 
-// -- Config -------------------------------------------------------------------
+// -- Policy -------------------------------------------------------------------
 
-const LINE_WARN    = 75;    // lines -- warn above this
-const LINE_DANGER  = 120;   // lines -- stronger warning
-const REVIEW_EVERY = 20;    // turns -- remind to /review-docs
+export const DOC_GUARDIAN_POLICY = {
+	cautionLines: 150,
+	warningLines: 250,
+	reviewEvery: 50,
+} as const;
 
 // -- State --------------------------------------------------------------------
 
 interface State {
-  turnsSinceReview: number;
+	turnsSinceReview: number;
 }
 
-// -- File discovery -----------------------------------------------------------
+export interface DocGuardianOptions {
+	home?: string;
+}
 
-function findContextFiles(cwd: string): string[] {
-  const found: string[] = [];
+export interface ContextFile {
+	path: string;
+	content: string;
+}
 
-  // Global AGENTS.md
-  const global = path.join(os.homedir(), ".pi/agent/AGENTS.md");
-  if (fs.existsSync(global)) found.push(global);
+export type DocHealth = "healthy" | "caution" | "warning";
 
-  // CLAUDE.md -- walk up from cwd to git root (or home)
-  const home = os.homedir();
-  let dir = cwd;
-  while (dir.startsWith(home) && dir !== home) {
-    const f = path.join(dir, "CLAUDE.md");
-    if (fs.existsSync(f)) found.push(f);
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-
-  return found;
+export interface FileStats {
+	path: string;
+	label: string;
+	lines: number;
+	health: DocHealth;
 }
 
 // -- Checks -------------------------------------------------------------------
 
-interface FileStats {
-  path: string;
-  label: string;
-  lines: number;
-  ok: boolean;
-  danger: boolean;
+export function normalizeContextFiles(files: readonly ContextFile[] | undefined): ContextFile[] {
+	const normalized: ContextFile[] = [];
+	const seen = new Set<string>();
+	for (const file of files ?? []) {
+		if (seen.has(file.path)) continue;
+		seen.add(file.path);
+		normalized.push(file);
+	}
+	return normalized;
 }
 
-function statFiles(files: string[]): FileStats[] {
-  return files.map((f) => {
-    const content = fs.readFileSync(f, "utf-8");
-    const lines   = content.split("\n").length;
-    const label   = f.replace(os.homedir(), "~");
-    return {
-      path:   f,
-      label,
-      lines,
-      ok:     lines <= LINE_WARN,
-      danger: lines > LINE_DANGER,
-    };
-  });
+export function countLines(content: string): number {
+	if (content.length === 0) return 0;
+	const lines = content.split(/\r?\n/);
+	if (lines.at(-1) === "") lines.pop();
+	return lines.length;
 }
 
-function statusIcon(stats: FileStats[]): string {
-  if (stats.some((s) => s.danger))  return "docs ●";
-  if (stats.some((s) => !s.ok))     return "docs ◑";
-  return "docs ○";
+export function classifyLineCount(lines: number): DocHealth {
+	if (lines > DOC_GUARDIAN_POLICY.warningLines) return "warning";
+	if (lines > DOC_GUARDIAN_POLICY.cautionLines) return "caution";
+	return "healthy";
+}
+
+export function shouldRemind(turnsSinceReview: number): boolean {
+	return turnsSinceReview > 0 && turnsSinceReview % DOC_GUARDIAN_POLICY.reviewEvery === 0;
+}
+
+function displayPath(file: string, home: string): string {
+	const relative = path.relative(home, file);
+	if (relative === "") return "~";
+	if (!relative.startsWith("..") && !path.isAbsolute(relative)) return `~/${relative}`;
+	return file;
+}
+
+export function statFiles(files: readonly ContextFile[], home = os.homedir()): FileStats[] {
+	return files.map((file) => {
+		const lines = countLines(file.content);
+		return {
+			path: file.path,
+			label: displayPath(file.path, home),
+			lines,
+			health: classifyLineCount(lines),
+		};
+	});
+}
+
+export function statusIcon(stats: FileStats[]): string {
+	if (stats.some((item) => item.health === "warning")) return "docs ●";
+	if (stats.some((item) => item.health === "caution")) return "docs ◑";
+	return "docs ○";
 }
 
 // -- Extension ----------------------------------------------------------------
 
-export default function (pi: ExtensionAPI) {
-  let state: State = { turnsSinceReview: 0 };
-  let cachedFiles:  string[] = [];
+export function createDocGuardianExtension(options: DocGuardianOptions = {}) {
+	const home = options.home ?? os.homedir();
 
-  // Restore state from session entries
-  pi.on("session_start", async (_event, ctx) => {
-    for (const entry of ctx.sessionManager.getEntries()) {
-      if (entry.type === "custom" && (entry as any).customType === "doc-guardian") {
-        state = (entry as any).data as State;
-      }
-    }
-    cachedFiles = findContextFiles(ctx.cwd);
-    refreshStatus(cachedFiles, ctx.ui);
-  });
+	return function docGuardian(pi: ExtensionAPI): void {
+		let state: State = { turnsSinceReview: 0 };
+		let contextFiles: ContextFile[] = [];
+		let warnedFiles = new Set<string>();
 
-  // Check after every turn
-  pi.on("agent_end", async (_event, ctx) => {
-    state.turnsSinceReview++;
-    pi.appendEntry("doc-guardian", state);
+		pi.on("session_start", async (_event, ctx) => {
+			for (const entry of ctx.sessionManager.getEntries()) {
+				if (entry.type === "custom" && (entry as any).customType === "doc-guardian") {
+					state = (entry as any).data as State;
+				}
+			}
+			contextFiles = [];
+			warnedFiles = new Set<string>();
+			ctx.ui.setStatus("doc-guardian", undefined);
+		});
 
-    cachedFiles = findContextFiles(ctx.cwd);
-    const stats = statFiles(cachedFiles);
-    refreshStatus(cachedFiles, ctx.ui);
+		// Capture exactly the context files Pi loaded for this request.
+		pi.on("before_agent_start", (event, ctx) => {
+			contextFiles = normalizeContextFiles(event.systemPromptOptions.contextFiles);
+			refreshStatus(contextFiles, ctx.ui);
+		});
 
-    // Warn about bloated files
-    for (const s of stats) {
-      if (s.danger) {
-        ctx.ui.notify(`${s.label} is ${s.lines} lines — run /review-docs`, "warning");
-      }
-    }
+		// Count settled requests rather than low-level retries or continuations.
+		pi.on("agent_settled", async (_event, ctx) => {
+			state.turnsSinceReview++;
+			pi.appendEntry("doc-guardian", state);
 
-    // Periodic reminder
-    if (state.turnsSinceReview >= REVIEW_EVERY) {
-      ctx.ui.notify(
-        `${state.turnsSinceReview} turns without a doc review — run /review-docs`,
-        "info",
-      );
-    }
-  });
+			const stats = statFiles(contextFiles, home);
+			refreshStatus(contextFiles, ctx.ui);
 
-  // /review-docs — ask Claude to audit the files
-  pi.registerCommand("review-docs", {
-    description: "Ask Claude to audit context files for staleness, bloat, and accuracy",
-    handler: async (_args, ctx) => {
-      await ctx.waitForIdle();
+			// Warn once per warning episode instead of repeating after every request.
+			const currentWarnings = new Set<string>();
+			for (const item of stats) {
+				if (item.health !== "warning") continue;
+				currentWarnings.add(item.path);
+				if (!warnedFiles.has(item.path)) {
+					ctx.ui.notify(`${item.label} is ${item.lines} lines — consider /review-docs`, "warning");
+				}
+			}
+			warnedFiles = currentWarnings;
 
-      state.turnsSinceReview = 0;
-      pi.appendEntry("doc-guardian", state);
+			// Remind only at the interval, not after every subsequent request.
+			if (shouldRemind(state.turnsSinceReview)) {
+				ctx.ui.notify(
+					`${state.turnsSinceReview} requests since the last doc review — consider /review-docs`,
+					"info",
+				);
+			}
+		});
 
-      cachedFiles = findContextFiles(ctx.cwd);
-      const fileList = cachedFiles.map((f) => f.replace(os.homedir(), "~")).join("\n  ");
+		pi.registerCommand("review-docs", {
+			description: "Audit context files for concrete staleness, duplication, and accuracy issues",
+			handler: async (_args, ctx) => {
+				await ctx.waitForIdle();
 
-      pi.sendUserMessage(
-        `Please audit our context/instruction files for quality. The files to review are:\n  ${fileList}\n\n` +
-        `For each file, check:\n` +
-        `1. **Staleness** — references to files, commands, or patterns that no longer exist or have changed\n` +
-        `2. **Bloat** — verbose sections that could be trimmed or moved to docs/ and read on demand\n` +
-        `3. **Redundancy** — information duplicated across files or already obvious from context\n` +
-        `4. **Missing** — recent decisions, patterns, or conventions from this session not yet captured\n` +
-        `5. **Accuracy** — anything that describes how things work but is now wrong\n\n` +
-        `Read each file, report findings per file with specific line references, and suggest concrete edits. ` +
-        `Don't make changes yet — just report.`,
-        { deliverAs: "followUp" },
-      );
-    },
-  });
+				state.turnsSinceReview = 0;
+				pi.appendEntry("doc-guardian", state);
 
-  // /doc-status — quick stats, no LLM call
-  pi.registerCommand("doc-status", {
-    description: "Show context file stats (lines, health)",
-    handler: async (_args, ctx) => {
-      cachedFiles = findContextFiles(ctx.cwd);
-      if (cachedFiles.length === 0) {
-        ctx.ui.notify("No context files found", "info");
-        return;
-      }
+				contextFiles = normalizeContextFiles(ctx.getSystemPromptOptions().contextFiles);
+				if (contextFiles.length === 0) {
+					ctx.ui.notify("No context files loaded", "info");
+					return;
+				}
+				const fileList = contextFiles.map((file) => displayPath(file.path, home)).join("\n  ");
 
-      const stats = statFiles(cachedFiles);
-      const lines = stats.map((s) => {
-        const icon = s.danger ? "●" : s.ok ? "○" : "◑";
-        return `${icon} ${s.label}  (${s.lines} lines)`;
-      });
-      lines.push(`Turns since last review: ${state.turnsSinceReview}`);
-      ctx.ui.notify(lines.join("\n"), "info");
-    },
-  });
+				pi.sendUserMessage(
+					`Please audit our context/instruction files for quality. The files to review are:\n  ${fileList}\n\n` +
+					`For each file, check:\n` +
+					`1. **Staleness** — references to files, commands, or patterns that no longer exist or have changed\n` +
+					`2. **Focus** — sections whose maintenance or context cost clearly exceeds their practical value; length alone is not a defect\n` +
+					`3. **Redundancy** — information duplicated across files or already covered by more-specific guidance\n` +
+					`4. **Missing** — durable decisions, patterns, or conventions from this session that would prevent future mistakes\n` +
+					`5. **Accuracy** — anything that describes how things work but is now wrong\n\n` +
+					`Be conservative: preserve useful operational detail and guardrails, do not enforce a universal line limit, ` +
+					`and report no finding when a file is already useful and accurate. For genuine issues, cite specific lines ` +
+					`and suggest concrete edits. Don't make changes yet — just report.`,
+					{ deliverAs: "followUp" },
+				);
+			},
+		});
 
-  function refreshStatus(files: string[], ui: any) {
-    if (files.length === 0) return;
-    const stats = statFiles(files);
-    ui.setStatus("doc-guardian", statusIcon(stats));
-  }
+		pi.registerCommand("doc-status", {
+			description: "Show loaded context file stats (lines, health)",
+			handler: async (_args, ctx) => {
+				contextFiles = normalizeContextFiles(ctx.getSystemPromptOptions().contextFiles);
+				if (contextFiles.length === 0) {
+					ctx.ui.notify("No context files loaded", "info");
+					return;
+				}
+
+				const stats = statFiles(contextFiles, home);
+				const lines = stats.map((item) => {
+					const icon = item.health === "warning" ? "●" : item.health === "healthy" ? "○" : "◑";
+					return `${icon} ${item.label}  (${item.lines} lines)`;
+				});
+				lines.push(`Requests since last review: ${state.turnsSinceReview}`);
+				ctx.ui.notify(lines.join("\n"), "info");
+			},
+		});
+
+		function refreshStatus(files: ContextFile[], ui: any): void {
+			if (files.length === 0) {
+				ui.setStatus("doc-guardian", undefined);
+				return;
+			}
+			ui.setStatus("doc-guardian", statusIcon(statFiles(files, home)));
+		}
+	};
 }
+
+export default createDocGuardianExtension();
