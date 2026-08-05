@@ -98,6 +98,7 @@ const EXT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSIONS_DIR = path.dirname(EXT_DIR);
 const PACKAGE_ROOT = path.dirname(EXTENSIONS_DIR);
 const PACKAGE_AGENTS_DIR = path.join(PACKAGE_ROOT, "agents");
+const PACKAGE_LOCAL_AGENTS_DIR = path.join(PACKAGE_ROOT, ".pi", "agents");
 const USER_AGENTS_DIR = path.join(getAgentDir(), "agents");
 const TOOLS_DIR = path.join(EXT_DIR, "tools");
 const CONFIG_PATH = path.join(EXT_DIR, "config.json");
@@ -209,12 +210,8 @@ export function loadAgentsFromDirectories(directories: string[]): AgentConfig[] 
 	return [...mergedAgents.values()];
 }
 
-export function getAgentDirectories(cwd?: string): string[] {
-	const directories = [PACKAGE_AGENTS_DIR, USER_AGENTS_DIR];
-	if (cwd) {
-		directories.push(path.join(cwd, ".pi", "agents"));
-	}
-	return directories;
+export function getAgentDirectories(_cwd?: string): string[] {
+	return [PACKAGE_AGENTS_DIR, USER_AGENTS_DIR, PACKAGE_LOCAL_AGENTS_DIR];
 }
 
 function loadAgents(cwd?: string): AgentConfig[] {

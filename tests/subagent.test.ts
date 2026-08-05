@@ -43,21 +43,31 @@ test("keeps the bundled reviewer bounded", () => {
 	assert.match(reviewer.systemPrompt, /at most 300 words/);
 });
 
-test("resolves bundled, user, then workspace-local agent directories", () => {
+test("resolves bundled, user, then package-local agent directories", () => {
 	const workspace = join(tmpdir(), "pi-extensio-workspace-fixture");
 	assert.deepEqual(getAgentDirectories(workspace), [
 		join(REPO_ROOT, "agents"),
 		join(process.env.HOME || "", ".pi/agent/agents"),
-		join(workspace, ".pi/agents"),
+		join(REPO_ROOT, ".pi/agents"),
 	]);
 });
 
-test("loads user and workspace agents as full sequential overrides of bundled defaults", () => {
+test("loads user and package-local agents as full sequential overrides of bundled defaults", () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "pi-extensio-subagents-"));
+	const packageLocalDir = join(tempDir, "package", ".pi", "agents");
 	const userDir = join(tempDir, "agents");
-	const workspaceDir = join(tempDir, "workspace", ".pi", "agents");
+	mkdirSync(packageLocalDir, { recursive: true });
 	mkdirSync(userDir);
-	mkdirSync(workspaceDir, { recursive: true });
+	writeFileSync(join(packageLocalDir, "scout.md"), `---
+name: scout
+description: Package-local scout
+tools: read
+model: openai-codex/gpt-5.5
+thinking: medium
+---
+
+Package-local scout prompt.
+`);
 	writeFileSync(join(userDir, "scout.md"), `---
 name: scout
 description: User scout
@@ -76,33 +86,24 @@ tools: read
 
 Specialist prompt.
 `);
-	writeFileSync(join(workspaceDir, "scout.md"), `---
-name: scout
-description: Workspace scout
-tools: read, grep
-model: openai-codex/gpt-5.5
-thinking: medium
----
-
-Workspace-local scout prompt.
-`);
 
 	try {
 		const bundledDir = join(REPO_ROOT, "agents");
-		const withoutUserOverrides = loadAgentsFromDirectories([bundledDir, join(tempDir, "missing")]);
-		const agents = loadAgentsFromDirectories([bundledDir, userDir, workspaceDir]);
+		const withoutUserOverrides = loadAgentsFromDirectories([bundledDir, join(tempDir, "missing"), packageLocalDir]);
+		const agents = loadAgentsFromDirectories([bundledDir, userDir, packageLocalDir]);
 		const byName = new Map(agents.map((agent) => [agent.name, agent]));
 		const scout = byName.get("scout");
 		const specialist = byName.get("specialist");
 
 		assert.equal(withoutUserOverrides.length, 4);
+		assert.equal(withoutUserOverrides.find((agent) => agent.name === "scout")?.description, "Package-local scout");
 		assert.equal(agents.length, 5);
-		assert.equal(scout?.description, "Workspace scout");
-		assert.deepEqual(scout?.tools, ["read", "grep"]);
+		assert.equal(scout?.description, "Package-local scout");
+		assert.deepEqual(scout?.tools, ["read"]);
 		assert.equal(scout?.model, "openai-codex/gpt-5.5");
 		assert.equal(scout?.thinking, "medium");
-		assert.equal(scout?.systemPrompt.trim(), "Workspace-local scout prompt.");
-		assert.equal(scout?.filePath, join(workspaceDir, "scout.md"));
+		assert.equal(scout?.systemPrompt.trim(), "Package-local scout prompt.");
+		assert.equal(scout?.filePath, join(packageLocalDir, "scout.md"));
 		assert.equal(specialist?.model, "openai-codex/gpt-5.6-sol");
 		assert.equal(specialist?.thinking, "medium");
 	} finally {

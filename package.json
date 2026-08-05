@@ -29,5 +29,8 @@
     "skills": [
       "./skills"
     ]
+  },
+  "devDependencies": {
+    "tsx": "^4.23.5"
   }
 }

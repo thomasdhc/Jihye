@@ -356,7 +356,7 @@ test("hard-blocks dangerous GitLab commands in headless subagents", () => {
 	]) {
 		const result = spawnSync(
 			process.execPath,
-			["--experimental-strip-types", "--input-type=module", "-e", script, command],
+			["--import", "tsx", "--input-type=module", "-e", script, command],
 			{
 				encoding: "utf8",
 				env: { ...process.env, PI_SUBAGENT_DEPTH: "1" },

@@ -97,16 +97,16 @@ python3 -m venv .venv
 
 ### `subagent` agent definitions
 
-Portable default definitions are tracked in `agents/`:
+Portable default definitions are tracked in `agents/`. Package-local active defaults are tracked in `.pi/agents/` and override the portable defaults for every workspace that loads this package:
 
-| Agent | Model | Thinking |
-|---|---|---|
-| `scout` | `openai-codex/gpt-5.6-sol` | medium |
-| `researcher` | `openai-codex/gpt-5.6-sol` | medium |
-| `reviewer` | `openai-codex/gpt-5.6-sol` | medium |
-| `worker` | `openai-codex/gpt-5.6-sol` | high |
+| Agent | Portable model | Package-local model | Thinking |
+|---|---|---|---|
+| `scout` | `openai-codex/gpt-5.6-sol` | `openai-codex/gpt-5.5` | medium |
+| `researcher` | `openai-codex/gpt-5.6-sol` | `openai-codex/gpt-5.5` | medium |
+| `reviewer` | `openai-codex/gpt-5.6-sol` | `openai-codex/gpt-5.5` | medium |
+| `worker` | `openai-codex/gpt-5.6-sol` | `openai-codex/gpt-5.5` | medium |
 
-Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override a bundled agent across the current user account. For workspace-local overrides, create `<workspace>/.pi/agents/`. Agent directories are merged in order: bundled `agents/`, user-global `~/.pi/agent/agents/`, then workspace-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and workspace-only agent names are also loaded.
+Package-local overrides in `.pi/agents/` replace the portable bundled definitions in `agents/` for every workspace that loads this package. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `agents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 
 ### Terminal notifications
 
