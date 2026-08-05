@@ -11,6 +11,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `custom-header` | Custom Pi startup header |
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
+| `pi-pet` | Placeholder terminal pet widget that reacts to Pi lifecycle events |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
@@ -106,6 +107,32 @@ Portable default definitions are tracked in `agents/`:
 | `worker` | `openai-codex/gpt-5.6-sol` | high |
 
 Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `agents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `agents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
+
+### Pi pet
+
+`pi-pet` is a ground-up placeholder companion rendered below the editor. It uses ASCII frames for now and reacts to local Pi lifecycle events without sending prompt, tool, command, path, or output text anywhere.
+
+Commands:
+
+```bash
+/pet status
+/pet show
+/pet hide
+/pet test
+/pet react idle|thinking|working|success|error
+```
+
+Current state mapping:
+
+| Pi activity | Pet state |
+|---|---|
+| Session start | `idle` |
+| Agent starts thinking | `thinking` |
+| Tool execution starts | `working` |
+| Agent settles successfully | `success`, then `idle` |
+| Tool error / failed turn | `error`, then `idle` |
+
+Future asset work can replace the ASCII frame table with a small local pet manifest such as `pet.json` plus one image or frame strip per state.
 
 ### Terminal notifications
 
