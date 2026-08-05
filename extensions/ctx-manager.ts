@@ -12,9 +12,16 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 
 const WARN_THRESHOLD    = 0.50;   // 50%  -- yellow warning notification
 const COMPACT_THRESHOLD = 0.65;   // 65%  -- auto-compact silently
+const BAR_WIDTH         = 10;
 
 function fmt(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n);
+}
+
+function contextBar(pct: number) {
+  const clamped = Math.max(0, Math.min(1, pct));
+  const filled = Math.round(clamped * BAR_WIDTH);
+  return "█".repeat(filled) + "░".repeat(BAR_WIDTH - filled);
 }
 
 function updateStatus(ctx: ExtensionContext) {
@@ -22,8 +29,8 @@ function updateStatus(ctx: ExtensionContext) {
   if (!usage) return;
 
   const pct = usage.tokens / usage.contextWindow;
-  const bar = pct >= COMPACT_THRESHOLD ? "▓▓▓" : pct >= WARN_THRESHOLD ? "▓▓░" : "▓░░";
-  const label = `ctx ${bar} ${Math.round(pct * 100)}% (${fmt(usage.tokens)}/${fmt(usage.contextWindow)})`;
+  const bar = contextBar(pct);
+  const label = `ctx [${bar}] ${Math.round(pct * 100)}% (${fmt(usage.tokens)}/${fmt(usage.contextWindow)})`;
   ctx.ui.setStatus("ctx-manager", label);
 }
 
