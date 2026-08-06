@@ -28,6 +28,10 @@ import {
 	formatSessionIdentityTitle,
 } from "../extensions/session-identity/index.ts";
 import {
+	COMPANION_WIDGET_UPDATE_EVENT,
+	type CompanionWidgetUpdate,
+} from "../lib/companion-widget.ts";
+import {
 	getActiveSessionIdentity,
 	setActiveSessionIdentity,
 } from "../lib/session-identity.ts";
@@ -433,6 +437,7 @@ test("reports an invalid user config without disabling extension registration", 
 	const handlers = new Map<string, Handler>();
 	const notifications: string[] = [];
 	const headlessWarnings: string[] = [];
+	const companionUpdates: CompanionWidgetUpdate[] = [];
 	let currentName: string | undefined = "Agent One";
 	const extension = createSessionIdentityExtension({
 		createConfig() {
@@ -444,6 +449,12 @@ test("reports an invalid user config without disabling extension registration", 
 	});
 
 	extension({
+		events: {
+			emit(event: string, update: CompanionWidgetUpdate) {
+				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
+				companionUpdates.push(update);
+			},
+		},
 		on(event: string, handler: Handler) {
 			handlers.set(event, handler);
 		},
@@ -478,12 +489,16 @@ test("reports an invalid user config without disabling extension registration", 
 		const warning = "Session identity unavailable: Invalid session identity config at /tmp/session-identity.json: names must be unique";
 		assert.deepEqual(notifications, [warning]);
 		assert.deepEqual(headlessWarnings, [warning]);
+		assert.deepEqual(companionUpdates, [
+			{ id: "session-identity" },
+			{ id: "session-identity" },
+		]);
 	} finally {
 		setActiveSessionIdentity(undefined);
 	}
 });
 
-test("synchronizes the session name, terminal title, and process identity", async () => {
+test("publishes the session identity without taking over the session display name", async () => {
 	type Handler = (event: Record<string, unknown>, ctx: TestContext) => Promise<void> | void;
 	interface TestContext {
 		hasUI: boolean;
@@ -499,41 +514,46 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 		leaseId: "lease-1",
 		ownerId: "owner-1",
 	};
-	let currentName: string | undefined;
+	let currentName: string | undefined = "Agent One";
 	let releaseCount = 0;
-	const handlers = new Map<string, Handler>();
 	const titles: string[] = [];
 	const notifications: string[] = [];
-	const emittedEvents: string[] = [];
-	const extension = createSessionIdentityExtension({
-		allocator: {
-			async acquire() {
-				return lease;
-			},
-			async release(released) {
-				assert.deepEqual(released, lease);
-				releaseCount += 1;
-				return true;
-			},
+	const assignedSessionNames: string[] = [];
+	const companionUpdates: CompanionWidgetUpdate[] = [];
+	const sharedAllocator = {
+		async acquire() {
+			return lease;
 		},
-	});
+		async release(released: SessionNameLease) {
+			assert.deepEqual(released, lease);
+			releaseCount += 1;
+			return true;
+		},
+	};
 
-	extension({
-		events: {
-			emit(event: string) {
-				emittedEvents.push(event);
+	function registerRuntime(): Map<string, Handler> {
+		const handlers = new Map<string, Handler>();
+		const extension = createSessionIdentityExtension({ allocator: sharedAllocator });
+		extension({
+			events: {
+				emit(event: string, update: CompanionWidgetUpdate) {
+					assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
+					companionUpdates.push(update);
+				},
 			},
-		},
-		on(event: string, handler: Handler) {
-			handlers.set(event, handler);
-		},
-		getSessionName() {
-			return currentName;
-		},
-		setSessionName(name: string) {
-			currentName = name;
-		},
-	} as never);
+			on(event: string, handler: Handler) {
+				handlers.set(event, handler);
+			},
+			getSessionName() {
+				return currentName;
+			},
+			setSessionName(name: string) {
+				currentName = name;
+				assignedSessionNames.push(name);
+			},
+		} as never);
+		return handlers;
+	}
 
 	const ctx: TestContext = {
 		hasUI: true,
@@ -549,27 +569,75 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 	};
 
 	setActiveSessionIdentity(undefined);
+	setActiveSessionIdentity("Agent One");
 	try {
-		await handlers.get("session_start")?.({ reason: "startup" }, ctx);
-		assert.equal(currentName, "Agent One");
+		const handlers = registerRuntime();
+		await handlers.get("session_start")?.({ reason: "reload" }, ctx);
+		assert.equal(currentName, "");
+		assert.deepEqual(assignedSessionNames, [""]);
 		assert.equal(getActiveSessionIdentity(), "Agent One");
 		assert.equal(titles.at(-1), "π - Agent One - project");
 		assert.deepEqual(notifications, []);
-		assert.deepEqual(emittedEvents, []);
+		assert.deepEqual(companionUpdates.at(-1), {
+			id: "session-identity",
+			contribution: {
+				id: "session-identity",
+				region: "details",
+				order: 30,
+				lines: ["Agent One"],
+				tone: "accent",
+			},
+		});
 
-		currentName = "manual-name";
-		await handlers.get("session_info_changed")?.({ name: "manual-name" }, ctx);
+		// A later session_start handler may yield before resource discovery begins.
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		await handlers.get("resources_discover")?.({ reason: "startup" }, ctx);
+		// Pi refreshes its built-in title after extension binding completes.
+		titles.push("π - project");
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		assert.equal(titles.at(-1), "π - Agent One - project");
+
+		currentName = "Agent One";
+		await handlers.get("session_info_changed")?.({ name: "Agent One" }, ctx);
 		assert.equal(currentName, "Agent One");
+		assert.deepEqual(assignedSessionNames, [""]);
+		assert.equal(titles.at(-1), "π - Agent One - project");
 
-		for (const reason of ["reload", "new", "resume", "fork"]) {
-			await handlers.get("session_shutdown")?.({ reason }, ctx);
-		}
+		await handlers.get("session_shutdown")?.({ reason: "reload" }, ctx);
 		assert.equal(releaseCount, 0);
 		assert.equal(getActiveSessionIdentity(), "Agent One");
+		assert.deepEqual(companionUpdates.at(-1), { id: "session-identity" });
 
-		await handlers.get("session_shutdown")?.({ reason: "quit" }, ctx);
+		const reloadedHandlers = registerRuntime();
+		await reloadedHandlers.get("session_start")?.({ reason: "reload" }, ctx);
+		assert.equal(currentName, "Agent One");
+		assert.deepEqual(assignedSessionNames, [""]);
+		assert.deepEqual(companionUpdates.at(-1), {
+			id: "session-identity",
+			contribution: {
+				id: "session-identity",
+				region: "details",
+				order: 30,
+				lines: ["Agent One"],
+				tone: "accent",
+			},
+		});
+
+		await reloadedHandlers.get("resources_discover")?.({ reason: "reload" }, ctx);
+		titles.push("π - project");
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		assert.equal(titles.at(-1), "π - Agent One - project");
+
+		currentName = "manual-name";
+		await reloadedHandlers.get("session_info_changed")?.({ name: "manual-name" }, ctx);
+		assert.equal(currentName, "manual-name");
+		assert.deepEqual(assignedSessionNames, [""]);
+		assert.equal(titles.at(-1), "π - Agent One - project");
+
+		await reloadedHandlers.get("session_shutdown")?.({ reason: "quit" }, ctx);
 		assert.equal(releaseCount, 1);
 		assert.equal(getActiveSessionIdentity(), undefined);
+		assert.deepEqual(companionUpdates.at(-1), { id: "session-identity" });
 	} finally {
 		setActiveSessionIdentity(undefined);
 	}
