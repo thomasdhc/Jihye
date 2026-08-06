@@ -15,6 +15,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { removeCompanionWidgetContribution, updateCompanionWidget } from "../lib/companion-widget.ts";
+
 // -- Policy -------------------------------------------------------------------
 
 export const DOC_GUARDIAN_POLICY = {
@@ -39,6 +41,12 @@ export interface ContextFile {
 }
 
 export type DocHealth = "healthy" | "caution" | "warning";
+
+export const DOC_GUARDIAN_STATUS_EVENT = "doc-guardian:status";
+
+export interface DocGuardianStatusPayload {
+	label?: string;
+}
 
 export interface FileStats {
 	path: string;
@@ -120,6 +128,7 @@ export function createDocGuardianExtension(options: DocGuardianOptions = {}) {
 			}
 			contextFiles = [];
 			warnedFiles = new Set<string>();
+			publishStatus([]);
 			ctx.ui.setStatus("doc-guardian", undefined);
 		});
 
@@ -207,12 +216,25 @@ export function createDocGuardianExtension(options: DocGuardianOptions = {}) {
 			},
 		});
 
-		function refreshStatus(files: ContextFile[], ui: any): void {
-			if (files.length === 0) {
-				ui.setStatus("doc-guardian", undefined);
-				return;
+		function publishStatus(files: ContextFile[]): void {
+			const label = files.length > 0 ? statusIcon(statFiles(files, home)) : undefined;
+			pi.events.emit(DOC_GUARDIAN_STATUS_EVENT, { label } satisfies DocGuardianStatusPayload);
+			if (label) {
+				updateCompanionWidget(pi.events, {
+					id: "doc-guardian",
+					region: "details",
+					order: 20,
+					lines: [label],
+					tone: "text",
+				});
+			} else {
+				removeCompanionWidgetContribution(pi.events, "doc-guardian");
 			}
-			ui.setStatus("doc-guardian", statusIcon(statFiles(files, home)));
+		}
+
+		function refreshStatus(files: ContextFile[], ui: any): void {
+			publishStatus(files);
+			ui.setStatus("doc-guardian", undefined);
 		}
 	};
 }

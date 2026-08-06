@@ -7,10 +7,12 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | Extension | Purpose |
 |---|---|
 | `bash-guard` | Interactive prompt for destructive bash and GitHub/GitLab CLI commands; headless hard-block in subagents |
-| `ctx-manager` | Context usage status bar + auto-compaction at 65% |
+| `companion-widget` | Composes independent visual and status contributions below the editor |
+| `ctx-manager` | Context usage publisher + auto-compaction at 65% |
 | `custom-header` | Custom Pi startup header |
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
+| `pi-pet` | Placeholder terminal pet widget that reacts to Pi lifecycle events |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
@@ -106,6 +108,24 @@ Portable default definitions are tracked in `agents/`:
 | `worker` | `openai-codex/gpt-5.6-sol` | high |
 
 Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `agents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `agents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
+
+### Pi pet
+
+`pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere.
+
+The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, and `doc-guardian`. Context and documentation details use Pi's normal text color on the left, while the pet artwork sits on the right. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
+
+Current state mapping:
+
+| Pi activity | Pet state |
+|---|---|
+| Session start | `idle` |
+| Agent starts thinking | `thinking` |
+| Tool execution starts | `working` |
+| Agent settles successfully | `success` for 5 seconds, then `idle` |
+| Tool error / failed turn | `error` for 1.5 seconds, then `idle` |
+
+Future asset work can replace the ASCII frame table with a small local pet manifest such as `pet.json` plus one image or frame strip per state.
 
 ### Terminal notifications
 
