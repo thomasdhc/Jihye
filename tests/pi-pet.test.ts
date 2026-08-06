@@ -5,16 +5,10 @@ import {
 	applyPiPetEvent,
 	createPiPetExtension,
 	createPiPetRuntimeState,
-	normalizePetState,
+	getPiPetResetDelay,
 	renderPiPetLines,
 } from "../extensions/pi-pet.ts";
 import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../lib/companion-widget.ts";
-
-test("normalizes supported pi pet states", () => {
-	assert.equal(normalizePetState("idle"), "idle");
-	assert.equal(normalizePetState(" Working "), "working");
-	assert.equal(normalizePetState("nope"), undefined);
-});
 
 test("maps lifecycle events to pet states", () => {
 	const runtime = createPiPetRuntimeState();
@@ -37,32 +31,22 @@ test("keeps an error reaction through agent settlement", () => {
 	assert.equal(applyPiPetEvent(runtime, "agent_settled"), "error");
 });
 
-test("renders only pet-owned artwork", () => {
+test("renders persistent pet-owned artwork without status text", () => {
 	const runtime = createPiPetRuntimeState();
 	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\", "( o.o )", " > ^ <"]);
 });
 
-test("renders no pet artwork when hidden", () => {
-	const runtime = createPiPetRuntimeState();
-	runtime.visible = false;
-	assert.deepEqual(renderPiPetLines(runtime), []);
+test("keeps successful reactions visible longer than other settled states", () => {
+	assert.equal(getPiPetResetDelay("success"), 5000);
+	assert.equal(getPiPetResetDelay("error"), 1500);
 });
 
-test("publishes pet-owned contributions and commands without owning the widget", async () => {
-	type Handler = (event: unknown, ctx: FakeContext) => Promise<void> | void;
+test("publishes one persistent pet contribution with distinct lifecycle tones", async () => {
+	type Handler = (event: unknown) => Promise<void> | void;
 	const handlers = new Map<string, Handler>();
-	let commandHandler: ((args: string, ctx: FakeContext) => Promise<void>) | undefined;
 	const updates: CompanionWidgetUpdate[] = [];
-	const notifications: string[] = [];
-	const ctx: FakeContext = {
-		ui: {
-			notify(message: string) {
-				notifications.push(message);
-			},
-		},
-	};
 
-	createPiPetExtension({ resetToIdleMs: 1 })({
+	createPiPetExtension({ resetToIdleMs: 1, successResetToIdleMs: 1 })({
 		events: {
 			emit(event: string, payload: CompanionWidgetUpdate) {
 				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
@@ -72,33 +56,23 @@ test("publishes pet-owned contributions and commands without owning the widget",
 		on(event: string, handler: Handler) {
 			handlers.set(event, handler);
 		},
-		registerCommand(name: string, command: { handler: (args: string, ctx: FakeContext) => Promise<void> }) {
-			assert.equal(name, "pet");
-			commandHandler = command.handler;
-		},
 	} as never);
 
-	assert.ok(commandHandler);
-	await handlers.get("session_start")?.({}, ctx);
-	assert.deepEqual(
-		updates.slice(-2).map((update) => update.id),
-		["pi-pet:art", "pi-pet:status"],
-	);
+	await handlers.get("session_start")?.({});
+	assert.equal(updates.at(-1)?.id, "pi-pet:art");
+	assert.equal(updates.at(-1)?.contribution?.tone, "text");
 
-	await commandHandler("react error", ctx);
-	assert.match(notifications.at(-1) ?? "", /error/);
+	await handlers.get("before_agent_start")?.({});
+	assert.equal(updates.at(-1)?.contribution?.tone, "accent");
+
+	await handlers.get("tool_execution_start")?.({});
+	assert.equal(updates.at(-1)?.contribution?.tone, "syntaxString");
+
+	await handlers.get("tool_execution_end")?.({ isError: true });
 	assert.equal(updates.at(-1)?.contribution?.tone, "error");
 
-	await commandHandler("hide", ctx);
-	assert.deepEqual(
-		updates.slice(-2).map((update) => update.id),
-		["pi-pet:art", "pi-pet:status"],
-	);
-	assert.ok(updates.slice(-2).every((update) => update.contribution === undefined));
+	await handlers.get("session_start")?.({});
+	await handlers.get("agent_settled")?.({});
+	assert.equal(updates.at(-1)?.contribution?.tone, "thinkingHigh");
+	assert.ok(updates.every((update) => update.id === "pi-pet:art"));
 });
-
-interface FakeContext {
-	ui: {
-		notify(message: string, level?: string): void;
-	};
-}

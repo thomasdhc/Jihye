@@ -28,6 +28,7 @@ function publishStatus(pi: ExtensionAPI, ctx: ExtensionContext) {
     region: "details",
     order: 10,
     lines: [payload.label],
+    tone: "text",
   });
 }
 

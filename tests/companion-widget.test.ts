@@ -6,16 +6,15 @@ import type { CompanionWidgetContribution } from "../lib/companion-widget.ts";
 
 test("composes independent visual and detail contributions", () => {
 	const contributions: CompanionWidgetContribution[] = [
-		{ id: "pet-status", region: "details", order: 30, lines: ["ready when you are"] },
 		{ id: "docs", region: "details", order: 20, lines: ["docs ○"] },
 		{ id: "pet", region: "visual", order: 10, lines: [" /\\_/\\", "( o.o )", " > ^ <"] },
 		{ id: "context", region: "details", order: 10, lines: ["ctx 42%"] },
 	];
 
 	assert.deepEqual(renderCompanionWidgetLines(contributions), [
-		" /\\_/\\   ctx 42%",
-		"( o.o )  docs ○",
-		" > ^ <   ready when you are",
+		"ctx 42%   /\\_/\\",
+		"docs ○   ( o.o )",
+		"          > ^ <",
 	]);
 });
 
@@ -25,7 +24,7 @@ test("removing one contribution does not affect remaining components", () => {
 		{ id: "docs", region: "details", order: 20, lines: ["docs ○"] },
 	];
 
-	assert.deepEqual(renderCompanionWidgetLines(contributions), ["pet  docs ○"]);
+	assert.deepEqual(renderCompanionWidgetLines(contributions), ["docs ○  pet"]);
 	assert.deepEqual(renderCompanionWidgetLines(contributions.filter((item) => item.id !== "pet")), ["docs ○"]);
 });
 

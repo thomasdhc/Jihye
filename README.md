@@ -111,19 +111,9 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 
 ### Pi pet
 
-`pi-pet` is a ground-up placeholder companion rendered below the editor. It uses ASCII frames for now and reacts to local Pi lifecycle events without sending prompt, tool, command, path, or output text anywhere.
+`pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere.
 
-The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, and `doc-guardian`. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
-
-Commands:
-
-```bash
-/pet status
-/pet show
-/pet hide
-/pet test
-/pet react idle|thinking|working|success|error
-```
+The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, and `doc-guardian`. Context and documentation details use Pi's normal text color on the left, while the pet artwork sits on the right. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 
 Current state mapping:
 
@@ -132,8 +122,8 @@ Current state mapping:
 | Session start | `idle` |
 | Agent starts thinking | `thinking` |
 | Tool execution starts | `working` |
-| Agent settles successfully | `success`, then `idle` |
-| Tool error / failed turn | `error`, then `idle` |
+| Agent settles successfully | `success` for 5 seconds, then `idle` |
+| Tool error / failed turn | `error` for 1.5 seconds, then `idle` |
 
 Future asset work can replace the ASCII frame table with a small local pet manifest such as `pet.json` plus one image or frame strip per state.
 

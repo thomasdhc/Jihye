@@ -1,7 +1,15 @@
 export const COMPANION_WIDGET_UPDATE_EVENT = "companion-widget:update";
 
 export type CompanionWidgetRegion = "visual" | "details";
-export type CompanionWidgetTone = "muted" | "accent" | "warning" | "success" | "error";
+export type CompanionWidgetTone =
+	| "text"
+	| "muted"
+	| "accent"
+	| "warning"
+	| "success"
+	| "error"
+	| "syntaxString"
+	| "thinkingHigh";
 
 export interface CompanionWidgetContribution {
 	id: string;

@@ -225,6 +225,7 @@ export function createDocGuardianExtension(options: DocGuardianOptions = {}) {
 					region: "details",
 					order: 20,
 					lines: [label],
+					tone: "text",
 				});
 			} else {
 				removeCompanionWidgetContribution(pi.events, "doc-guardian");

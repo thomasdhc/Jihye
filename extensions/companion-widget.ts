@@ -26,18 +26,18 @@ export function renderCompanionWidgetLines(
 		});
 		return segments.join(" ".repeat(COLUMN_GAP)).trimEnd();
 	});
-	const visualWidth = Math.max(0, ...visualLines.map(visibleWidth));
 	const detailLines = details.flatMap((item) =>
 		item.lines.map((line) => style(item.tone ?? "muted", line)),
 	);
+	const detailWidth = Math.max(0, ...detailLines.map(visibleWidth));
 	const height = Math.max(visualLines.length, detailLines.length);
 
 	return Array.from({ length: height }, (_, row) => {
-		const left = visualLines[row] ?? "";
-		const right = detailLines[row] ?? "";
+		const left = detailLines[row] ?? "";
+		const right = visualLines[row] ?? "";
 		if (!right) return left;
-		if (!left && visualWidth === 0) return right;
-		return `${left}${" ".repeat(visualWidth - visibleWidth(left) + COLUMN_GAP)}${right}`;
+		if (!left && detailWidth === 0) return right;
+		return `${left}${" ".repeat(detailWidth - visibleWidth(left) + COLUMN_GAP)}${right}`;
 	});
 }
 
