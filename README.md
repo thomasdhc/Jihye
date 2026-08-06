@@ -13,6 +13,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
 | `pi-pet` | Placeholder terminal pet widget that reacts to Pi lifecycle events |
+| `session-identity` | Assign collision-free round-robin names to active local Pi sessions |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
@@ -127,9 +128,21 @@ Current state mapping:
 
 Future asset work can replace the ASCII frame table with a small local pet manifest such as `pet.json` plus one image or frame strip per state.
 
+### Session identities
+
+`session-identity` automatically leases one name to each running local Pi process in round-robin order:
+
+```text
+Aqila → Athena → Ji-hye → Cyrus → Lozen → Odin → Augustine → Manuela
+```
+
+If every selected name is active, additional processes receive `pi-agent-01`, `pi-agent-02`, and so on. Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
+
+The leased name becomes Pi's session display name and terminal tab title, and appears below `docs` in the companion widget using Pi's accent color. It is intentionally restored after `/name` so the local uniqueness guarantee remains intact for the lifetime of the Pi process.
+
 ### Terminal notifications
 
-`terminal-notify` detects the current terminal at runtime, so the same package works across workstations:
+`terminal-notify` detects the current terminal at runtime, so the same package works across workstations. Notification titles use the active `session-identity` name, including urgent `bash-guard` alerts:
 
 | Terminal | Detection | Protocol |
 |---|---|---|

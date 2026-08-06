@@ -1,12 +1,14 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
+import { getActiveSessionIdentity } from "../lib/session-identity.ts";
+
 export type NotificationProtocol = "iterm" | "kitty" | "osc777";
 
 export const TERMINAL_NOTIFY_EVENT = "terminal-notify:request";
 
 export interface TerminalNotificationRequest {
 	mode: string;
-	title: string;
+	title?: string;
 	body: string;
 	ringBell?: boolean;
 }
@@ -65,14 +67,16 @@ export function notificationSequence(
 export function notificationRequestSequence(
 	request: TerminalNotificationRequest,
 	env: Environment,
+	defaultTitle = DEFAULT_TITLE,
 ): string {
 	if (request.mode !== "tui") return "";
 	if (env.PI_TERMINAL_NOTIFY?.trim().toLowerCase() === "off") return "";
 
 	const bell = request.ringBell ? TERMINAL_BELL : "";
 	const protocol = detectNotificationProtocol(env);
+	const title = request.title?.trim() || defaultTitle;
 	const notification = protocol
-		? notificationSequence(protocol, request.title, request.body)
+		? notificationSequence(protocol, title, request.body)
 		: "";
 	return `${bell}${notification}`;
 }
@@ -86,11 +90,15 @@ export function createTerminalNotifyExtension(options: TerminalNotifyOptions = {
 			if (ctx.mode !== "tui") return;
 			const protocol = detectNotificationProtocol(env);
 			if (!protocol) return;
-			write(notificationSequence(protocol));
+			write(notificationSequence(protocol, getActiveSessionIdentity() ?? DEFAULT_TITLE));
 		});
 
 		pi.events.on(TERMINAL_NOTIFY_EVENT, (data) => {
-			const sequence = notificationRequestSequence(data as TerminalNotificationRequest, env);
+			const sequence = notificationRequestSequence(
+				data as TerminalNotificationRequest,
+				env,
+				getActiveSessionIdentity() ?? DEFAULT_TITLE,
+			);
 			if (sequence) write(sequence);
 		});
 	};

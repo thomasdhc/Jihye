@@ -408,7 +408,6 @@ test("requests a terminal alert before showing an approval prompt", async () => 
 	assert.equal(emittedEvent, TERMINAL_NOTIFY_EVENT);
 	assert.deepEqual(emittedData, {
 		mode: "tui",
-		title: "Pi",
 		body: "Bash approval required (high risk)",
 		ringBell: true,
 	});
