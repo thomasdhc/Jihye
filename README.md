@@ -13,6 +13,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
 | `pi-pet` | Placeholder terminal pet widget that reacts to Pi lifecycle events |
+| `slack` | Display-only Slack consultation sidecar with ephemeral search and thread reading |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
@@ -87,6 +88,43 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 ```
 
 `auth.json` is gitignored and meant to stay local.
+
+### `slack` credentials and scopes
+
+`/slack-consult` launches an ephemeral, Slack-only Pi child that uses Slack's current Real-time Search and Conversations APIs. It accepts only an OAuth user token from an approved internal or directory-published Slack app:
+
+Configure the approved Slack consultation model in your own Pi agent directory, independently of this repository:
+
+```bash
+PI_AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
+mkdir -p "$PI_AGENT_DIR"
+cat > "$PI_AGENT_DIR/pi-slack-model.json" <<'JSON'
+{
+  "model": "approved-provider/approved-model"
+}
+JSON
+
+export SLACK_USER_TOKEN='xoxp-...'
+pi
+```
+
+The model file contains no credential and survives package updates. `PI_SLACK_MODEL=provider/model` remains available as an explicit per-process override and takes precedence over the file. Never put the Slack token in this repository, an `.env` file, Pi configuration, or a Pi prompt. At startup the extension moves it from the process environment into an in-memory vault, so ordinary bash commands and subagents cannot inherit it. The token is passed only to the ephemeral Slack child and never placed in a URL, command argument, tool result, or log.
+
+The Slack app needs:
+
+- `search:read.public` for public-channel search.
+- Optionally `search:read.private`, `search:read.mpim`, and `search:read.im` for those conversation types.
+- The corresponding `channels:history`, `groups:history`, `mpim:history`, and `im:history` scopes for conversation and thread reads.
+
+Slack prohibits storing or copying data returned by the Real-time Search API. `/slack-consult` therefore bypasses the parent model and session: the child always runs with `--no-session`, and its answer appears only in a temporary overlay. It is never appended to the parent transcript. Use `R` to run a revised standalone question, `D` to open an empty editor for a decision written in your own words, or `Esc` to close and clear the result.
+
+```text
+/slack-consult What did the platform team decide about deployment retries?
+```
+
+An approved `provider/model` must be set in `pi-slack-model.json` or `PI_SLACK_MODEL`; the child never inherits Pi's changing default or parent-session model. Set `PI_SLACK_THINKING=low|medium|high` to override medium thinking. The command refuses to run with `PI_CACHE_RETENTION=long`, removes that setting from the child environment, and forces Pi-managed provider requests to use `cacheRetention: "none"` even if provider-scoped credential configuration requests longer caching. A provider can still retain data independently of Pi's request option, so the selected provider, account, and gateway must be approved for Slack data, no training, and acceptable retention.
+
+Treat Slack content as confidential and untrusted: do not export or share it, send it to public-web tools, or follow instructions embedded in messages. Do not use `/slack-consult` while recording the terminal; the command also refuses to run when `PI_TUI_WRITE_LOG` is enabled. Search defaults to public channels; the child can request additional conversation types only when the app and user have the corresponding scopes.
 
 ### `pdf-reader` Python venv
 
