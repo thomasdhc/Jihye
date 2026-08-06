@@ -130,11 +130,7 @@ Future asset work can replace the ASCII frame table with a small local pet manif
 
 ### Session identities
 
-`session-identity` automatically leases one name to each running local Pi process in round-robin order. The bundled defaults live in [`examples/session-identity.json`](examples/session-identity.json):
-
-```text
-Aqila → Athena → Ji-hye → Cyrus → Lozen → Odin → Augustine → Manuela
-```
+`session-identity` automatically leases one name to each running local Pi process in round-robin order. A bundled configuration template lives in [`examples/session-identity.json`](examples/session-identity.json); keep personal name choices in your user configuration rather than shared documentation.
 
 To replace them, create `~/.pi/agent/session-identity.json` (or `$PI_CODING_AGENT_DIR/session-identity.json` when using a custom agent directory):
 
