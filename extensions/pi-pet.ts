@@ -26,6 +26,8 @@ const SUBAGENT_PET_ID_PREFIX = "pi-pet:subagent:";
 const RESET_TO_IDLE_MS = 1500;
 const SUCCESS_RESET_TO_IDLE_MS = 5000;
 
+const PET_FRAME_WIDTH = 7;
+
 const PET_FRAMES: Record<PiPetState, string[]> = {
 	idle: [" /\\_/\\", "( o.o )", " > ^ <"],
 	thinking: [" /\\_/\\", "( -.- )", " > ? <"],
@@ -49,7 +51,7 @@ export function setPiPetState(runtime: PiPetRuntimeState, state: PiPetState): vo
 }
 
 export function renderPiPetStateLines(state: PiPetState): string[] {
-	return PET_FRAMES[state];
+	return PET_FRAMES[state].map((line) => line.padEnd(PET_FRAME_WIDTH));
 }
 
 export function renderPiPetLines(runtime: PiPetRuntimeState): string[] {

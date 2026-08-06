@@ -7,6 +7,7 @@ import {
 	createPiPetRuntimeState,
 	getPiPetResetDelay,
 	renderPiPetLines,
+	renderPiPetStateLines,
 } from "../extensions/pi-pet.ts";
 import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../lib/companion-widget.ts";
 
@@ -48,7 +49,12 @@ test("tracks top-level subagent pets independently", () => {
 
 test("renders persistent pet-owned artwork without status text", () => {
 	const runtime = createPiPetRuntimeState();
-	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\", "( o.o )", " > ^ <"]);
+	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\ ", "( o.o )", " > ^ < "]);
+});
+
+test("pads pet frame rows to keep duplicated pets aligned", () => {
+	const lines = renderPiPetStateLines("working");
+	assert.deepEqual(lines.map((line) => line.length), [7, 7, 7]);
 });
 
 test("keeps successful reactions visible longer than other settled states", () => {
