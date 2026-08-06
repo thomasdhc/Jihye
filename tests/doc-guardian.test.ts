@@ -59,6 +59,7 @@ test("does not warn for 124 lines and warns only once per oversized episode", as
 	const notifications: Array<{ message: string; level: string }> = [];
 
 	createDocGuardianExtension({ home })({
+		events: { emit() {} },
 		on(event: string, handler: EventHandler) {
 			handlers.set(event, handler);
 		},

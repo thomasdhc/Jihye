@@ -15,6 +15,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { removeCompanionWidgetContribution, updateCompanionWidget } from "../lib/companion-widget.ts";
+
 // -- Policy -------------------------------------------------------------------
 
 export const DOC_GUARDIAN_POLICY = {
@@ -215,9 +217,18 @@ export function createDocGuardianExtension(options: DocGuardianOptions = {}) {
 		});
 
 		function publishStatus(files: ContextFile[]): void {
-			(pi as any).events?.emit?.(DOC_GUARDIAN_STATUS_EVENT, {
-				label: files.length > 0 ? statusIcon(statFiles(files, home)) : undefined,
-			} satisfies DocGuardianStatusPayload);
+			const label = files.length > 0 ? statusIcon(statFiles(files, home)) : undefined;
+			pi.events.emit(DOC_GUARDIAN_STATUS_EVENT, { label } satisfies DocGuardianStatusPayload);
+			if (label) {
+				updateCompanionWidget(pi.events, {
+					id: "doc-guardian",
+					region: "details",
+					order: 20,
+					lines: [label],
+				});
+			} else {
+				removeCompanionWidgetContribution(pi.events, "doc-guardian");
+			}
 		}
 
 		function refreshStatus(files: ContextFile[], ui: any): void {

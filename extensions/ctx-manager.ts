@@ -10,6 +10,7 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
+import { updateCompanionWidget } from "../lib/companion-widget.ts";
 import { CONTEXT_STATUS_EVENT, createContextStatusPayload } from "../lib/context-status.ts";
 
 const WARN_THRESHOLD    = 0.50;   // 50%  -- yellow warning notification
@@ -19,8 +20,15 @@ function publishStatus(pi: ExtensionAPI, ctx: ExtensionContext) {
   const usage = ctx.getContextUsage();
   if (!usage) return;
 
+  const payload = createContextStatusPayload(usage);
   ctx.ui.setStatus("ctx-manager", undefined);
-  pi.events.emit(CONTEXT_STATUS_EVENT, createContextStatusPayload(usage));
+  pi.events.emit(CONTEXT_STATUS_EVENT, payload);
+  updateCompanionWidget(pi.events, {
+    id: "ctx-manager",
+    region: "details",
+    order: 10,
+    lines: [payload.label],
+  });
 }
 
 export default function (pi: ExtensionAPI) {

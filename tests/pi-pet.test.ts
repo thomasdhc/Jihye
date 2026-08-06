@@ -8,8 +8,7 @@ import {
 	normalizePetState,
 	renderPiPetLines,
 } from "../extensions/pi-pet.ts";
-import { CONTEXT_STATUS_EVENT } from "../lib/context-status.ts";
-import { DOC_GUARDIAN_STATUS_EVENT } from "../extensions/doc-guardian.ts";
+import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../lib/companion-widget.ts";
 
 test("normalizes supported pi pet states", () => {
 	assert.equal(normalizePetState("idle"), "idle");
@@ -38,51 +37,36 @@ test("keeps an error reaction through agent settlement", () => {
 	assert.equal(applyPiPetEvent(runtime, "agent_settled"), "error");
 });
 
-test("renders message next to the pet art without a state label", () => {
+test("renders only pet-owned artwork", () => {
 	const runtime = createPiPetRuntimeState();
-	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\      ready when you are", "( o.o )", " > ^ <"]);
+	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\", "( o.o )", " > ^ <"]);
 });
 
-test("renders shared status and message as a fixed-distance right column", () => {
-	const runtime = createPiPetRuntimeState();
-	runtime.contextStatus = "ctx [████░░░░░░] 42% (115k/272k)";
-	runtime.docStatus = "docs ○";
-	assert.deepEqual(renderPiPetLines(runtime), [
-		" /\\_/\\      ctx [████░░░░░░] 42% (115k/272k)",
-		"( o.o )     docs ○",
-		" > ^ <      ready when you are",
-	]);
-});
-
-test("renders no widget lines when hidden", () => {
+test("renders no pet artwork when hidden", () => {
 	const runtime = createPiPetRuntimeState();
 	runtime.visible = false;
 	assert.deepEqual(renderPiPetLines(runtime), []);
 });
 
-test("registers pet command and updates the widget", async () => {
+test("publishes pet-owned contributions and commands without owning the widget", async () => {
 	type Handler = (event: unknown, ctx: FakeContext) => Promise<void> | void;
 	const handlers = new Map<string, Handler>();
 	let commandHandler: ((args: string, ctx: FakeContext) => Promise<void>) | undefined;
-	const widgets: unknown[] = [];
+	const updates: CompanionWidgetUpdate[] = [];
 	const notifications: string[] = [];
 	const ctx: FakeContext = {
-		hasUI: true,
 		ui: {
 			notify(message: string) {
 				notifications.push(message);
 			},
-			setWidget(_id: string, value: unknown) {
-				widgets.push(value);
-			},
 		},
 	};
 
-	const eventBus = new Map<string, (payload: unknown) => void>();
 	createPiPetExtension({ resetToIdleMs: 1 })({
 		events: {
-			on(event: string, handler: (payload: unknown) => void) {
-				eventBus.set(event, handler);
+			emit(event: string, payload: CompanionWidgetUpdate) {
+				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
+				updates.push(payload);
 			},
 		},
 		on(event: string, handler: Handler) {
@@ -95,23 +79,26 @@ test("registers pet command and updates the widget", async () => {
 	} as never);
 
 	assert.ok(commandHandler);
-	eventBus.get(CONTEXT_STATUS_EVENT)?.({ label: "ctx [████░░░░░░] 42% (115k/272k)" });
-	eventBus.get(DOC_GUARDIAN_STATUS_EVENT)?.({ label: "docs ○" });
 	await handlers.get("session_start")?.({}, ctx);
-	assert.equal(typeof widgets.at(-1), "function");
+	assert.deepEqual(
+		updates.slice(-2).map((update) => update.id),
+		["pi-pet:art", "pi-pet:status"],
+	);
 
 	await commandHandler("react error", ctx);
 	assert.match(notifications.at(-1) ?? "", /error/);
+	assert.equal(updates.at(-1)?.contribution?.tone, "error");
 
 	await commandHandler("hide", ctx);
-	assert.equal(widgets.at(-1), undefined);
+	assert.deepEqual(
+		updates.slice(-2).map((update) => update.id),
+		["pi-pet:art", "pi-pet:status"],
+	);
+	assert.ok(updates.slice(-2).every((update) => update.contribution === undefined));
 });
 
 interface FakeContext {
-	hasUI: boolean;
 	ui: {
 		notify(message: string, level?: string): void;
-		setStatus?(id: string, value: string | undefined): void;
-		setWidget(id: string, value: unknown, options?: unknown): void;
 	};
 }

@@ -1,8 +1,10 @@
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth } from "@earendil-works/pi-tui";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-import { CONTEXT_STATUS_EVENT, type ContextStatusPayload } from "../lib/context-status.ts";
-import { DOC_GUARDIAN_STATUS_EVENT, type DocGuardianStatusPayload } from "./doc-guardian.ts";
+import {
+	removeCompanionWidgetContribution,
+	updateCompanionWidget,
+	type CompanionWidgetTone,
+} from "../lib/companion-widget.ts";
 
 export type PiPetState = "idle" | "thinking" | "working" | "success" | "error";
 
@@ -12,13 +14,11 @@ export interface PiPetRuntimeState {
 	message: string;
 	activeTools: number;
 	sawError: boolean;
-	contextStatus?: string;
-	docStatus?: string;
 }
 
-const WIDGET_ID = "pi-pet";
+const PET_ART_ID = "pi-pet:art";
+const PET_STATUS_ID = "pi-pet:status";
 const RESET_TO_IDLE_MS = 1500;
-const PET_COLUMN_WIDTH = 10;
 
 const STATE_MESSAGES: Record<PiPetState, string> = {
 	idle: "ready when you are",
@@ -56,16 +56,8 @@ export function setPiPetState(runtime: PiPetRuntimeState, state: PiPetState, mes
 	runtime.message = message;
 }
 
-export function renderPiPetLines(runtime: PiPetRuntimeState, style?: (state: PiPetState, text: string) => string): string[] {
-	if (!runtime.visible) return [];
-
-	const decorate = style ?? ((_state, text) => text);
-	const frame = PET_FRAMES[runtime.state];
-	const detailLines = [runtime.contextStatus, runtime.docStatus, runtime.message].filter((line): line is string => Boolean(line));
-	return frame.map((line, index) => {
-		const detail = detailLines[index];
-		return decorate(runtime.state, detail ? `${line.padEnd(PET_COLUMN_WIDTH)}  ${detail}` : line);
-	});
+export function renderPiPetLines(runtime: PiPetRuntimeState): string[] {
+	return runtime.visible ? PET_FRAMES[runtime.state] : [];
 }
 
 export function applyPiPetEvent(runtime: PiPetRuntimeState, event: string, payload?: { isError?: boolean }): PiPetState {
@@ -103,31 +95,12 @@ export function applyPiPetEvent(runtime: PiPetRuntimeState, event: string, paylo
 	return runtime.state;
 }
 
-function renderWidget(ctx: ExtensionContext, runtime: PiPetRuntimeState): void {
-	if (!ctx.hasUI) return;
-
-	if (!runtime.visible) {
-		ctx.ui.setWidget(WIDGET_ID, undefined);
-		return;
-	}
-
-	ctx.ui.setWidget(
-		WIDGET_ID,
-		(_tui, theme) => ({
-			render(width: number) {
-				const styled = renderPiPetLines(runtime, (state, text) => {
-					if (state === "success") return theme.fg("success", text);
-					if (state === "error") return theme.fg("error", text);
-					if (state === "working") return theme.fg("warning", text);
-					if (state === "thinking") return theme.fg("accent", text);
-					return theme.fg("muted", text);
-				});
-				return styled.map((line) => truncateToWidth(line, width));
-			},
-			invalidate() {},
-		}),
-		{ placement: "belowEditor" },
-	);
+function toneForState(state: PiPetState): CompanionWidgetTone {
+	if (state === "success") return "success";
+	if (state === "error") return "error";
+	if (state === "working") return "warning";
+	if (state === "thinking") return "accent";
+	return "muted";
 }
 
 export function createPiPetExtension(options: { resetToIdleMs?: number } = {}) {
@@ -141,64 +114,80 @@ export function createPiPetExtension(options: { resetToIdleMs?: number } = {}) {
 			resetTimer = undefined;
 		}
 
-		function update(ctx: ExtensionContext, state?: PiPetState, message?: string): void {
-			clearResetTimer();
-			if (state) setPiPetState(runtime, state, message);
-			renderWidget(ctx, runtime);
+		function publish(): void {
+			if (!runtime.visible) {
+				removeCompanionWidgetContribution(pi.events, PET_ART_ID);
+				removeCompanionWidgetContribution(pi.events, PET_STATUS_ID);
+				return;
+			}
+
+			const tone = toneForState(runtime.state);
+			updateCompanionWidget(pi.events, {
+				id: PET_ART_ID,
+				region: "visual",
+				order: 10,
+				lines: renderPiPetLines(runtime),
+				tone,
+			});
+			updateCompanionWidget(pi.events, {
+				id: PET_STATUS_ID,
+				region: "details",
+				order: 30,
+				lines: [runtime.message],
+				tone,
+			});
 		}
 
-		function scheduleIdle(ctx: ExtensionContext): void {
+		function update(state?: PiPetState, message?: string): void {
+			clearResetTimer();
+			if (state) setPiPetState(runtime, state, message);
+			publish();
+		}
+
+		function scheduleIdle(): void {
 			clearResetTimer();
 			resetTimer = setTimeout(() => {
 				setPiPetState(runtime, "idle");
 				runtime.sawError = false;
-				renderWidget(ctx, runtime);
+				publish();
 			}, resetToIdleMs);
 		}
 
-		pi.events.on(CONTEXT_STATUS_EVENT, (payload: ContextStatusPayload) => {
-			runtime.contextStatus = payload.label;
-		});
-		pi.events.on(DOC_GUARDIAN_STATUS_EVENT, (payload: DocGuardianStatusPayload) => {
-			runtime.docStatus = payload.label;
-		});
-
-		pi.on("session_start", async (_event, ctx) => {
+		pi.on("session_start", async () => {
 			applyPiPetEvent(runtime, "session_start");
-			renderWidget(ctx, runtime);
+			publish();
 		});
 
-		pi.on("before_agent_start", async (_event, ctx) => {
+		pi.on("before_agent_start", async () => {
 			applyPiPetEvent(runtime, "before_agent_start");
-			renderWidget(ctx, runtime);
+			publish();
 		});
 
-		pi.on("agent_start", async (_event, ctx) => {
+		pi.on("agent_start", async () => {
 			applyPiPetEvent(runtime, "agent_start");
-			renderWidget(ctx, runtime);
+			publish();
 		});
 
-		pi.on("tool_execution_start", async (_event, ctx) => {
+		pi.on("tool_execution_start", async () => {
 			applyPiPetEvent(runtime, "tool_execution_start");
-			renderWidget(ctx, runtime);
+			publish();
 		});
 
-		pi.on("tool_execution_end", async (event, ctx) => {
+		pi.on("tool_execution_end", async (event) => {
 			applyPiPetEvent(runtime, "tool_execution_end", { isError: Boolean((event as { isError?: boolean }).isError) });
-			renderWidget(ctx, runtime);
+			publish();
 		});
 
-		pi.on("agent_settled", async (_event, ctx) => {
+		pi.on("agent_settled", async () => {
 			applyPiPetEvent(runtime, "agent_settled");
-			renderWidget(ctx, runtime);
-			scheduleIdle(ctx);
+			publish();
+			scheduleIdle();
 		});
 
-		pi.on("session_shutdown", async (_event, ctx) => {
+		pi.on("session_shutdown", async () => {
 			clearResetTimer();
-			if (ctx.hasUI) {
-				ctx.ui.setWidget(WIDGET_ID, undefined);
-			}
+			removeCompanionWidgetContribution(pi.events, PET_ART_ID);
+			removeCompanionWidgetContribution(pi.events, PET_STATUS_ID);
 		});
 
 		pi.registerCommand("pet", {
@@ -209,12 +198,12 @@ export function createPiPetExtension(options: { resetToIdleMs?: number } = {}) {
 				switch (command.toLowerCase()) {
 					case "show":
 						runtime.visible = true;
-						update(ctx);
+						update();
 						ctx.ui.notify("π-pet is visible", "info");
 						return;
 					case "hide":
 						runtime.visible = false;
-						update(ctx);
+						update();
 						ctx.ui.notify("π-pet is hidden", "info");
 						return;
 					case "react": {
@@ -224,18 +213,18 @@ export function createPiPetExtension(options: { resetToIdleMs?: number } = {}) {
 							return;
 						}
 						runtime.visible = true;
-						update(ctx, nextState, `manual ${nextState}`);
+						update(nextState, `manual ${nextState}`);
 						ctx.ui.notify(`π-pet reaction: ${nextState}`, "info");
 						return;
 					}
 					case "test":
 						runtime.visible = true;
-						update(ctx, "success", "test sparkle");
-						scheduleIdle(ctx);
+						update("success", "test sparkle");
+						scheduleIdle();
 						ctx.ui.notify("π-pet test reaction sent", "info");
 						return;
 					case "status":
-						update(ctx);
+						update();
 						ctx.ui.notify(
 							`π-pet is ${runtime.visible ? "visible" : "hidden"}; state=${runtime.state}; tools=${runtime.activeTools}`,
 							"info",
