@@ -2,6 +2,11 @@ import { basename } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 import {
+	removeCompanionWidgetContribution,
+	updateCompanionWidget,
+} from "../../lib/companion-widget.ts";
+import {
+	consumeLegacySessionDisplayName,
 	getActiveSessionIdentity,
 	setActiveSessionIdentity,
 } from "../../lib/session-identity.ts";
@@ -13,6 +18,8 @@ import {
 	createSessionIdentityConfig,
 	type SessionIdentityConfig,
 } from "./config.ts";
+
+const COMPANION_CONTRIBUTION_ID = "session-identity";
 
 interface SessionLeaseAllocator {
 	acquire(): Promise<SessionNameLease>;
@@ -39,43 +46,44 @@ export function createSessionIdentityExtension(
 		const formatTitle = options.formatTitle ?? formatSessionIdentityTitle;
 		const reportWarning = options.reportWarning ?? ((message: string) => process.stderr.write(`${message}\n`));
 		let lease: SessionNameLease | undefined;
-		let restoringName = false;
 
 		function synchronizeIdentity(ctx: ExtensionContext): void {
 			if (!lease) return;
 			setActiveSessionIdentity(lease.name);
+			updateCompanionWidget(pi.events, {
+				id: COMPANION_CONTRIBUTION_ID,
+				region: "details",
+				order: 30,
+				lines: [lease.name],
+				tone: "accent",
+			});
 			if (ctx.hasUI) ctx.ui.setTitle(formatTitle(lease.name, ctx.cwd));
 		}
 
-		function clearActiveIdentity(): void {
-			const activeIdentity = getActiveSessionIdentity();
-			if (activeIdentity === undefined) return;
-			setActiveSessionIdentity(undefined);
-			if (pi.getSessionName() === activeIdentity) pi.setSessionName("");
+		function clearLegacySessionName(identity: string | undefined): void {
+			if (identity !== undefined && pi.getSessionName() === identity) {
+				pi.setSessionName("");
+			}
 		}
 
-		function enforceSessionName(ctx: ExtensionContext): void {
-			if (!lease || pi.getSessionName() === lease.name || restoringName) {
-				synchronizeIdentity(ctx);
-				return;
+		function clearActiveIdentity(identity: string | undefined): void {
+			if (identity !== undefined && getActiveSessionIdentity() === identity) {
+				setActiveSessionIdentity(undefined);
 			}
-
-			restoringName = true;
-			try {
-				pi.setSessionName(lease.name);
-			} finally {
-				restoringName = false;
-			}
-			synchronizeIdentity(ctx);
 		}
 
 		pi.on("session_start", async (_event, ctx) => {
+			const legacySessionName = consumeLegacySessionDisplayName();
 			try {
 				allocator ??= new SessionNameAllocator(createConfig());
 				lease = await allocator.acquire();
-				enforceSessionName(ctx);
+				clearLegacySessionName(legacySessionName);
+				synchronizeIdentity(ctx);
 			} catch (error) {
-				clearActiveIdentity();
+				lease = undefined;
+				removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
+				clearLegacySessionName(legacySessionName);
+				clearActiveIdentity(legacySessionName);
 				const message = error instanceof Error ? error.message : String(error);
 				const warning = `Session identity unavailable: ${message}`;
 				if (ctx.hasUI) ctx.ui.notify(warning, "warning");
@@ -83,20 +91,12 @@ export function createSessionIdentityExtension(
 			}
 		});
 
-		pi.on("session_info_changed", async (event, ctx) => {
-			if (!lease) return;
-			if (event.name !== lease.name && !restoringName) {
-				restoringName = true;
-				try {
-					pi.setSessionName(lease.name);
-				} finally {
-					restoringName = false;
-				}
-			}
-			synchronizeIdentity(ctx);
+		pi.on("session_info_changed", async (_event, ctx) => {
+			if (lease && ctx.hasUI) ctx.ui.setTitle(formatTitle(lease.name, ctx.cwd));
 		});
 
 		pi.on("session_shutdown", async (event, ctx) => {
+			removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
 			if (event.reason !== "quit" || !lease || !allocator) return;
 			const releasedLease = lease;
 			const releasingAllocator = allocator;
@@ -109,9 +109,7 @@ export function createSessionIdentityExtension(
 					ctx.ui.notify(`Could not release session identity: ${message}`, "warning");
 				}
 			} finally {
-				if (getActiveSessionIdentity() === releasedLease.name) {
-					setActiveSessionIdentity(undefined);
-				}
+				clearActiveIdentity(releasedLease.name);
 			}
 		});
 	};

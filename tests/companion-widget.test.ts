@@ -28,6 +28,18 @@ test("removing one contribution does not affect remaining components", () => {
 	assert.deepEqual(renderCompanionWidgetLines(contributions.filter((item) => item.id !== "pet")), ["docs ○"]);
 });
 
+test("renders the session name below docs in Pi's accent color", () => {
+	const contributions: CompanionWidgetContribution[] = [
+		{ id: "session-identity", region: "details", order: 30, lines: ["Agent One"], tone: "accent" },
+		{ id: "docs", region: "details", order: 20, lines: ["docs ○"], tone: "text" },
+	];
+
+	assert.deepEqual(
+		renderCompanionWidgetLines(contributions, (tone, text) => `${tone}:${text}`),
+		["text:docs ○", "accent:Agent One"],
+	);
+});
+
 test("orders contributions without knowing component ids", () => {
 	const contributions: CompanionWidgetContribution[] = [
 		{ id: "later", region: "details", order: 20, lines: ["later"] },

@@ -114,7 +114,7 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 
 `pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere. Top-level subagent tool calls get their own temporary pet instances, each tracking that subagent's working, success, or error state independently.
 
-The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, and `doc-guardian`. The pet artwork sits on the left, while context and documentation details are right-aligned. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
+The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, `doc-guardian`, and `session-identity`. The pet artwork sits on the left, while context, documentation, and session identity details are right-aligned. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 
 Current state mapping:
 
@@ -146,7 +146,7 @@ The names may be any unique, non-empty labels without terminal control character
 
 Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
 
-The leased name becomes Pi's session display name. Pi shows it once in its built-in footer and includes it in the terminal tab title; it is not repeated in the companion widget. The name is intentionally restored after `/name` so the local uniqueness guarantee remains intact for the lifetime of the Pi process.
+The leased name appears below the documentation status in the companion widget using Pi's teal accent color, and it remains part of the terminal tab title and notification title. It does not replace Pi's session display name or appear in the built-in footer. Manual names set with `/name` remain independent of the leased process identity.
 
 ### Terminal notifications
 
