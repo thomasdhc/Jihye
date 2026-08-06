@@ -11,6 +11,7 @@ export type PiPetState = "idle" | "thinking" | "working" | "success" | "error";
 export interface PiPetInstance {
 	state: PiPetState;
 	order: number;
+	agentName?: string;
 }
 
 export interface PiPetRuntimeState {
@@ -21,6 +22,19 @@ export interface PiPetRuntimeState {
 	nextSubagentOrder: number;
 }
 
+interface PiPetLayout {
+	top: string;
+	middle: Record<PiPetState, string>;
+	bottom: string | Record<PiPetState, string>;
+}
+
+interface PiPetEventPayload {
+	isError?: boolean;
+	toolName?: string;
+	toolCallId?: string;
+	args?: unknown;
+}
+
 const PET_ART_ID = "pi-pet:art";
 const SUBAGENT_PET_ID_PREFIX = "pi-pet:subagent:";
 const RESET_TO_IDLE_MS = 1500;
@@ -28,12 +42,70 @@ const SUCCESS_RESET_TO_IDLE_MS = 5000;
 
 const PET_FRAME_WIDTH = 7;
 
-const PET_FRAMES: Record<PiPetState, string[]> = {
-	idle: [" /\\_/\\", "( o.o )", " > ^ <"],
-	thinking: [" /\\_/\\", "( -.- )", " > ? <"],
-	working: [" /\\_/\\", "( o.o )", " /|_|\\"],
-	success: [" /\\_/\\", "( ^.^ )", " > ★ <"],
-	error: [" /\\_/\\", "( x.x )", " > ! <"],
+const CAT_FACES: Record<PiPetState, string> = {
+	idle: "( o.o )",
+	thinking: "( -.- )",
+	working: "( o.o )",
+	success: "( ^.^ )",
+	error: "( x.x )",
+};
+
+const DEFAULT_PET_LAYOUT: PiPetLayout = {
+	top: " /\\_/\\",
+	middle: CAT_FACES,
+	bottom: {
+		idle: " > ^ <",
+		thinking: " > ? <",
+		working: " /|_|\\",
+		success: " > ★ <",
+		error: " > ! <",
+	},
+};
+
+const SUBAGENT_PET_LAYOUTS: Record<string, PiPetLayout> = {
+	scout: {
+		top: " /\\ /\\ ",
+		middle: {
+			idle: " (o|o) ",
+			thinking: " (-|-) ",
+			working: " (o|o) ",
+			success: " (^|^) ",
+			error: " (x|x) ",
+		},
+		bottom: " / V \\ ",
+	},
+	researcher: {
+		top: " ,___, ",
+		middle: {
+			idle: " (o,o) ",
+			thinking: " (-,-) ",
+			working: " (o,o) ",
+			success: " (^,^) ",
+			error: " (x,x) ",
+		},
+		bottom: " /===\\ ",
+	},
+	reviewer: {
+		top: " .---. ",
+		middle: {
+			idle: " (o)-Q ",
+			thinking: " (?)-Q ",
+			working: " (o)-Q ",
+			success: " (+)-Q ",
+			error: " (x)-Q ",
+		},
+		bottom: " /___\\ ",
+	},
+	worker: {
+		top: " /===\\ ",
+		middle: CAT_FACES,
+		bottom: " /|_|\\ ",
+	},
+	coordinator: {
+		top: " \\ | / ",
+		middle: CAT_FACES,
+		bottom: " /_^_\\ ",
+	},
 };
 
 export function createPiPetRuntimeState(): PiPetRuntimeState {
@@ -50,22 +122,30 @@ export function setPiPetState(runtime: PiPetRuntimeState, state: PiPetState): vo
 	runtime.state = state;
 }
 
-export function renderPiPetStateLines(state: PiPetState): string[] {
-	return PET_FRAMES[state].map((line) => line.padEnd(PET_FRAME_WIDTH));
+export function renderPiPetStateLines(state: PiPetState, agentName?: string): string[] {
+	const layout = agentName ? (SUBAGENT_PET_LAYOUTS[agentName] ?? DEFAULT_PET_LAYOUT) : DEFAULT_PET_LAYOUT;
+	const bottom = typeof layout.bottom === "string" ? layout.bottom : layout.bottom[state];
+	return [layout.top, layout.middle[state], bottom].map((line) => line.padEnd(PET_FRAME_WIDTH));
 }
 
 export function renderPiPetLines(runtime: PiPetRuntimeState): string[] {
 	return renderPiPetStateLines(runtime.state);
 }
 
-function getSubagentToolCallId(payload?: { toolName?: string; toolCallId?: string }): string | undefined {
+function getSubagentToolCallId(payload?: PiPetEventPayload): string | undefined {
 	return payload?.toolName === "subagent" && payload.toolCallId ? payload.toolCallId : undefined;
+}
+
+function getSubagentAgentName(payload?: PiPetEventPayload): string | undefined {
+	if (!payload?.args || typeof payload.args !== "object") return undefined;
+	const agentName = (payload.args as { agent?: unknown }).agent;
+	return typeof agentName === "string" && agentName.trim() ? agentName.trim() : undefined;
 }
 
 export function applyPiPetEvent(
 	runtime: PiPetRuntimeState,
 	event: string,
-	payload?: { isError?: boolean; toolName?: string; toolCallId?: string },
+	payload?: PiPetEventPayload,
 ): PiPetState {
 	switch (event) {
 		case "session_start":
@@ -87,7 +167,11 @@ export function applyPiPetEvent(
 			runtime.activeTools += 1;
 			const subagentId = getSubagentToolCallId(payload);
 			if (subagentId && !runtime.subagentPets.has(subagentId)) {
-				runtime.subagentPets.set(subagentId, { state: "working", order: runtime.nextSubagentOrder++ });
+				runtime.subagentPets.set(subagentId, {
+					state: "working",
+					order: runtime.nextSubagentOrder++,
+					agentName: getSubagentAgentName(payload),
+				});
 			}
 			setPiPetState(runtime, "working");
 			break;
@@ -178,7 +262,7 @@ export function createPiPetExtension(options: { resetToIdleMs?: number; successR
 				id: getSubagentPetContributionId(toolCallId),
 				region: "visual",
 				order: 20 + pet.order,
-				lines: renderPiPetStateLines(pet.state),
+				lines: renderPiPetStateLines(pet.state, pet.agentName),
 				tone: toneForState(pet.state),
 			});
 		}
@@ -228,7 +312,7 @@ export function createPiPetExtension(options: { resetToIdleMs?: number; successR
 		});
 
 		pi.on("tool_execution_start", async (event) => {
-			const toolEvent = event as { toolName?: string; toolCallId?: string };
+			const toolEvent = event as { toolName?: string; toolCallId?: string; args?: unknown };
 			applyPiPetEvent(runtime, "tool_execution_start", toolEvent);
 			publish();
 		});
