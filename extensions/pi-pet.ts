@@ -79,9 +79,9 @@ export function applyPiPetEvent(runtime: PiPetRuntimeState, event: string, paylo
 
 function toneForState(state: PiPetState): CompanionWidgetTone {
 	if (state === "thinking") return "accent";
-	if (state === "working") return "syntaxString";
+	if (state === "working") return "mdLink";
 	if (state === "success") return "thinkingHigh";
-	if (state === "error") return "error";
+	if (state === "error") return "mdHeading";
 	return "text";
 }
 

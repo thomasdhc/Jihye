@@ -9,6 +9,8 @@ export type CompanionWidgetTone =
 	| "success"
 	| "error"
 	| "syntaxString"
+	| "mdLink"
+	| "mdHeading"
 	| "thinkingHigh";
 
 export interface CompanionWidgetContribution {

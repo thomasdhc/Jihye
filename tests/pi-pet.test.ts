@@ -66,10 +66,10 @@ test("publishes one persistent pet contribution with distinct lifecycle tones", 
 	assert.equal(updates.at(-1)?.contribution?.tone, "accent");
 
 	await handlers.get("tool_execution_start")?.({});
-	assert.equal(updates.at(-1)?.contribution?.tone, "syntaxString");
+	assert.equal(updates.at(-1)?.contribution?.tone, "mdLink");
 
 	await handlers.get("tool_execution_end")?.({ isError: true });
-	assert.equal(updates.at(-1)?.contribution?.tone, "error");
+	assert.equal(updates.at(-1)?.contribution?.tone, "mdHeading");
 
 	await handlers.get("session_start")?.({});
 	await handlers.get("agent_settled")?.({});
