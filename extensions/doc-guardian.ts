@@ -40,6 +40,12 @@ export interface ContextFile {
 
 export type DocHealth = "healthy" | "caution" | "warning";
 
+export const DOC_GUARDIAN_STATUS_EVENT = "doc-guardian:status";
+
+export interface DocGuardianStatusPayload {
+	label?: string;
+}
+
 export interface FileStats {
 	path: string;
 	label: string;
@@ -120,6 +126,7 @@ export function createDocGuardianExtension(options: DocGuardianOptions = {}) {
 			}
 			contextFiles = [];
 			warnedFiles = new Set<string>();
+			publishStatus([]);
 			ctx.ui.setStatus("doc-guardian", undefined);
 		});
 
@@ -207,12 +214,15 @@ export function createDocGuardianExtension(options: DocGuardianOptions = {}) {
 			},
 		});
 
+		function publishStatus(files: ContextFile[]): void {
+			(pi as any).events?.emit?.(DOC_GUARDIAN_STATUS_EVENT, {
+				label: files.length > 0 ? statusIcon(statFiles(files, home)) : undefined,
+			} satisfies DocGuardianStatusPayload);
+		}
+
 		function refreshStatus(files: ContextFile[], ui: any): void {
-			if (files.length === 0) {
-				ui.setStatus("doc-guardian", undefined);
-				return;
-			}
-			ui.setStatus("doc-guardian", statusIcon(statFiles(files, home)));
+			publishStatus(files);
+			ui.setStatus("doc-guardian", undefined);
 		}
 	};
 }

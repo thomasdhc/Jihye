@@ -9,6 +9,7 @@ import {
 	renderPiPetLines,
 } from "../extensions/pi-pet.ts";
 import { CONTEXT_STATUS_EVENT } from "../extensions/context-status.ts";
+import { DOC_GUARDIAN_STATUS_EVENT } from "../extensions/doc-guardian.ts";
 
 test("normalizes supported pi pet states", () => {
 	assert.equal(normalizePetState("idle"), "idle");
@@ -42,13 +43,14 @@ test("renders message next to the pet art without a state label", () => {
 	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\      ready when you are", "( o.o )", " > ^ <"]);
 });
 
-test("renders context status and message as a fixed-distance right column", () => {
+test("renders shared status and message as a fixed-distance right column", () => {
 	const runtime = createPiPetRuntimeState();
 	runtime.contextStatus = "ctx [████░░░░░░] 42% (115k/272k)";
+	runtime.docStatus = "docs ○";
 	assert.deepEqual(renderPiPetLines(runtime), [
 		" /\\_/\\      ctx [████░░░░░░] 42% (115k/272k)",
-		"( o.o )     ready when you are",
-		" > ^ <",
+		"( o.o )     docs ○",
+		" > ^ <      ready when you are",
 	]);
 });
 
@@ -94,6 +96,7 @@ test("registers pet command and updates the widget", async () => {
 
 	assert.ok(commandHandler);
 	eventBus.get(CONTEXT_STATUS_EVENT)?.({ label: "ctx [████░░░░░░] 42% (115k/272k)" });
+	eventBus.get(DOC_GUARDIAN_STATUS_EVENT)?.({ label: "docs ○" });
 	await handlers.get("session_start")?.({}, ctx);
 	assert.equal(typeof widgets.at(-1), "function");
 

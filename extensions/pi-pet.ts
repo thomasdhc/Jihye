@@ -2,6 +2,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { truncateToWidth } from "@earendil-works/pi-tui";
 
 import { CONTEXT_STATUS_EVENT, type ContextStatusPayload } from "./context-status.ts";
+import { DOC_GUARDIAN_STATUS_EVENT, type DocGuardianStatusPayload } from "./doc-guardian.ts";
 
 export type PiPetState = "idle" | "thinking" | "working" | "success" | "error";
 
@@ -12,6 +13,7 @@ export interface PiPetRuntimeState {
 	activeTools: number;
 	sawError: boolean;
 	contextStatus?: string;
+	docStatus?: string;
 }
 
 const WIDGET_ID = "pi-pet";
@@ -59,7 +61,7 @@ export function renderPiPetLines(runtime: PiPetRuntimeState, style?: (state: PiP
 
 	const decorate = style ?? ((_state, text) => text);
 	const frame = PET_FRAMES[runtime.state];
-	const detailLines = [runtime.contextStatus, runtime.message].filter((line): line is string => Boolean(line));
+	const detailLines = [runtime.contextStatus, runtime.docStatus, runtime.message].filter((line): line is string => Boolean(line));
 	return frame.map((line, index) => {
 		const detail = detailLines[index];
 		return decorate(runtime.state, detail ? `${line.padEnd(PET_COLUMN_WIDTH)}  ${detail}` : line);
@@ -156,6 +158,9 @@ export function createPiPetExtension(options: { resetToIdleMs?: number } = {}) {
 
 		pi.events.on(CONTEXT_STATUS_EVENT, (payload: ContextStatusPayload) => {
 			runtime.contextStatus = payload.label;
+		});
+		pi.events.on(DOC_GUARDIAN_STATUS_EVENT, (payload: DocGuardianStatusPayload) => {
+			runtime.docStatus = payload.label;
 		});
 
 		pi.on("session_start", async (_event, ctx) => {

@@ -110,7 +110,7 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 
 ### Pi pet
 
-`pi-pet` is a ground-up placeholder companion rendered below the editor. It uses ASCII frames for now, shows `ctx-manager` usage beside the pet when available, and reacts to local Pi lifecycle events without sending prompt, tool, command, path, or output text anywhere.
+`pi-pet` is a ground-up placeholder companion rendered below the editor. It uses ASCII frames for now, shows `ctx-manager` usage and `doc-guardian` health beside the pet when available, and reacts to local Pi lifecycle events without sending prompt, tool, command, path, or output text anywhere.
 
 Commands:
 
