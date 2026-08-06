@@ -11,10 +11,10 @@ test("composes independent visual and detail contributions", () => {
 		{ id: "context", region: "details", order: 10, lines: ["ctx 42%"] },
 	];
 
-	assert.deepEqual(renderCompanionWidgetLines(contributions), [
-		"ctx 42%   /\\_/\\",
-		"docs ○   ( o.o )",
-		"          > ^ <",
+	assert.deepEqual(renderCompanionWidgetLines(contributions, undefined, 20), [
+		" /\\_/\\       ctx 42%",
+		"( o.o )       docs ○",
+		" > ^ <",
 	]);
 });
 
@@ -24,7 +24,7 @@ test("removing one contribution does not affect remaining components", () => {
 		{ id: "docs", region: "details", order: 20, lines: ["docs ○"] },
 	];
 
-	assert.deepEqual(renderCompanionWidgetLines(contributions), ["docs ○  pet"]);
+	assert.deepEqual(renderCompanionWidgetLines(contributions), ["pet  docs ○"]);
 	assert.deepEqual(renderCompanionWidgetLines(contributions.filter((item) => item.id !== "pet")), ["docs ○"]);
 });
 
@@ -70,5 +70,5 @@ test("preserves contributions published before the host session-start handler", 
 		{ requestRender() {} },
 		{ fg(_tone: string, text: string) { return text; } },
 	);
-	assert.deepEqual(component?.render(80), ["published early"]);
+	assert.deepEqual(component?.render(80), [`${" ".repeat(65)}published early`]);
 });

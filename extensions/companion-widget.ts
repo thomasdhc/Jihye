@@ -14,6 +14,7 @@ const COLUMN_GAP = 2;
 export function renderCompanionWidgetLines(
 	contributions: Iterable<CompanionWidgetContribution>,
 	style: (tone: CompanionWidgetTone, text: string) => string = (_tone, text) => text,
+	width?: number,
 ): string[] {
 	const active = [...contributions].filter((item) => item.lines.length > 0).sort((a, b) => a.order - b.order);
 	const visual = active.filter((item) => item.region === "visual");
@@ -29,15 +30,26 @@ export function renderCompanionWidgetLines(
 	const detailLines = details.flatMap((item) =>
 		item.lines.map((line) => style(item.tone ?? "muted", line)),
 	);
+	const visualWidth = Math.max(0, ...visualLines.map(visibleWidth));
 	const detailWidth = Math.max(0, ...detailLines.map(visibleWidth));
 	const height = Math.max(visualLines.length, detailLines.length);
 
 	return Array.from({ length: height }, (_, row) => {
-		const left = detailLines[row] ?? "";
-		const right = visualLines[row] ?? "";
+		const left = visualLines[row] ?? "";
+		const right = detailLines[row] ?? "";
 		if (!right) return left;
-		if (!left && detailWidth === 0) return right;
-		return `${left}${" ".repeat(detailWidth - visibleWidth(left) + COLUMN_GAP)}${right}`;
+		if (!left && visualWidth === 0) {
+			const rightOffset = width === undefined ? 0 : Math.max(0, width - visibleWidth(right));
+			return `${" ".repeat(rightOffset)}${right}`;
+		}
+
+		const leftWidth = visibleWidth(left);
+		const rightStart = width === undefined
+			? leftWidth + COLUMN_GAP
+			: Math.max(visualWidth + COLUMN_GAP, width - detailWidth);
+		const rightInset = detailWidth - visibleWidth(right);
+		const gap = Math.max(COLUMN_GAP, rightStart - leftWidth + rightInset);
+		return `${left}${" ".repeat(gap)}${right}`;
 	});
 }
 
@@ -59,7 +71,7 @@ export default function companionWidgetExtension(pi: ExtensionAPI): void {
 				requestRender = () => tui.requestRender();
 				return {
 					render(width: number) {
-						return renderCompanionWidgetLines(contributions.values(), (tone, text) => theme.fg(tone, text)).map(
+						return renderCompanionWidgetLines(contributions.values(), (tone, text) => theme.fg(tone, text), width).map(
 							(line) => truncateToWidth(line, width),
 						);
 					},
