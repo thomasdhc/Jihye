@@ -7,7 +7,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | Extension | Purpose |
 |---|---|
 | `bash-guard` | Interactive prompt for destructive bash and GitHub/GitLab CLI commands; headless hard-block in subagents |
-| `ctx-manager` | Context usage status bar + auto-compaction at 65% |
+| `ctx-manager` | Context usage publisher + auto-compaction at 65% |
 | `custom-header` | Custom Pi startup header |
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
@@ -110,7 +110,7 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 
 ### Pi pet
 
-`pi-pet` is a ground-up placeholder companion rendered below the editor. It uses ASCII frames for now and reacts to local Pi lifecycle events without sending prompt, tool, command, path, or output text anywhere.
+`pi-pet` is a ground-up placeholder companion rendered below the editor. It uses ASCII frames for now, shows `ctx-manager` usage beside the pet when available, and reacts to local Pi lifecycle events without sending prompt, tool, command, path, or output text anywhere.
 
 Commands:
 

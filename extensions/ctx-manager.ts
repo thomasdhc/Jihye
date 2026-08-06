@@ -1,7 +1,7 @@
 /**
  * ctx-manager — context usage tracking + auto-compaction
  *
- * Status bar: always shows current context % and token count
+ * Publishes current context % and token count for companion widgets.
  * Warn at WARN_THRESHOLD, auto-compact at COMPACT_THRESHOLD
  *
  * Commands:
@@ -10,38 +10,27 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
+import { CONTEXT_STATUS_EVENT, createContextStatusPayload } from "./context-status.ts";
+
 const WARN_THRESHOLD    = 0.50;   // 50%  -- yellow warning notification
 const COMPACT_THRESHOLD = 0.65;   // 65%  -- auto-compact silently
-const BAR_WIDTH         = 10;
 
-function fmt(n: number) {
-  return n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n);
-}
-
-function contextBar(pct: number) {
-  const clamped = Math.max(0, Math.min(1, pct));
-  const filled = Math.round(clamped * BAR_WIDTH);
-  return "█".repeat(filled) + "░".repeat(BAR_WIDTH - filled);
-}
-
-function updateStatus(ctx: ExtensionContext) {
+function publishStatus(pi: ExtensionAPI, ctx: ExtensionContext) {
   const usage = ctx.getContextUsage();
   if (!usage) return;
 
-  const pct = usage.tokens / usage.contextWindow;
-  const bar = contextBar(pct);
-  const label = `ctx [${bar}] ${Math.round(pct * 100)}% (${fmt(usage.tokens)}/${fmt(usage.contextWindow)})`;
-  ctx.ui.setStatus("ctx-manager", label);
+  ctx.ui.setStatus("ctx-manager", undefined);
+  pi.events.emit(CONTEXT_STATUS_EVENT, createContextStatusPayload(usage));
 }
 
 export default function (pi: ExtensionAPI) {
 
-  // Update status bar after every agent turn
+  // Publish context usage after every agent turn
   pi.on("agent_end", async (_event, ctx) => {
     const usage = ctx.getContextUsage();
     if (!usage) return;
 
-    updateStatus(ctx);
+    publishStatus(pi, ctx);
 
     const pct = usage.tokens / usage.contextWindow;
 
@@ -62,9 +51,9 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
-  // Also update on session restore so status bar is populated immediately
+  // Also publish on session restore so companion widgets can populate immediately
   pi.on("session_start", async (_event, ctx) => {
-    updateStatus(ctx);
+    publishStatus(pi, ctx);
   });
 
   // /ctx — quick usage readout

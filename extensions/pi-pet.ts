@@ -1,6 +1,8 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 
+import { CONTEXT_STATUS_EVENT, type ContextStatusPayload } from "./context-status.ts";
+
 export type PiPetState = "idle" | "thinking" | "working" | "success" | "error";
 
 export interface PiPetRuntimeState {
@@ -9,10 +11,12 @@ export interface PiPetRuntimeState {
 	message: string;
 	activeTools: number;
 	sawError: boolean;
+	contextStatus?: string;
 }
 
 const WIDGET_ID = "pi-pet";
 const RESET_TO_IDLE_MS = 1500;
+const PET_COLUMN_WIDTH = 10;
 
 const STATE_MESSAGES: Record<PiPetState, string> = {
 	idle: "ready when you are",
@@ -55,10 +59,10 @@ export function renderPiPetLines(runtime: PiPetRuntimeState, style?: (state: PiP
 
 	const decorate = style ?? ((_state, text) => text);
 	const frame = PET_FRAMES[runtime.state];
-	const messageLines = [runtime.message];
+	const detailLines = [runtime.contextStatus, runtime.message].filter((line): line is string => Boolean(line));
 	return frame.map((line, index) => {
-		const message = messageLines[index] ? `  ${messageLines[index]}` : "";
-		return decorate(runtime.state, `${line}${message}`);
+		const detail = detailLines[index];
+		return decorate(runtime.state, detail ? `${line.padEnd(PET_COLUMN_WIDTH)}  ${detail}` : line);
 	});
 }
 
@@ -149,6 +153,10 @@ export function createPiPetExtension(options: { resetToIdleMs?: number } = {}) {
 				renderWidget(ctx, runtime);
 			}, resetToIdleMs);
 		}
+
+		pi.events.on(CONTEXT_STATUS_EVENT, (payload: ContextStatusPayload) => {
+			runtime.contextStatus = payload.label;
+		});
 
 		pi.on("session_start", async (_event, ctx) => {
 			applyPiPetEvent(runtime, "session_start");

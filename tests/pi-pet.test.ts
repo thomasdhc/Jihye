@@ -8,6 +8,7 @@ import {
 	normalizePetState,
 	renderPiPetLines,
 } from "../extensions/pi-pet.ts";
+import { CONTEXT_STATUS_EVENT } from "../extensions/context-status.ts";
 
 test("normalizes supported pi pet states", () => {
 	assert.equal(normalizePetState("idle"), "idle");
@@ -38,7 +39,17 @@ test("keeps an error reaction through agent settlement", () => {
 
 test("renders message next to the pet art without a state label", () => {
 	const runtime = createPiPetRuntimeState();
-	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\  ready when you are", "( o.o )", " > ^ <"]);
+	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\      ready when you are", "( o.o )", " > ^ <"]);
+});
+
+test("renders context status and message as a fixed-distance right column", () => {
+	const runtime = createPiPetRuntimeState();
+	runtime.contextStatus = "ctx [████░░░░░░] 42% (115k/272k)";
+	assert.deepEqual(renderPiPetLines(runtime), [
+		" /\\_/\\      ctx [████░░░░░░] 42% (115k/272k)",
+		"( o.o )     ready when you are",
+		" > ^ <",
+	]);
 });
 
 test("renders no widget lines when hidden", () => {
@@ -65,7 +76,13 @@ test("registers pet command and updates the widget", async () => {
 		},
 	};
 
+	const eventBus = new Map<string, (payload: unknown) => void>();
 	createPiPetExtension({ resetToIdleMs: 1 })({
+		events: {
+			on(event: string, handler: (payload: unknown) => void) {
+				eventBus.set(event, handler);
+			},
+		},
 		on(event: string, handler: Handler) {
 			handlers.set(event, handler);
 		},
@@ -76,6 +93,7 @@ test("registers pet command and updates the widget", async () => {
 	} as never);
 
 	assert.ok(commandHandler);
+	eventBus.get(CONTEXT_STATUS_EVENT)?.({ label: "ctx [████░░░░░░] 42% (115k/272k)" });
 	await handlers.get("session_start")?.({}, ctx);
 	assert.equal(typeof widgets.at(-1), "function");
 
