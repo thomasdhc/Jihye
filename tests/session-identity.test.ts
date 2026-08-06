@@ -20,7 +20,7 @@ import {
 } from "../extensions/session-identity/allocator.ts";
 import {
 	createSessionIdentityConfig,
-	SESSION_NAME_POOL,
+	SESSION_IDENTITY_CONFIG_FILE,
 	type SessionIdentityConfig,
 } from "../extensions/session-identity/config.ts";
 import {
@@ -28,13 +28,20 @@ import {
 	formatSessionIdentityTitle,
 } from "../extensions/session-identity/index.ts";
 import {
-	COMPANION_WIDGET_UPDATE_EVENT,
-	type CompanionWidgetUpdate,
-} from "../lib/companion-widget.ts";
-import {
 	getActiveSessionIdentity,
 	setActiveSessionIdentity,
 } from "../lib/session-identity.ts";
+
+const EXAMPLE_NAMES = [
+	"Aqila",
+	"Athena",
+	"Ji-hye",
+	"Cyrus",
+	"Lozen",
+	"Odin",
+	"Augustine",
+	"Manuela",
+] as const;
 
 function temporaryDirectory(): string {
 	return mkdtempSync(join(tmpdir(), "pi-session-identity-"));
@@ -42,7 +49,7 @@ function temporaryDirectory(): string {
 
 function testConfig(
 	stateDirectory: string,
-	pool: readonly string[] = SESSION_NAME_POOL,
+	pool: readonly string[] = EXAMPLE_NAMES,
 ): SessionIdentityConfig {
 	return {
 		stateDirectory,
@@ -77,7 +84,7 @@ function dependencies(
 function allocator(
 	stateDirectory: string,
 	leaseOwner: LeaseOwner,
-	pool: readonly string[] = SESSION_NAME_POOL,
+	pool: readonly string[] = EXAMPLE_NAMES,
 	customDependencies?: SessionNameAllocatorDependencies,
 ): SessionNameAllocator {
 	return new SessionNameAllocator(
@@ -87,36 +94,77 @@ function allocator(
 	);
 }
 
-test("defines the selected session-name pool and fallback format", () => {
-	assert.deepEqual(SESSION_NAME_POOL, [
-		"Aqila",
-		"Athena",
-		"Ji-hye",
-		"Cyrus",
-		"Lozen",
-		"Odin",
-		"Augustine",
-		"Manuela",
-	]);
-	assert.equal(formatFallbackName("pi-agent", 1, 2), "pi-agent-01");
-	assert.equal(formatFallbackName("pi-agent", 105, 2), "pi-agent-105");
+test("loads the bundled example names and fallback format", () => {
+	const directory = temporaryDirectory();
+	try {
+		const config = createSessionIdentityConfig(directory);
+		assert.deepEqual(config.pool, EXAMPLE_NAMES);
+		assert.equal(config.stateDirectory, join(directory, "state", "session-identity"));
+		assert.equal(formatFallbackName(config.fallbackPrefix, 1, config.fallbackMinimumDigits), "pi-agent-01");
+		assert.equal(formatFallbackName(config.fallbackPrefix, 105, config.fallbackMinimumDigits), "pi-agent-105");
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
+});
 
-	const config = createSessionIdentityConfig("/tmp/pi-agent");
-	assert.equal(config.stateDirectory, "/tmp/pi-agent/state/session-identity");
+test("loads a user-owned session identity config instead of the bundled example", () => {
+	const directory = temporaryDirectory();
+	try {
+		writeFileSync(join(directory, SESSION_IDENTITY_CONFIG_FILE), `${JSON.stringify({
+			names: ["Red", "Blue"],
+			fallbackPrefix: "helper",
+			fallbackMinimumDigits: 3,
+		})}\n`);
+
+		const config = createSessionIdentityConfig(directory);
+		assert.deepEqual(config.pool, ["Red", "Blue"]);
+		assert.equal(config.fallbackPrefix, "helper");
+		assert.equal(config.fallbackMinimumDigits, 3);
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
+});
+
+test("rejects an invalid user config instead of silently using the example", () => {
+	const directory = temporaryDirectory();
+	try {
+		const configPath = join(directory, SESSION_IDENTITY_CONFIG_FILE);
+		writeFileSync(configPath, `${JSON.stringify({ names: ["Agent", "agent"] })}\n`);
+		assert.throws(
+			() => createSessionIdentityConfig(directory),
+			(error: unknown) => error instanceof Error
+				&& error.message.includes(configPath)
+				&& error.message.includes("case-insensitive filesystems"),
+		);
+
+		writeFileSync(configPath, `${JSON.stringify({ names: ["Aqila\nAthena"] })}\n`);
+		assert.throws(
+			() => createSessionIdentityConfig(directory),
+			/control characters/,
+		);
+
+		writeFileSync(configPath, `${JSON.stringify({ names: ["界".repeat(64)] })}\n`);
+		assert.throws(
+			() => createSessionIdentityConfig(directory),
+			/portable lease filename/,
+		);
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
 });
 
 test("allocates released names in persistent round-robin order", async () => {
 	const directory = temporaryDirectory();
 	try {
 		const assigned: string[] = [];
-		for (let index = 0; index < SESSION_NAME_POOL.length + 1; index += 1) {
+		for (let index = 0; index < EXAMPLE_NAMES.length + 1; index += 1) {
 			const currentAllocator = allocator(directory, owner(index + 1));
 			const lease = await currentAllocator.acquire();
 			assigned.push(lease.name);
 			assert.equal(await currentAllocator.release(lease), true);
 		}
 
-		assert.deepEqual(assigned, [...SESSION_NAME_POOL, SESSION_NAME_POOL[0]]);
+		assert.deepEqual(assigned, [...EXAMPLE_NAMES, EXAMPLE_NAMES[0]]);
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
@@ -137,11 +185,24 @@ test("reuses the same process lease across extension reloads", async () => {
 	}
 });
 
+test("treats case-only lease names as occupied across config changes", async () => {
+	const directory = temporaryDirectory();
+	try {
+		const firstLease = await allocator(directory, owner(1), ["Agent"]).acquire();
+		assert.equal(firstLease.name, "Agent");
+
+		const secondLease = await allocator(directory, owner(2), ["agent"]).acquire();
+		assert.equal(secondLease.name, "pi-agent-01");
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
+});
+
 test("keeps concurrent allocations unique and falls back after pool exhaustion", async () => {
 	const directory = temporaryDirectory();
 	try {
 		const allocators = Array.from(
-			{ length: SESSION_NAME_POOL.length + 2 },
+			{ length: EXAMPLE_NAMES.length + 2 },
 			(_, index) => allocator(directory, owner(index + 1)),
 		);
 		const leases = await Promise.all(allocators.map((item) => item.acquire()));
@@ -150,7 +211,7 @@ test("keeps concurrent allocations unique and falls back after pool exhaustion",
 		assert.equal(new Set(names).size, names.length);
 		assert.deepEqual(
 			new Set(names),
-			new Set([...SESSION_NAME_POOL, "pi-agent-01", "pi-agent-02"]),
+			new Set([...EXAMPLE_NAMES, "pi-agent-01", "pi-agent-02"]),
 		);
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
@@ -367,6 +428,61 @@ test("recovers a registry lock left by a crashed process", async () => {
 	}
 });
 
+test("reports an invalid user config without disabling extension registration", async () => {
+	type Handler = (event: Record<string, unknown>, ctx: any) => Promise<void> | void;
+	const handlers = new Map<string, Handler>();
+	const notifications: string[] = [];
+	const headlessWarnings: string[] = [];
+	let currentName: string | undefined = "Aqila";
+	const extension = createSessionIdentityExtension({
+		createConfig() {
+			throw new Error("Invalid session identity config at /tmp/session-identity.json: names must be unique");
+		},
+		reportWarning(message) {
+			headlessWarnings.push(message);
+		},
+	});
+
+	extension({
+		on(event: string, handler: Handler) {
+			handlers.set(event, handler);
+		},
+		getSessionName() {
+			return currentName;
+		},
+		setSessionName(name: string) {
+			currentName = name;
+		},
+	} as never);
+
+	setActiveSessionIdentity("Aqila");
+	try {
+		await handlers.get("session_start")?.({}, {
+			hasUI: true,
+			cwd: "/workspace/project",
+			ui: {
+				notify(message: string) {
+					notifications.push(message);
+				},
+			},
+		});
+		assert.equal(currentName, "");
+		assert.equal(getActiveSessionIdentity(), undefined);
+
+		await handlers.get("session_start")?.({}, {
+			hasUI: false,
+			cwd: "/workspace/project",
+			ui: {},
+		});
+
+		const warning = "Session identity unavailable: Invalid session identity config at /tmp/session-identity.json: names must be unique";
+		assert.deepEqual(notifications, [warning]);
+		assert.deepEqual(headlessWarnings, [warning]);
+	} finally {
+		setActiveSessionIdentity(undefined);
+	}
+});
+
 test("synchronizes the session name, terminal title, and process identity", async () => {
 	type Handler = (event: Record<string, unknown>, ctx: TestContext) => Promise<void> | void;
 	interface TestContext {
@@ -388,7 +504,7 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 	const handlers = new Map<string, Handler>();
 	const titles: string[] = [];
 	const notifications: string[] = [];
-	const companionUpdates: CompanionWidgetUpdate[] = [];
+	const emittedEvents: string[] = [];
 	const extension = createSessionIdentityExtension({
 		allocator: {
 			async acquire() {
@@ -404,8 +520,8 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 
 	extension({
 		events: {
-			emit(event: string, update: CompanionWidgetUpdate) {
-				if (event === COMPANION_WIDGET_UPDATE_EVENT) companionUpdates.push(update);
+			emit(event: string) {
+				emittedEvents.push(event);
 			},
 		},
 		on(event: string, handler: Handler) {
@@ -439,16 +555,7 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 		assert.equal(getActiveSessionIdentity(), "Aqila");
 		assert.equal(titles.at(-1), "π - Aqila - project");
 		assert.deepEqual(notifications, []);
-		assert.deepEqual(companionUpdates.at(-1), {
-			id: "session-identity",
-			contribution: {
-				id: "session-identity",
-				region: "details",
-				order: 30,
-				lines: ["Aqila"],
-				tone: "accent",
-			},
-		});
+		assert.deepEqual(emittedEvents, []);
 
 		currentName = "manual-name";
 		await handlers.get("session_info_changed")?.({ name: "manual-name" }, ctx);
@@ -463,7 +570,6 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 		await handlers.get("session_shutdown")?.({ reason: "quit" }, ctx);
 		assert.equal(releaseCount, 1);
 		assert.equal(getActiveSessionIdentity(), undefined);
-		assert.deepEqual(companionUpdates.at(-1), { id: "session-identity" });
 	} finally {
 		setActiveSessionIdentity(undefined);
 	}

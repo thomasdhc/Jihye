@@ -1,0 +1,14 @@
+{
+  "names": [
+    "Aqila",
+    "Athena",
+    "Ji-hye",
+    "Cyrus",
+    "Lozen",
+    "Odin",
+    "Augustine",
+    "Manuela"
+  ],
+  "fallbackPrefix": "pi-agent",
+  "fallbackMinimumDigits": 2
+}

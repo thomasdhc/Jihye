@@ -114,6 +114,10 @@ function safeIdentifier(value: string): string {
 	return value.replace(/[^a-zA-Z0-9_.-]/g, "-");
 }
 
+function portableLeaseKey(name: string): string {
+	return encodeURIComponent(name).toLowerCase();
+}
+
 function leaseFileName(name: string): string {
 	return `${encodeURIComponent(name)}.json`;
 }
@@ -204,8 +208,8 @@ export class SessionNameAllocator {
 		private readonly owner: LeaseOwner = getProcessLeaseOwner(),
 		dependencies: SessionNameAllocatorDependencies = {},
 	) {
-		if (new Set(config.pool).size !== config.pool.length) {
-			throw new Error("Session identity names must be unique");
+		if (new Set(config.pool.map(portableLeaseKey)).size !== config.pool.length) {
+			throw new Error("Session identity names must be unique on case-insensitive filesystems");
 		}
 		if (!config.fallbackPrefix.trim()) {
 			throw new Error("Session identity fallback prefix must not be empty");
@@ -237,7 +241,7 @@ export class SessionNameAllocator {
 			if (existing) return this.publicLease(existing);
 
 			const cursor = await this.readCursor();
-			const occupiedNames = new Set(leases.keys());
+			const occupiedNameKeys = new Set([...leases.keys()].map(portableLeaseKey));
 			let name: string | undefined;
 
 			if (this.config.pool.length > 0) {
@@ -245,7 +249,7 @@ export class SessionNameAllocator {
 				for (let offset = 0; offset < this.config.pool.length; offset += 1) {
 					const index = (start + offset) % this.config.pool.length;
 					const candidate = this.config.pool[index];
-					if (occupiedNames.has(candidate)) continue;
+					if (occupiedNameKeys.has(portableLeaseKey(candidate))) continue;
 					name = candidate;
 					cursor.nextPoolIndex = (index + 1) % this.config.pool.length;
 					break;
@@ -262,10 +266,10 @@ export class SessionNameAllocator {
 						this.config.fallbackMinimumDigits,
 					);
 					fallbackNumber = fallbackNumber === Number.MAX_SAFE_INTEGER ? 1 : fallbackNumber + 1;
-					if (fallbackNumber === firstFallbackNumber && occupiedNames.has(name)) {
+					if (fallbackNumber === firstFallbackNumber && occupiedNameKeys.has(portableLeaseKey(name))) {
 						throw new Error("Session identity fallback namespace is exhausted");
 					}
-				} while (occupiedNames.has(name));
+				} while (occupiedNameKeys.has(portableLeaseKey(name)));
 				cursor.nextFallbackNumber = fallbackNumber;
 			}
 

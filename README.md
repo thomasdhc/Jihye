@@ -130,15 +130,27 @@ Future asset work can replace the ASCII frame table with a small local pet manif
 
 ### Session identities
 
-`session-identity` automatically leases one name to each running local Pi process in round-robin order:
+`session-identity` automatically leases one name to each running local Pi process in round-robin order. The bundled defaults live in [`examples/session-identity.json`](examples/session-identity.json):
 
 ```text
 Aqila → Athena → Ji-hye → Cyrus → Lozen → Odin → Augustine → Manuela
 ```
 
-If every selected name is active, additional processes receive `pi-agent-01`, `pi-agent-02`, and so on. Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
+To replace them, create `~/.pi/agent/session-identity.json` (or `$PI_CODING_AGENT_DIR/session-identity.json` when using a custom agent directory):
 
-The leased name becomes Pi's session display name and terminal tab title, and appears below `docs` in the companion widget using Pi's accent color. It is intentionally restored after `/name` so the local uniqueness guarantee remains intact for the lifetime of the Pi process.
+```json
+{
+  "names": ["Red", "Blue", "Green"],
+  "fallbackPrefix": "helper",
+  "fallbackMinimumDigits": 2
+}
+```
+
+The names may be any unique, non-empty labels without terminal control characters. Missing optional fallback settings use `pi-agent-01`, `pi-agent-02`, and so on. A malformed user file stops identity allocation and produces a warning instead of silently reverting to the example. Restart active Pi processes after changing the file so they release their current leases and adopt the new pool.
+
+Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
+
+The leased name becomes Pi's session display name. Pi shows it once in its built-in footer and includes it in the terminal tab title; it is not repeated in the companion widget. The name is intentionally restored after `/name` so the local uniqueness guarantee remains intact for the lifetime of the Pi process.
 
 ### Terminal notifications
 
