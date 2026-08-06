@@ -113,7 +113,7 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 
 `pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere.
 
-The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, and `doc-guardian`. Context and documentation details use Pi's normal text color on the left, while the pet artwork sits on the right. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
+The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, and `doc-guardian`. The pet artwork sits on the left, while context and documentation details are right-aligned. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 
 Current state mapping:
 
