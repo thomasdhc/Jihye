@@ -112,7 +112,15 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 
 ### Pi pet
 
-`pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere. Top-level subagent tool calls get their own temporary pet instances, each tracking that subagent's working, success, or error state independently.
+`pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere. Top-level subagent tool calls get their own temporary pet instances, each tracking that subagent's working, success, or error state independently. Bundled roles use compact, role-specific silhouettes; custom agents fall back to the generic cat.
+
+| Subagent | Pet motif |
+|---|---|
+| `scout` | Fox with binoculars |
+| `researcher` | Owl behind a book |
+| `reviewer` | Inspector with a magnifier |
+| `worker` | Builder in a hard hat |
+| `coordinator` | Conductor joining several paths |
 
 The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, `doc-guardian`, and `session-identity`. The pet artwork sits on the left, while context, documentation, and session identity details are right-aligned. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 

@@ -11,6 +11,16 @@ import {
 } from "../extensions/pi-pet.ts";
 import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../lib/companion-widget.ts";
 
+const ROLE_PET_WORKING_FRAMES = {
+	scout: [" /\\ /\\ ", " (o|o) ", " / V \\ "],
+	researcher: [" ,___, ", " (o,o) ", " /===\\ "],
+	reviewer: [" .---. ", " (o)-Q ", " /___\\ "],
+	worker: [" /===\\ ", "( o.o )", " /|_|\\ "],
+	coordinator: [" \\ | / ", "( o.o )", " /_^_\\ "],
+} as const;
+
+const PET_STATES = ["idle", "thinking", "working", "success", "error"] as const;
+
 test("maps lifecycle events to pet states", () => {
 	const runtime = createPiPetRuntimeState();
 
@@ -32,13 +42,23 @@ test("keeps an error reaction through agent settlement", () => {
 	assert.equal(applyPiPetEvent(runtime, "agent_settled"), "error");
 });
 
-test("tracks top-level subagent pets independently", () => {
+test("tracks top-level subagent roles and states independently", () => {
 	const runtime = createPiPetRuntimeState();
 
-	applyPiPetEvent(runtime, "tool_execution_start", { toolName: "subagent", toolCallId: "a" });
-	applyPiPetEvent(runtime, "tool_execution_start", { toolName: "subagent", toolCallId: "b" });
+	applyPiPetEvent(runtime, "tool_execution_start", {
+		toolName: "subagent",
+		toolCallId: "a",
+		args: { agent: "scout" },
+	});
+	applyPiPetEvent(runtime, "tool_execution_start", {
+		toolName: "subagent",
+		toolCallId: "b",
+		args: { agent: "researcher" },
+	});
 	assert.equal(runtime.subagentPets.get("a")?.state, "working");
+	assert.equal(runtime.subagentPets.get("a")?.agentName, "scout");
 	assert.equal(runtime.subagentPets.get("b")?.state, "working");
+	assert.equal(runtime.subagentPets.get("b")?.agentName, "researcher");
 	assert.notEqual(runtime.subagentPets.get("a")?.order, runtime.subagentPets.get("b")?.order);
 
 	applyPiPetEvent(runtime, "tool_execution_end", { toolName: "subagent", toolCallId: "a" });
@@ -50,6 +70,31 @@ test("tracks top-level subagent pets independently", () => {
 test("renders persistent pet-owned artwork without status text", () => {
 	const runtime = createPiPetRuntimeState();
 	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\ ", "( o.o )", " > ^ < "]);
+});
+
+test("renders a compact role-specific layout for each bundled subagent", () => {
+	for (const [agentName, expected] of Object.entries(ROLE_PET_WORKING_FRAMES)) {
+		assert.deepEqual(renderPiPetStateLines("working", agentName), expected, agentName);
+
+		for (const state of PET_STATES) {
+			const lines = renderPiPetStateLines(state, agentName);
+			assert.deepEqual(lines.map((line) => line.length), [7, 7, 7], `${agentName} ${state} dimensions`);
+			assert.equal(lines[0], expected[0], `${agentName} ${state} silhouette`);
+			assert.equal(lines[2], expected[2], `${agentName} ${state} role prop`);
+		}
+	}
+});
+
+test("falls back to the generic pet when subagent role metadata is absent or custom", () => {
+	const runtime = createPiPetRuntimeState();
+	const agentArgs = [undefined, {}, { agent: "   " }, { agent: 42 }, { agent: "custom-agent" }];
+
+	for (const [index, args] of agentArgs.entries()) {
+		const toolCallId = `fallback-${index}`;
+		applyPiPetEvent(runtime, "tool_execution_start", { toolName: "subagent", toolCallId, args });
+		const pet = runtime.subagentPets.get(toolCallId);
+		assert.deepEqual(renderPiPetStateLines(pet?.state ?? "working", pet?.agentName), renderPiPetStateLines("working"));
+	}
 });
 
 test("pads pet frame rows to keep duplicated pets aligned", () => {
@@ -98,7 +143,7 @@ test("publishes one persistent pet contribution with distinct lifecycle tones", 
 	assert.ok(updates.every((update) => update.id === "pi-pet:art"));
 });
 
-test("publishes and removes independent top-level subagent pet contributions", async () => {
+test("publishes role-specific top-level subagent pets through settled states", async () => {
 	type Handler = (event: unknown) => Promise<void> | void;
 	const handlers = new Map<string, Handler>();
 	const updates: CompanionWidgetUpdate[] = [];
@@ -115,24 +160,37 @@ test("publishes and removes independent top-level subagent pet contributions", a
 		},
 	} as never);
 
-	await handlers.get("tool_execution_start")?.({ toolName: "subagent", toolCallId: "subagent-a" });
+	await handlers.get("tool_execution_start")?.({
+		toolName: "subagent",
+		toolCallId: "subagent-a",
+		args: { agent: "scout" },
+	});
 	assert.equal(updates.at(-1)?.id, "pi-pet:subagent:subagent-a");
 	assert.equal(updates.at(-1)?.contribution?.tone, "mdLink");
+	assert.deepEqual(updates.at(-1)?.contribution?.lines, ROLE_PET_WORKING_FRAMES.scout);
 
-	await handlers.get("tool_execution_start")?.({ toolName: "subagent", toolCallId: "subagent-b" });
+	await handlers.get("tool_execution_start")?.({
+		toolName: "subagent",
+		toolCallId: "subagent-b",
+		args: { agent: "researcher" },
+	});
 	assert.equal(updates.at(-1)?.id, "pi-pet:subagent:subagent-b");
 	assert.equal(updates.at(-1)?.contribution?.tone, "mdLink");
+	assert.deepEqual(updates.at(-1)?.contribution?.lines, ROLE_PET_WORKING_FRAMES.researcher);
 	assert.notEqual(
 		updates.find((update) => update.id === "pi-pet:subagent:subagent-a")?.contribution?.order,
 		updates.find((update) => update.id === "pi-pet:subagent:subagent-b")?.contribution?.order,
 	);
 
 	await handlers.get("tool_execution_end")?.({ toolName: "subagent", toolCallId: "subagent-a" });
-	assert.equal(updates.at(-1)?.id, "pi-pet:subagent:subagent-b");
-	assert.equal(updates.findLast((update) => update.id === "pi-pet:subagent:subagent-a")?.contribution?.tone, "thinkingHigh");
+	const scoutSuccess = updates.findLast((update) => update.id === "pi-pet:subagent:subagent-a")?.contribution;
+	assert.equal(scoutSuccess?.tone, "thinkingHigh");
+	assert.deepEqual(scoutSuccess?.lines, [" /\\ /\\ ", " (^|^) ", " / V \\ "]);
 
 	await handlers.get("tool_execution_end")?.({ toolName: "subagent", toolCallId: "subagent-b", isError: true });
-	assert.equal(updates.findLast((update) => update.id === "pi-pet:subagent:subagent-b")?.contribution?.tone, "mdHeading");
+	const researcherError = updates.findLast((update) => update.id === "pi-pet:subagent:subagent-b")?.contribution;
+	assert.equal(researcherError?.tone, "mdHeading");
+	assert.deepEqual(researcherError?.lines, [" ,___, ", " (x,x) ", " /===\\ "]);
 
 	await new Promise((resolve) => setTimeout(resolve, 5));
 	assert.equal(updates.findLast((update) => update.id === "pi-pet:subagent:subagent-a")?.contribution, undefined);
