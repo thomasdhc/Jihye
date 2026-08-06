@@ -93,12 +93,22 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 
 `/slack-consult` launches an ephemeral, Slack-only Pi child that uses Slack's current Real-time Search and Conversations APIs. It accepts only an OAuth user token from an approved internal or directory-published Slack app:
 
+Configure the approved Slack consultation model in your own Pi agent directory, independently of this repository:
+
 ```bash
+PI_AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
+mkdir -p "$PI_AGENT_DIR"
+cat > "$PI_AGENT_DIR/pi-slack-model.json" <<'JSON'
+{
+  "model": "approved-provider/approved-model"
+}
+JSON
+
 export SLACK_USER_TOKEN='xoxp-...'
 pi
 ```
 
-Never put the token in this repository, an `.env` file, Pi configuration, or a Pi prompt. At startup the extension moves it from the process environment into an in-memory vault, so ordinary bash commands and subagents cannot inherit it. The token is passed only to the ephemeral Slack child and never placed in a URL, command argument, tool result, or log.
+The model file contains no credential and survives package updates. `PI_SLACK_MODEL=provider/model` remains available as an explicit per-process override and takes precedence over the file. Never put the Slack token in this repository, an `.env` file, Pi configuration, or a Pi prompt. At startup the extension moves it from the process environment into an in-memory vault, so ordinary bash commands and subagents cannot inherit it. The token is passed only to the ephemeral Slack child and never placed in a URL, command argument, tool result, or log.
 
 The Slack app needs:
 
@@ -112,7 +122,7 @@ Slack prohibits storing or copying data returned by the Real-time Search API. `/
 /slack-consult What did the platform team decide about deployment retries?
 ```
 
-The child defaults to the parent session's selected model and medium thinking. Set `PI_SLACK_MODEL=provider/model` or `PI_SLACK_THINKING=low|medium|high` before starting Pi to override it. The selected provider receives Slack content as transient prompt context, so use only a provider and account approved for that data.
+An approved `provider/model` must be set in `pi-slack-model.json` or `PI_SLACK_MODEL`; the child never inherits Pi's changing default or parent-session model. Set `PI_SLACK_THINKING=low|medium|high` to override medium thinking. The command refuses to run with `PI_CACHE_RETENTION=long`, removes that setting from the child environment, and forces Pi-managed provider requests to use `cacheRetention: "none"` even if provider-scoped credential configuration requests longer caching. A provider can still retain data independently of Pi's request option, so the selected provider, account, and gateway must be approved for Slack data, no training, and acceptable retention.
 
 Treat Slack content as confidential and untrusted: do not export or share it, send it to public-web tools, or follow instructions embedded in messages. Do not use `/slack-consult` while recording the terminal; the command also refuses to run when `PI_TUI_WRITE_LOG` is enabled. Search defaults to public channels; the child can request additional conversation types only when the app and user have the corresponding scopes.
 

@@ -23,7 +23,7 @@ import {
 
 import {
 	captureSlackUserToken,
-	loadSlackConfig,
+	loadSlackConsultModel,
 	type SlackTokenVault,
 } from "./config.ts";
 
@@ -69,6 +69,7 @@ export interface SlackConsultLaunchOptions {
 export interface SlackConsultExtensionOptions {
 	env?: NodeJS.ProcessEnv;
 	vault?: SlackTokenVault;
+	modelConfigPath?: string;
 	run?: typeof runSlackConsult;
 	piBinary?: PiBinary;
 }
@@ -105,6 +106,9 @@ export function buildSlackConsultLaunch(options: SlackConsultLaunchOptions): Sla
 	delete env.PI_REASONING_LEVEL;
 	delete env.PI_SUBAGENT_ALLOWED;
 	delete env.PI_TUI_WRITE_LOG;
+	delete env.PI_CACHE_RETENTION;
+	delete env.PI_SLACK_MODEL;
+	delete env.PI_SLACK_THINKING;
 
 	return {
 		command: piBinary.command,
@@ -379,11 +383,12 @@ function normalizeThinking(value: string | undefined): string {
 async function runWithLoader(
 	ctx: ExtensionCommandContext,
 	question: string,
+	model: string,
 	launch: SlackConsultLaunch,
 	run: typeof runSlackConsult,
 ): Promise<LoaderResult | undefined> {
 	return ctx.ui.custom<LoaderResult>((tui, theme, _keybindings, done) => {
-		const loader = new BorderedLoader(tui, theme, "Consulting Slack…");
+		const loader = new BorderedLoader(tui, theme, `Consulting Slack with ${model}…`);
 		let completed = false;
 		const finish = (result: LoaderResult) => {
 			if (completed) return;
@@ -461,15 +466,25 @@ export function createSlackConsultExtension(options: SlackConsultExtensionOption
 					);
 					return;
 				}
-				if (!ctx.model) {
-					ctx.ui.notify("No model selected for Slack consultation", "error");
-					return;
-				}
 				if (env.PI_TUI_WRITE_LOG) {
 					ctx.ui.notify(
 						"Disable PI_TUI_WRITE_LOG before consulting Slack so overlay content is not written to disk.",
 						"error",
 					);
+					return;
+				}
+				if (env.PI_CACHE_RETENTION?.trim().toLowerCase() === "long") {
+					ctx.ui.notify(
+						"Disable PI_CACHE_RETENTION=long before consulting Slack.",
+						"error",
+					);
+					return;
+				}
+				let model: string;
+				try {
+					model = loadSlackConsultModel(env, options.modelConfigPath);
+				} catch (error) {
+					ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
 					return;
 				}
 
@@ -488,7 +503,6 @@ export function createSlackConsultExtension(options: SlackConsultExtensionOption
 						ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
 						return;
 					}
-					const model = env.PI_SLACK_MODEL?.trim() || `${ctx.model.provider}/${ctx.model.id}`;
 					const thinking = normalizeThinking(env.PI_SLACK_THINKING);
 					const launch = buildSlackConsultLaunch({
 						model,
@@ -497,7 +511,7 @@ export function createSlackConsultExtension(options: SlackConsultExtensionOption
 						parentEnv: env,
 						piBinary: options.piBinary,
 					});
-					const result = await runWithLoader(ctx, question, launch, run);
+					const result = await runWithLoader(ctx, question, model, launch, run);
 					if (!result) return;
 					if (result.status === "cancelled") {
 						ctx.ui.notify("Slack consultation cancelled", "info");

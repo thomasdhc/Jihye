@@ -5,6 +5,10 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { DEFAULT_MAX_BYTES } from "@earendil-works/pi-coding-agent";
+import {
+	installNoPromptCacheProvider,
+	withoutPromptCaching,
+} from "../extensions/slack/cache-policy.ts";
 import { SlackApiError, SlackClient } from "../extensions/slack/client.ts";
 import {
 	assistantTextFromJsonEvent,
@@ -15,6 +19,8 @@ import {
 import {
 	captureSlackUserToken,
 	loadSlackConfig,
+	loadSlackConsultModel,
+	slackModelConfigPath,
 } from "../extensions/slack/config.ts";
 import slackChildExtension from "../lib/slack-child.ts";
 import slackPackageExtension, {
@@ -64,6 +70,57 @@ test("loads only an OAuth Slack user token", () => {
 	);
 });
 
+test("loads an explicitly approved Slack model from the environment or user config", () => {
+	const dir = mkdtempSync(join(tmpdir(), "pi-slack-model-"));
+	const configPath = join(dir, "pi-slack-model.json");
+	try {
+		assert.equal(
+			loadSlackConsultModel(
+				{ PI_SLACK_MODEL: " approved-provider/approved-model " },
+				configPath,
+			),
+			"approved-provider/approved-model",
+		);
+		writeFileSync(configPath, JSON.stringify({ model: "configured-provider/configured-model" }));
+		assert.equal(
+			loadSlackConsultModel({}, configPath),
+			"configured-provider/configured-model",
+		);
+		assert.equal(
+			loadSlackConsultModel(
+				{ PI_SLACK_MODEL: "environment-provider/environment-model" },
+				configPath,
+			),
+			"environment-provider/environment-model",
+		);
+		assert.throws(
+			() => loadSlackConsultModel({ PI_SLACK_MODEL: "missing-provider" }, configPath),
+			/provider\/model/,
+		);
+		writeFileSync(configPath, "not-json");
+		assert.throws(
+			() => loadSlackConsultModel({}, configPath),
+			/must contain valid JSON/,
+		);
+		writeFileSync(configPath, JSON.stringify({ model: "missing-provider" }));
+		assert.throws(
+			() => loadSlackConsultModel({}, configPath),
+			/provider\/model/,
+		);
+		rmSync(configPath);
+		assert.throws(
+			() => loadSlackConsultModel({}, configPath),
+			/never inherits the parent model/,
+		);
+		assert.equal(
+			slackModelConfigPath({ PI_CODING_AGENT_DIR: dir }),
+			configPath,
+		);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test("captures the Slack token outside the process environment and reuses the in-memory vault", () => {
 	const env = { SLACK_USER_TOKEN: " xoxp-secret " };
 	const vault: { token?: string } = {};
@@ -83,6 +140,9 @@ test("builds an isolated no-session Slack child launch without putting secrets i
 			PI_SESSION_FILE: "/tmp/parent.jsonl",
 			PI_SUBAGENT_ALLOWED: "researcher",
 			PI_TUI_WRITE_LOG: "/tmp/tui.log",
+			PI_CACHE_RETENTION: "long",
+			PI_SLACK_MODEL: "provider/model",
+			PI_SLACK_THINKING: "high",
 		},
 		piBinary: { command: "/usr/local/bin/pi", baseArgs: [] },
 	});
@@ -104,6 +164,159 @@ test("builds an isolated no-session Slack child launch without putting secrets i
 	assert.equal(launch.env.PI_SESSION_FILE, undefined);
 	assert.equal(launch.env.PI_SUBAGENT_ALLOWED, undefined);
 	assert.equal(launch.env.PI_TUI_WRITE_LOG, undefined);
+	assert.equal(launch.env.PI_CACHE_RETENTION, undefined);
+	assert.equal(launch.env.PI_SLACK_MODEL, undefined);
+	assert.equal(launch.env.PI_SLACK_THINKING, undefined);
+});
+
+test("forces no prompt caching after provider-scoped request options are resolved", async () => {
+	const cacheRetentions: unknown[] = [];
+	const deferredCalls: string[] = [];
+	const models = [{ provider: "approved-provider", id: "approved-model" }];
+	const provider = {
+		id: "approved-provider",
+		name: "Approved Provider",
+		baseUrl: "https://provider.example/v1",
+		auth: { apiKey: {} },
+		getModels() {
+			return models;
+		},
+		stream(_model: unknown, _context: unknown, options: { cacheRetention?: string }) {
+			cacheRetentions.push(options.cacheRetention);
+			return {};
+		},
+		streamSimple(_model: unknown, _context: unknown, options: { cacheRetention?: string }) {
+			cacheRetentions.push(options.cacheRetention);
+			return {};
+		},
+		fetchDeferred() {
+			assert.equal(this, provider);
+			deferredCalls.push("fetch");
+			return "fetched";
+		},
+		cancelDeferred() {
+			assert.equal(this, provider);
+			deferredCalls.push("cancel");
+			return Promise.resolve();
+		},
+	};
+	const wrapped = withoutPromptCaching(provider as never);
+
+	wrapped.stream(models[0] as never, {} as never, {
+		cacheRetention: "long",
+		env: { PI_CACHE_RETENTION: "long" },
+	} as never);
+	wrapped.streamSimple(models[0] as never, {} as never, {
+		cacheRetention: "long",
+		env: { PI_CACHE_RETENTION: "long" },
+	});
+	assert.deepEqual(cacheRetentions, ["none", "none"]);
+	assert.equal(wrapped.id, provider.id);
+	assert.equal(wrapped.auth, provider.auth);
+	assert.equal(wrapped.getModels(), models);
+	const deferred = wrapped as typeof wrapped & {
+		fetchDeferred: () => string;
+		cancelDeferred: () => Promise<void>;
+	};
+	assert.equal(deferred.fetchDeferred(), "fetched");
+	await deferred.cancelDeferred();
+	assert.deepEqual(deferredCalls, ["fetch", "cancel"]);
+});
+
+test("installs the no-cache wrapper for the Slack child's selected provider", () => {
+	const provider = {
+		id: "approved-provider",
+		name: "Approved Provider",
+		auth: { apiKey: {} },
+		getModels: () => [],
+		stream: () => ({}),
+		streamSimple: () => ({}),
+	};
+	let registered: unknown;
+	installNoPromptCacheProvider({
+		registerProvider(value: unknown) {
+			registered = value;
+		},
+	} as never, {
+		model: { provider: "approved-provider", id: "approved-model" },
+		modelRegistry: {
+			getProvider: (id: string) => id === provider.id ? provider : undefined,
+		},
+	} as never);
+	assert.equal((registered as { id?: string })?.id, provider.id);
+});
+
+test("Slack child enables input only after installing its no-cache provider", () => {
+	const handlers = new Map<string, (event: unknown, ctx: any) => unknown>();
+	const registeredTools: string[] = [];
+	let registeredProvider: unknown;
+	let shutdown = false;
+	const provider = {
+		id: "approved-provider",
+		name: "Approved Provider",
+		auth: { apiKey: {} },
+		getModels: () => [],
+		stream: () => ({}),
+		streamSimple: () => ({}),
+	};
+	slackChildExtension({
+		on(event: string, handler: (event: unknown, ctx: any) => unknown) {
+			handlers.set(event, handler);
+		},
+		registerProvider(value: unknown) {
+			registeredProvider = value;
+		},
+		registerTool(tool: { name: string }) {
+			registeredTools.push(tool.name);
+		},
+	} as never);
+	const ctx = {
+		model: { provider: provider.id, id: "approved-model" },
+		modelRegistry: { getProvider: () => provider },
+		shutdown: () => { shutdown = true; },
+	};
+
+	handlers.get("session_start")?.({}, ctx);
+	assert.equal((registeredProvider as { id?: string })?.id, provider.id);
+	assert.deepEqual(handlers.get("input")?.({}, ctx), { action: "continue" });
+	assert.equal(shutdown, false);
+	assert.deepEqual(registeredTools, ["slack_search", "slack_read"]);
+});
+
+test("Slack child fails closed when no-cache provider installation fails", () => {
+	const previousExitCode = process.exitCode;
+	const handlers = new Map<string, (event: unknown, ctx: any) => unknown>();
+	let shutdownCount = 0;
+	try {
+		slackChildExtension({
+			on(event: string, handler: (event: unknown, ctx: any) => unknown) {
+				handlers.set(event, handler);
+			},
+			registerProvider() {
+				throw new Error("registration failed");
+			},
+			registerTool() {},
+		} as never);
+		const ctx = {
+			model: { provider: "approved-provider", id: "approved-model" },
+			modelRegistry: { getProvider: () => ({
+				id: "approved-provider",
+				name: "Approved Provider",
+				auth: { apiKey: {} },
+				getModels: () => [],
+				stream: () => ({}),
+				streamSimple: () => ({}),
+			}) },
+			shutdown: () => { shutdownCount++; },
+		};
+
+		handlers.get("session_start")?.({}, ctx);
+		assert.equal(process.exitCode, 1);
+		assert.deepEqual(handlers.get("input")?.({}, ctx), { action: "handled" });
+		assert.equal(shutdownCount, 2);
+	} finally {
+		process.exitCode = previousExitCode;
+	}
 });
 
 test("extracts only finalized assistant text from Pi JSON events", () => {
@@ -177,7 +390,10 @@ process.stdin.on("end", () => {
 test("slack-consult uses display-only UI without creating a parent-session message", async () => {
 	let command: { handler: (args: string, ctx: any) => Promise<void> } | undefined;
 	let customCalls = 0;
-	const env = { SLACK_USER_TOKEN: "xoxp-secret" };
+	const env = {
+		SLACK_USER_TOKEN: "xoxp-secret",
+		PI_SLACK_MODEL: "approved-provider/approved-model",
+	};
 
 	createSlackConsultExtension({
 		env,
@@ -211,6 +427,66 @@ test("slack-consult uses display-only UI without creating a parent-session messa
 	assert.equal(env.SLACK_USER_TOKEN, undefined);
 	assert.equal(customCalls, 2);
 	assert.deepEqual(notifications, []);
+});
+
+test("slack-consult never falls back to the parent model", async () => {
+	let command: { handler: (args: string, ctx: any) => Promise<void> } | undefined;
+	const notifications: string[] = [];
+	createSlackConsultExtension({
+		env: { SLACK_USER_TOKEN: "xoxp-secret" },
+		vault: {},
+		modelConfigPath: "/definitely-missing/pi-slack-model.json",
+	})({
+		registerCommand(_name: string, value: typeof command) {
+			command = value;
+		},
+	} as never);
+
+	await command?.handler("What was decided?", {
+		mode: "tui",
+		model: { provider: "unapproved-parent", id: "model" },
+		waitForIdle: async () => {},
+		ui: {
+			notify: (message: string) => notifications.push(message),
+			custom() {
+				throw new Error("overlay must not open");
+			},
+		},
+	});
+	assert.equal(notifications.length, 1);
+	assert.match(notifications[0] ?? "", /Set PI_SLACK_MODEL=provider\/model or create .*pi-slack-model\.json/);
+	assert.match(notifications[0] ?? "", /never inherits the parent model/);
+});
+
+test("slack-consult refuses extended provider prompt caching", async () => {
+	let command: { handler: (args: string, ctx: any) => Promise<void> } | undefined;
+	const notifications: string[] = [];
+	createSlackConsultExtension({
+		env: {
+			SLACK_USER_TOKEN: "xoxp-secret",
+			PI_SLACK_MODEL: "approved-provider/approved-model",
+			PI_CACHE_RETENTION: "long",
+		},
+		vault: {},
+	})({
+		registerCommand(_name: string, value: typeof command) {
+			command = value;
+		},
+	} as never);
+
+	await command?.handler("What was decided?", {
+		mode: "tui",
+		waitForIdle: async () => {},
+		ui: {
+			notify: (message: string) => notifications.push(message),
+			custom() {
+				throw new Error("overlay must not open");
+			},
+		},
+	});
+	assert.deepEqual(notifications, [
+		"Disable PI_CACHE_RETENTION=long before consulting Slack.",
+	]);
 });
 
 test("slack-consult refuses to display Slack data while TUI logging is enabled", async () => {
@@ -264,6 +540,7 @@ test("parent package entry always registers only the command and dedicated child
 		const childCommands: string[] = [];
 		const childTools: string[] = [];
 		slackChildExtension({
+			on() {},
 			registerCommand(name: string) {
 				childCommands.push(name);
 			},
