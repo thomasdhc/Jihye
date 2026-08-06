@@ -13,6 +13,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
 | `pi-pet` | Placeholder terminal pet widget that reacts to Pi lifecycle events |
+| `session-identity` | Assign collision-free round-robin names to active local Pi sessions |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
@@ -127,9 +128,29 @@ Current state mapping:
 
 Future asset work can replace the ASCII frame table with a small local pet manifest such as `pet.json` plus one image or frame strip per state.
 
+### Session identities
+
+`session-identity` automatically leases one name to each running local Pi process in round-robin order. A bundled configuration template lives in [`examples/session-identity.json`](examples/session-identity.json); keep personal name choices in your user configuration rather than shared documentation.
+
+To replace them, create `~/.pi/agent/session-identity.json` (or `$PI_CODING_AGENT_DIR/session-identity.json` when using a custom agent directory):
+
+```json
+{
+  "names": ["Red", "Blue", "Green"],
+  "fallbackPrefix": "helper",
+  "fallbackMinimumDigits": 2
+}
+```
+
+The names may be any unique, non-empty labels without terminal control characters. Missing optional fallback settings use `pi-agent-01`, `pi-agent-02`, and so on. A malformed user file stops identity allocation and produces a warning instead of silently reverting to the example. Restart active Pi processes after changing the file so they release their current leases and adopt the new pool.
+
+Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
+
+The leased name becomes Pi's session display name. Pi shows it once in its built-in footer and includes it in the terminal tab title; it is not repeated in the companion widget. The name is intentionally restored after `/name` so the local uniqueness guarantee remains intact for the lifetime of the Pi process.
+
 ### Terminal notifications
 
-`terminal-notify` detects the current terminal at runtime, so the same package works across workstations:
+`terminal-notify` detects the current terminal at runtime, so the same package works across workstations. Notification titles use the active `session-identity` name, including urgent `bash-guard` alerts:
 
 | Terminal | Detection | Protocol |
 |---|---|---|

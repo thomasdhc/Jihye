@@ -917,7 +917,6 @@ export default function (pi: ExtensionAPI) {
 		if (ctx.hasUI && ctx.mode === "tui") {
 			const request: TerminalNotificationRequest = {
 				mode: ctx.mode,
-				title: "Pi",
 				body: `Bash approval required (${risk.severity} risk)`,
 				ringBell: true,
 			};

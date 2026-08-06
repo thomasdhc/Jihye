@@ -1,0 +1,14 @@
+{
+  "names": [
+    "Agent One",
+    "Agent Two",
+    "Agent Three",
+    "Agent Four",
+    "Agent Five",
+    "Agent Six",
+    "Agent Seven",
+    "Agent Eight"
+  ],
+  "fallbackPrefix": "pi-agent",
+  "fallbackMinimumDigits": 2
+}
