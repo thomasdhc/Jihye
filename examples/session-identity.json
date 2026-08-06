@@ -1,13 +1,13 @@
 {
   "names": [
-    "Aqila",
-    "Athena",
-    "Ji-hye",
-    "Cyrus",
-    "Lozen",
-    "Odin",
-    "Augustine",
-    "Manuela"
+    "Agent One",
+    "Agent Two",
+    "Agent Three",
+    "Agent Four",
+    "Agent Five",
+    "Agent Six",
+    "Agent Seven",
+    "Agent Eight"
   ],
   "fallbackPrefix": "pi-agent",
   "fallbackMinimumDigits": 2

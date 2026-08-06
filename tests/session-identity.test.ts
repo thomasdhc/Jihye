@@ -33,14 +33,14 @@ import {
 } from "../lib/session-identity.ts";
 
 const EXAMPLE_NAMES = [
-	"Aqila",
-	"Athena",
-	"Ji-hye",
-	"Cyrus",
-	"Lozen",
-	"Odin",
-	"Augustine",
-	"Manuela",
+	"Agent One",
+	"Agent Two",
+	"Agent Three",
+	"Agent Four",
+	"Agent Five",
+	"Agent Six",
+	"Agent Seven",
+	"Agent Eight",
 ] as const;
 
 function temporaryDirectory(): string {
@@ -137,7 +137,7 @@ test("rejects an invalid user config instead of silently using the example", () 
 				&& error.message.includes("case-insensitive filesystems"),
 		);
 
-		writeFileSync(configPath, `${JSON.stringify({ names: ["Aqila\nAthena"] })}\n`);
+		writeFileSync(configPath, `${JSON.stringify({ names: ["Agent One\nAgent Two"] })}\n`);
 		assert.throws(
 			() => createSessionIdentityConfig(directory),
 			/control characters/,
@@ -179,7 +179,7 @@ test("reuses the same process lease across extension reloads", async () => {
 		assert.deepEqual(reloadedLease, firstLease);
 
 		const nextLease = await allocator(directory, owner(2)).acquire();
-		assert.equal(nextLease.name, "Athena");
+		assert.equal(nextLease.name, "Agent Two");
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
@@ -237,17 +237,17 @@ test("publishes fully formed locks atomically under contention", async () => {
 			signalCandidateReady?.();
 			await publishAllowed;
 		};
-		const first = allocator(directory, owner(1), ["Aqila"], firstDependencies);
+		const first = allocator(directory, owner(1), ["Agent One"], firstDependencies);
 		const firstLeasePromise = first.acquire();
 		await candidateReady;
 
-		const second = allocator(directory, owner(2), ["Aqila"]);
+		const second = allocator(directory, owner(2), ["Agent One"]);
 		const secondLease = await second.acquire();
 		resumePublish?.();
 		const firstLease = await firstLeasePromise;
 
 		assert.equal(new Set([firstLease.name, secondLease.name]).size, 2);
-		assert.deepEqual(new Set([firstLease.name, secondLease.name]), new Set(["Aqila", "pi-agent-01"]));
+		assert.deepEqual(new Set([firstLease.name, secondLease.name]), new Set(["Agent One", "pi-agent-01"]));
 	} finally {
 		resumePublish?.();
 		rmSync(directory, { recursive: true, force: true });
@@ -258,17 +258,17 @@ test("reclaims a crashed process lease", async () => {
 	const directory = temporaryDirectory();
 	try {
 		const firstOwner = owner(1);
-		const first = allocator(directory, firstOwner, ["Aqila"]);
-		assert.equal((await first.acquire()).name, "Aqila");
+		const first = allocator(directory, firstOwner, ["Agent One"]);
+		assert.equal((await first.acquire()).name, "Agent One");
 
 		const secondOwner = owner(2);
 		const second = allocator(
 			directory,
 			secondOwner,
-			["Aqila"],
+			["Agent One"],
 			dependencies(new Map(), (pid) => pid !== firstOwner.pid),
 		);
-		assert.equal((await second.acquire()).name, "Aqila");
+		assert.equal((await second.acquire()).name, "Agent One");
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
@@ -283,19 +283,19 @@ test("uses process fingerprints to detect PID reuse", async () => {
 		const first = allocator(
 			directory,
 			{ id: "old-owner", pid: reusedPid },
-			["Aqila"],
+			["Agent One"],
 			sharedDependencies,
 		);
-		assert.equal((await first.acquire()).name, "Aqila");
+		assert.equal((await first.acquire()).name, "Agent One");
 
 		fingerprints.set(reusedPid, "new-process");
 		const second = allocator(
 			directory,
 			{ id: "new-owner", pid: reusedPid },
-			["Aqila"],
+			["Agent One"],
 			sharedDependencies,
 		);
-		assert.equal((await second.acquire()).name, "Aqila");
+		assert.equal((await second.acquire()).name, "Agent One");
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
@@ -304,16 +304,16 @@ test("uses process fingerprints to detect PID reuse", async () => {
 test("does not let an old lease release a reassigned name", async () => {
 	const directory = temporaryDirectory();
 	try {
-		const first = allocator(directory, owner(1), ["Aqila"]);
+		const first = allocator(directory, owner(1), ["Agent One"]);
 		const oldLease = await first.acquire();
 		assert.equal(await first.release(oldLease), true);
 
-		const second = allocator(directory, owner(2), ["Aqila"]);
+		const second = allocator(directory, owner(2), ["Agent One"]);
 		const currentLease = await second.acquire();
-		assert.equal(currentLease.name, "Aqila");
+		assert.equal(currentLease.name, "Agent One");
 		assert.equal(await first.release(oldLease), false);
 
-		const third = allocator(directory, owner(3), ["Aqila"]);
+		const third = allocator(directory, owner(3), ["Agent One"]);
 		assert.equal((await third.acquire()).name, "pi-agent-01");
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
@@ -325,9 +325,9 @@ test("treats malformed lease files as occupied instead of duplicating a name", a
 	try {
 		const leasesDirectory = join(directory, "leases");
 		mkdirSync(leasesDirectory, { recursive: true });
-		writeFileSync(join(leasesDirectory, "Aqila.json"), "not json\n");
+		writeFileSync(join(leasesDirectory, "Agent One.json"), "not json\n");
 
-		const lease = await allocator(directory, owner(1), ["Aqila"]).acquire();
+		const lease = await allocator(directory, owner(1), ["Agent One"]).acquire();
 		assert.equal(lease.name, "pi-agent-01");
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
@@ -340,8 +340,8 @@ test("quarantines a corrupt cursor without risking active leases", async () => {
 		mkdirSync(directory, { recursive: true });
 		writeFileSync(join(directory, "cursor.json"), "not json\n");
 
-		const lease = await allocator(directory, owner(1), ["Aqila"]).acquire();
-		assert.equal(lease.name, "Aqila");
+		const lease = await allocator(directory, owner(1), ["Agent One"]).acquire();
+		assert.equal(lease.name, "Agent One");
 		assert.ok(readdirSync(directory).some((entry) => entry.startsWith("cursor.corrupt-")));
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
@@ -392,10 +392,10 @@ test("retries when publishing a lock loses to an active owner", async () => {
 		const lease = await allocator(
 			directory,
 			owner(1),
-			["Aqila"],
+			["Agent One"],
 			retryDependencies,
 		).acquire();
-		assert.equal(lease.name, "Aqila");
+		assert.equal(lease.name, "Agent One");
 		assert.ok(retries >= 1);
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
@@ -418,10 +418,10 @@ test("recovers a registry lock left by a crashed process", async () => {
 		const lease = await allocator(
 			directory,
 			owner(1),
-			["Aqila"],
+			["Agent One"],
 			dependencies(new Map(), (pid) => pid !== 99_999),
 		).acquire();
-		assert.equal(lease.name, "Aqila");
+		assert.equal(lease.name, "Agent One");
 		assert.ok(readdirSync(directory).includes("registry.lock.stale-dead-lock"));
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
@@ -433,7 +433,7 @@ test("reports an invalid user config without disabling extension registration", 
 	const handlers = new Map<string, Handler>();
 	const notifications: string[] = [];
 	const headlessWarnings: string[] = [];
-	let currentName: string | undefined = "Aqila";
+	let currentName: string | undefined = "Agent One";
 	const extension = createSessionIdentityExtension({
 		createConfig() {
 			throw new Error("Invalid session identity config at /tmp/session-identity.json: names must be unique");
@@ -455,7 +455,7 @@ test("reports an invalid user config without disabling extension registration", 
 		},
 	} as never);
 
-	setActiveSessionIdentity("Aqila");
+	setActiveSessionIdentity("Agent One");
 	try {
 		await handlers.get("session_start")?.({}, {
 			hasUI: true,
@@ -495,7 +495,7 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 	}
 
 	const lease: SessionNameLease = {
-		name: "Aqila",
+		name: "Agent One",
 		leaseId: "lease-1",
 		ownerId: "owner-1",
 	};
@@ -551,21 +551,21 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 	setActiveSessionIdentity(undefined);
 	try {
 		await handlers.get("session_start")?.({ reason: "startup" }, ctx);
-		assert.equal(currentName, "Aqila");
-		assert.equal(getActiveSessionIdentity(), "Aqila");
-		assert.equal(titles.at(-1), "π - Aqila - project");
+		assert.equal(currentName, "Agent One");
+		assert.equal(getActiveSessionIdentity(), "Agent One");
+		assert.equal(titles.at(-1), "π - Agent One - project");
 		assert.deepEqual(notifications, []);
 		assert.deepEqual(emittedEvents, []);
 
 		currentName = "manual-name";
 		await handlers.get("session_info_changed")?.({ name: "manual-name" }, ctx);
-		assert.equal(currentName, "Aqila");
+		assert.equal(currentName, "Agent One");
 
 		for (const reason of ["reload", "new", "resume", "fork"]) {
 			await handlers.get("session_shutdown")?.({ reason }, ctx);
 		}
 		assert.equal(releaseCount, 0);
-		assert.equal(getActiveSessionIdentity(), "Aqila");
+		assert.equal(getActiveSessionIdentity(), "Agent One");
 
 		await handlers.get("session_shutdown")?.({ reason: "quit" }, ctx);
 		assert.equal(releaseCount, 1);
@@ -576,5 +576,5 @@ test("synchronizes the session name, terminal title, and process identity", asyn
 });
 
 test("formats terminal titles consistently", () => {
-	assert.equal(formatSessionIdentityTitle("Ji-hye", "/workspace/pi-extensio"), "π - Ji-hye - pi-extensio");
+	assert.equal(formatSessionIdentityTitle("Agent Three", "/workspace/pi-extensio"), "π - Agent Three - pi-extensio");
 });

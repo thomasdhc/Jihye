@@ -66,7 +66,7 @@ test("uses the active session identity as the notification title", () => {
 	type SettledHandler = (_event: unknown, ctx: { mode: string }) => void;
 	let handler: SettledHandler | undefined;
 	const writes: string[] = [];
-	setActiveSessionIdentity("Ji-hye");
+	setActiveSessionIdentity("Agent Three");
 
 	try {
 		createTerminalNotifyExtension({
@@ -81,7 +81,7 @@ test("uses the active session identity as the notification title", () => {
 
 		assert.ok(handler);
 		handler({}, { mode: "tui" });
-		assert.deepEqual(writes, [notificationSequence("iterm", "Ji-hye")]);
+		assert.deepEqual(writes, [notificationSequence("iterm", "Agent Three")]);
 	} finally {
 		setActiveSessionIdentity(undefined);
 	}
@@ -105,7 +105,7 @@ test("does nothing for an unsupported terminal", () => {
 });
 
 test("rings the terminal bell and posts an urgent notification on request", () => {
-	setActiveSessionIdentity("Aqila");
+	setActiveSessionIdentity("Agent One");
 	let eventName = "";
 	let requestHandler: ((data: unknown) => void) | undefined;
 	const writes: string[] = [];
@@ -130,7 +130,7 @@ test("rings the terminal bell and posts an urgent notification on request", () =
 		body: "Bash approval required (high risk)",
 		ringBell: true,
 	});
-	assert.deepEqual(writes, ["\x07\x1b]9;Aqila: Bash approval required (high risk)\x1b\\"]);
+	assert.deepEqual(writes, ["\x07\x1b]9;Agent One: Bash approval required (high risk)\x1b\\"]);
 
 	requestHandler({ mode: "rpc", title: "Pi", body: "Ignored", ringBell: true });
 	assert.equal(writes.length, 1);
@@ -146,7 +146,7 @@ test("rings the terminal bell and posts an urgent notification on request", () =
 		notificationRequestSequence(
 			{ mode: "tui", title: "Custom", body: "Explicit", ringBell: false },
 			{ TERM_PROGRAM: "iTerm.app" },
-			"Aqila",
+			"Agent One",
 		),
 		"\x1b]9;Custom: Explicit\x1b\\",
 	);
