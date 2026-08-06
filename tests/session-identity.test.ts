@@ -589,6 +589,14 @@ test("publishes the session identity without taking over the session display nam
 			},
 		});
 
+		// A later session_start handler may yield before resource discovery begins.
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		await handlers.get("resources_discover")?.({ reason: "startup" }, ctx);
+		// Pi refreshes its built-in title after extension binding completes.
+		titles.push("π - project");
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		assert.equal(titles.at(-1), "π - Agent One - project");
+
 		currentName = "Agent One";
 		await handlers.get("session_info_changed")?.({ name: "Agent One" }, ctx);
 		assert.equal(currentName, "Agent One");
@@ -614,6 +622,11 @@ test("publishes the session identity without taking over the session display nam
 				tone: "accent",
 			},
 		});
+
+		await reloadedHandlers.get("resources_discover")?.({ reason: "reload" }, ctx);
+		titles.push("π - project");
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		assert.equal(titles.at(-1), "π - Agent One - project");
 
 		currentName = "manual-name";
 		await reloadedHandlers.get("session_info_changed")?.({ name: "manual-name" }, ctx);

@@ -46,6 +46,26 @@ export function createSessionIdentityExtension(
 		const formatTitle = options.formatTitle ?? formatSessionIdentityTitle;
 		const reportWarning = options.reportWarning ?? ((message: string) => process.stderr.write(`${message}\n`));
 		let lease: SessionNameLease | undefined;
+		let pendingTitleRefresh: ReturnType<typeof setImmediate> | undefined;
+
+		function publishTerminalTitle(ctx: ExtensionContext): void {
+			if (lease && ctx.hasUI) ctx.ui.setTitle(formatTitle(lease.name, ctx.cwd));
+		}
+
+		function clearPendingTitleRefresh(): void {
+			if (pendingTitleRefresh === undefined) return;
+			clearImmediate(pendingTitleRefresh);
+			pendingTitleRefresh = undefined;
+		}
+
+		function scheduleTerminalTitleRefresh(ctx: ExtensionContext): void {
+			clearPendingTitleRefresh();
+			if (!lease || !ctx.hasUI) return;
+			pendingTitleRefresh = setImmediate(() => {
+				pendingTitleRefresh = undefined;
+				publishTerminalTitle(ctx);
+			});
+		}
 
 		function synchronizeIdentity(ctx: ExtensionContext): void {
 			if (!lease) return;
@@ -57,7 +77,7 @@ export function createSessionIdentityExtension(
 				lines: [lease.name],
 				tone: "accent",
 			});
-			if (ctx.hasUI) ctx.ui.setTitle(formatTitle(lease.name, ctx.cwd));
+			publishTerminalTitle(ctx);
 		}
 
 		function clearLegacySessionName(identity: string | undefined): void {
@@ -81,6 +101,7 @@ export function createSessionIdentityExtension(
 				synchronizeIdentity(ctx);
 			} catch (error) {
 				lease = undefined;
+				clearPendingTitleRefresh();
 				removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
 				clearLegacySessionName(legacySessionName);
 				clearActiveIdentity(legacySessionName);
@@ -91,11 +112,17 @@ export function createSessionIdentityExtension(
 			}
 		});
 
+		pi.on("resources_discover", async (_event, ctx) => {
+			// Pi applies its built-in startup title after extension binding completes.
+			scheduleTerminalTitleRefresh(ctx);
+		});
+
 		pi.on("session_info_changed", async (_event, ctx) => {
-			if (lease && ctx.hasUI) ctx.ui.setTitle(formatTitle(lease.name, ctx.cwd));
+			publishTerminalTitle(ctx);
 		});
 
 		pi.on("session_shutdown", async (event, ctx) => {
+			clearPendingTitleRefresh();
 			removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
 			if (event.reason !== "quit" || !lease || !allocator) return;
 			const releasedLease = lease;
