@@ -8,7 +8,7 @@ import {
 	normalizePetState,
 	renderPiPetLines,
 } from "../extensions/pi-pet.ts";
-import { CONTEXT_STATUS_EVENT } from "../extensions/context-status.ts";
+import { CONTEXT_STATUS_EVENT } from "../lib/context-status.ts";
 import { DOC_GUARDIAN_STATUS_EVENT } from "../extensions/doc-guardian.ts";
 
 test("normalizes supported pi pet states", () => {

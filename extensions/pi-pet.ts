@@ -1,7 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 
-import { CONTEXT_STATUS_EVENT, type ContextStatusPayload } from "./context-status.ts";
+import { CONTEXT_STATUS_EVENT, type ContextStatusPayload } from "../lib/context-status.ts";
 import { DOC_GUARDIAN_STATUS_EVENT, type DocGuardianStatusPayload } from "./doc-guardian.ts";
 
 export type PiPetState = "idle" | "thinking" | "working" | "success" | "error";

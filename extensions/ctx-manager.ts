@@ -10,7 +10,7 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
-import { CONTEXT_STATUS_EVENT, createContextStatusPayload } from "./context-status.ts";
+import { CONTEXT_STATUS_EVENT, createContextStatusPayload } from "../lib/context-status.ts";
 
 const WARN_THRESHOLD    = 0.50;   // 50%  -- yellow warning notification
 const COMPACT_THRESHOLD = 0.65;   // 65%  -- auto-compact silently
