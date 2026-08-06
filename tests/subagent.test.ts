@@ -145,8 +145,10 @@ test("rejects duplicate agent names within one directory", () => {
 test("builds portable child arguments with the requested model and safety guard", async () => {
 	const previousDepth = process.env.PI_SUBAGENT_DEPTH;
 	const previousAllowlist = process.env.PI_SUBAGENT_ALLOWED;
+	const previousSlackToken = process.env.SLACK_USER_TOKEN;
 	process.env.PI_SUBAGENT_DEPTH = "2";
 	process.env.PI_SUBAGENT_ALLOWED = "stale-parent-value";
+	process.env.SLACK_USER_TOKEN = "xoxp-test-secret";
 
 	const agent: AgentConfig = {
 		name: "test-agent",
@@ -182,11 +184,14 @@ test("builds portable child arguments with the requested model and safety guard"
 
 		assert.equal(built.childEnv.PI_SUBAGENT_DEPTH, "3");
 		assert.equal(built.childEnv.PI_SUBAGENT_ALLOWED, "scout,reviewer");
+		assert.equal(built.childEnv.SLACK_USER_TOKEN, undefined);
 	} finally {
 		if (tempDir) rmSync(tempDir, { recursive: true, force: true });
 		if (previousDepth === undefined) delete process.env.PI_SUBAGENT_DEPTH;
 		else process.env.PI_SUBAGENT_DEPTH = previousDepth;
 		if (previousAllowlist === undefined) delete process.env.PI_SUBAGENT_ALLOWED;
 		else process.env.PI_SUBAGENT_ALLOWED = previousAllowlist;
+		if (previousSlackToken === undefined) delete process.env.SLACK_USER_TOKEN;
+		else process.env.SLACK_USER_TOKEN = previousSlackToken;
 	}
 });

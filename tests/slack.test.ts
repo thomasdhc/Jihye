@@ -1,10 +1,23 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import { DEFAULT_MAX_BYTES } from "@earendil-works/pi-coding-agent";
 import { SlackApiError, SlackClient } from "../extensions/slack/client.ts";
-import { loadSlackConfig } from "../extensions/slack/config.ts";
 import {
+	assistantTextFromJsonEvent,
+	buildSlackConsultLaunch,
+	createSlackConsultExtension,
+	runSlackConsult,
+} from "../extensions/slack/consult.ts";
+import {
+	captureSlackUserToken,
+	loadSlackConfig,
+} from "../extensions/slack/config.ts";
+import slackChildExtension from "../lib/slack-child.ts";
+import slackPackageExtension, {
 	assertEphemeralSlackSession,
 	boundSlackOutput,
 	createSlackExtension,
@@ -49,6 +62,221 @@ test("loads only an OAuth Slack user token", () => {
 		() => loadSlackConfig({ SLACK_USER_TOKEN: "xoxb-bot" }),
 		/OAuth user token beginning with xoxp-/,
 	);
+});
+
+test("captures the Slack token outside the process environment and reuses the in-memory vault", () => {
+	const env = { SLACK_USER_TOKEN: " xoxp-secret " };
+	const vault: { token?: string } = {};
+	assert.equal(captureSlackUserToken(env, vault), "xoxp-secret");
+	assert.equal(env.SLACK_USER_TOKEN, undefined);
+	assert.equal(captureSlackUserToken(env, vault), "xoxp-secret");
+});
+
+test("builds an isolated no-session Slack child launch without putting secrets in arguments", () => {
+	const launch = buildSlackConsultLaunch({
+		model: "provider/model",
+		thinking: "medium",
+		token: "xoxp-secret",
+		parentEnv: {
+			HOME: "/tmp/home",
+			PI_SESSION_ID: "parent-id",
+			PI_SESSION_FILE: "/tmp/parent.jsonl",
+			PI_SUBAGENT_ALLOWED: "researcher",
+			PI_TUI_WRITE_LOG: "/tmp/tui.log",
+		},
+		piBinary: { command: "/usr/local/bin/pi", baseArgs: [] },
+	});
+
+	assert.equal(launch.command, "/usr/local/bin/pi");
+	for (const flag of [
+		"--no-session",
+		"--no-context-files",
+		"--no-skills",
+		"--no-prompt-templates",
+		"--no-extensions",
+	]) {
+		assert.ok(launch.args.includes(flag), flag);
+	}
+	assert.equal(launch.args[launch.args.indexOf("--tools") + 1], "slack_search,slack_read");
+	assert.equal(launch.args.includes("xoxp-secret"), false);
+	assert.equal(launch.env.SLACK_USER_TOKEN, "xoxp-secret");
+	assert.equal(launch.env.PI_SESSION_ID, undefined);
+	assert.equal(launch.env.PI_SESSION_FILE, undefined);
+	assert.equal(launch.env.PI_SUBAGENT_ALLOWED, undefined);
+	assert.equal(launch.env.PI_TUI_WRITE_LOG, undefined);
+});
+
+test("extracts only finalized assistant text from Pi JSON events", () => {
+	assert.equal(assistantTextFromJsonEvent({
+		type: "message_end",
+		message: {
+			role: "assistant",
+			content: [{ type: "text", text: "Decision summary" }],
+		},
+	}), "Decision summary");
+	assert.equal(assistantTextFromJsonEvent({
+		type: "message_end",
+		message: { role: "toolResult", content: [{ type: "text", text: "raw Slack" }] },
+	}), undefined);
+});
+
+test("runs the consultation question over stdin and captures only the child assistant answer", async (t) => {
+	const dir = mkdtempSync(join(tmpdir(), "slack-consult-test-"));
+	t.after(() => rmSync(dir, { recursive: true, force: true }));
+	const script = join(dir, "child.mjs");
+	writeFileSync(script, `
+let input = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => input += chunk);
+process.stdin.on("end", () => {
+  console.log(JSON.stringify({ type: "message_end", message: {
+    role: "toolResult", content: [{ type: "text", text: "raw Slack data" }]
+  }}));
+  console.log(JSON.stringify({ type: "message_end", message: {
+    role: "assistant", content: [{ type: "text", text: "Answer for: " + input }]
+  }}));
+});
+`);
+
+	const answer = await runSlackConsult("What was decided?", {
+		command: process.execPath,
+		args: [script],
+		env: { ...process.env },
+	});
+	assert.equal(answer, "Answer for: What was decided?");
+	assert.doesNotMatch(answer, /raw Slack data/);
+});
+
+test("does not surface arbitrary child stderr in consultation errors", async (t) => {
+	const dir = mkdtempSync(join(tmpdir(), "slack-consult-error-test-"));
+	t.after(() => rmSync(dir, { recursive: true, force: true }));
+	const script = join(dir, "child.mjs");
+	writeFileSync(script, `
+process.stdin.resume();
+process.stdin.on("end", () => {
+  process.stderr.write("sensitive child diagnostic");
+  process.exit(2);
+});
+`);
+
+	await assert.rejects(
+		runSlackConsult("What was decided?", {
+			command: process.execPath,
+			args: [script],
+			env: { ...process.env },
+		}),
+		(error: unknown) => {
+			assert.ok(error instanceof Error);
+			assert.match(error.message, /exited with code 2/);
+			assert.doesNotMatch(error.message, /sensitive child diagnostic/);
+			return true;
+		},
+	);
+});
+
+test("slack-consult uses display-only UI without creating a parent-session message", async () => {
+	let command: { handler: (args: string, ctx: any) => Promise<void> } | undefined;
+	let customCalls = 0;
+	const env = { SLACK_USER_TOKEN: "xoxp-secret" };
+
+	createSlackConsultExtension({
+		env,
+		vault: {},
+		piBinary: { command: "/usr/local/bin/pi", baseArgs: [] },
+	})({
+		registerCommand(_name: string, value: typeof command) {
+			command = value;
+		},
+	} as never);
+
+	const notifications: string[] = [];
+	await command?.handler("What was decided?", {
+		mode: "tui",
+		model: { provider: "provider", id: "model" },
+		waitForIdle: async () => {},
+		ui: {
+			notify: (message: string) => notifications.push(message),
+			input: async () => undefined,
+			editor: async () => undefined,
+			setEditorText() {},
+			custom() {
+				customCalls++;
+				return Promise.resolve(customCalls === 1
+					? { status: "completed", answer: "A concise Slack consultation." }
+					: "close");
+			},
+		},
+	});
+
+	assert.equal(env.SLACK_USER_TOKEN, undefined);
+	assert.equal(customCalls, 2);
+	assert.deepEqual(notifications, []);
+});
+
+test("slack-consult refuses to display Slack data while TUI logging is enabled", async () => {
+	let command: { handler: (args: string, ctx: any) => Promise<void> } | undefined;
+	const notifications: string[] = [];
+	createSlackConsultExtension({
+		env: {
+			SLACK_USER_TOKEN: "xoxp-secret",
+			PI_TUI_WRITE_LOG: "/tmp/tui.log",
+		},
+		vault: {},
+	})({
+		registerCommand(_name: string, value: typeof command) {
+			command = value;
+		},
+	} as never);
+
+	await command?.handler("What was decided?", {
+		mode: "tui",
+		model: { provider: "provider", id: "model" },
+		waitForIdle: async () => {},
+		ui: {
+			notify: (message: string) => notifications.push(message),
+			custom() {
+				throw new Error("overlay must not open");
+			},
+		},
+	});
+	assert.deepEqual(notifications, [
+		"Disable PI_TUI_WRITE_LOG before consulting Slack so overlay content is not written to disk.",
+	]);
+});
+
+test("parent package entry always registers only the command and dedicated child entry registers only tools", () => {
+	const previousMarker = process.env.PI_SLACK_CHILD;
+	process.env.PI_SLACK_CHILD = "1";
+	try {
+		const parentCommands: string[] = [];
+		const parentTools: string[] = [];
+		slackPackageExtension({
+			registerCommand(name: string) {
+				parentCommands.push(name);
+			},
+			registerTool(tool: { name: string }) {
+				parentTools.push(tool.name);
+			},
+		} as never);
+		assert.deepEqual(parentCommands, ["slack-consult"]);
+		assert.deepEqual(parentTools, []);
+
+		const childCommands: string[] = [];
+		const childTools: string[] = [];
+		slackChildExtension({
+			registerCommand(name: string) {
+				childCommands.push(name);
+			},
+			registerTool(tool: { name: string }) {
+				childTools.push(tool.name);
+			},
+		} as never);
+		assert.deepEqual(childCommands, []);
+		assert.deepEqual(childTools, ["slack_search", "slack_read"]);
+	} finally {
+		if (previousMarker === undefined) delete process.env.PI_SLACK_CHILD;
+		else process.env.PI_SLACK_CHILD = previousMarker;
+	}
 });
 
 test("requires ephemeral Pi sessions for Slack data", () => {

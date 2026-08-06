@@ -372,6 +372,9 @@ export async function buildPiArgs(
 		PI_SUBAGENT_DEPTH: String(normalizedDepth + 1),
 	};
 	delete childEnv.PI_SUBAGENT_ALLOWED;
+	// Slack credentials are reserved for the dedicated display-only consultation
+	// sidecar and must never leak into ordinary subagent environments.
+	delete childEnv.SLACK_USER_TOKEN;
 	if (agent.tools.includes("subagent") && agent.subagentAgents && agent.subagentAgents.length > 0) {
 		childEnv.PI_SUBAGENT_ALLOWED = agent.subagentAgents.join(",");
 	}

@@ -14,6 +14,7 @@ import {
 	type SlackSearchMessage,
 } from "./client.ts";
 import { loadSlackConfig } from "./config.ts";
+import { createSlackConsultExtension } from "./consult.ts";
 
 export const SLACK_CHANNEL_TYPES = [
 	"public_channel",
@@ -440,4 +441,6 @@ export function createSlackExtension(options: SlackExtensionOptions = {}) {
 	};
 }
 
-export default createSlackExtension();
+export default function slackPackageExtension(pi: ExtensionAPI): void {
+	createSlackConsultExtension()(pi);
+}

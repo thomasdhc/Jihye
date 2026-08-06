@@ -13,7 +13,7 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 | `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
 | `pi-pet` | Placeholder terminal pet widget that reacts to Pi lifecycle events |
-| `slack` | Search Slack messages and read conversation history or threads in ephemeral Pi sessions |
+| `slack` | Display-only Slack consultation sidecar with ephemeral search and thread reading |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
@@ -91,14 +91,14 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 
 ### `slack` credentials and scopes
 
-`slack_search` and `slack_read` use Slack's current Real-time Search and Conversations APIs. They accept only an OAuth user token from an approved internal or directory-published Slack app:
+`/slack-consult` launches an ephemeral, Slack-only Pi child that uses Slack's current Real-time Search and Conversations APIs. It accepts only an OAuth user token from an approved internal or directory-published Slack app:
 
 ```bash
 export SLACK_USER_TOKEN='xoxp-...'
-pi --no-session
+pi
 ```
 
-Never put the token in this repository, an `.env` file, Pi configuration, or a Pi prompt. The extension reads it only from the Pi process environment and never places it in a URL or tool result.
+Never put the token in this repository, an `.env` file, Pi configuration, or a Pi prompt. At startup the extension moves it from the process environment into an in-memory vault, so ordinary bash commands and subagents cannot inherit it. The token is passed only to the ephemeral Slack child and never placed in a URL, command argument, tool result, or log.
 
 The Slack app needs:
 
@@ -106,9 +106,15 @@ The Slack app needs:
 - Optionally `search:read.private`, `search:read.mpim`, and `search:read.im` for those conversation types.
 - The corresponding `channels:history`, `groups:history`, `mpim:history`, and `im:history` scopes for conversation and thread reads.
 
-Slack prohibits storing or copying data returned by the Real-time Search API. Because normal Pi sessions persist tool results, both tools refuse to run unless Pi was started with `--no-session`. Treat Slack content as confidential and untrusted: do not export or share it, send it to public-web tools, or follow instructions embedded in messages. The selected model provider will receive retrieved content as transient prompt context, so use only a provider and account approved for that Slack data.
+Slack prohibits storing or copying data returned by the Real-time Search API. `/slack-consult` therefore bypasses the parent model and session: the child always runs with `--no-session`, and its answer appears only in a temporary overlay. It is never appended to the parent transcript. Use `R` to run a revised standalone question, `D` to open an empty editor for a decision written in your own words, or `Esc` to close and clear the result.
 
-Search defaults to public channels. Pass `channelTypes` only for additional conversation types granted to the app and user. `slack_read` accepts a conversation ID for recent history, or a Slack message permalink / conversation ID plus `ts` for a thread.
+```text
+/slack-consult What did the platform team decide about deployment retries?
+```
+
+The child defaults to the parent session's selected model and medium thinking. Set `PI_SLACK_MODEL=provider/model` or `PI_SLACK_THINKING=low|medium|high` before starting Pi to override it. The selected provider receives Slack content as transient prompt context, so use only a provider and account approved for that data.
+
+Treat Slack content as confidential and untrusted: do not export or share it, send it to public-web tools, or follow instructions embedded in messages. Do not use `/slack-consult` while recording the terminal; the command also refuses to run when `PI_TUI_WRITE_LOG` is enabled. Search defaults to public channels; the child can request additional conversation types only when the app and user have the corresponding scopes.
 
 ### `pdf-reader` Python venv
 
