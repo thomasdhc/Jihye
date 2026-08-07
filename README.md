@@ -1,6 +1,6 @@
 # Jihye (지혜)
 
-Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your workflow. It bundles focused extensions, reusable skills, and portable agent definitions into one package that works consistently across workstations.
+Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your workflow. It bundles focused extensions, reusable skills, portable agent definitions, and global/workspace guidance into one package that works consistently across workstations.
 
 ## Extensions
 
@@ -23,9 +23,26 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 
 | Skill | Purpose |
 |---|---|
+| `examen` | Evidence-based GitHub pull request and GitLab merge request reviews |
 | `pdf-reader` | Read and comprehend PDFs using hybrid text + vision strategy |
 | `session-digest` | Extract and save important session exchanges to markdown |
+| `todo` | Maintain a lean project todo and completion archive |
 | `ui-edit` | Reliable HTML/CSS/JS editing workflow |
+| `vicara` | Explore repositories and rank evidence-backed opportunities |
+
+## Personas
+
+Reusable guidance is tracked in [`personas/`](personas/README.md). Pi packages do not install context files automatically, so configure two symlinks after installing Jihye. The commands below expect both destinations not to exist; inspect and remove obsolete symlinks first, and never overwrite a regular context file.
+
+```bash
+JIHYE=/path/to/Jihye
+WORKSPACE=/path/to/workspace
+
+ln -s "$JIHYE/personas/JIHYE.md" ~/.pi/agent/AGENTS.md
+ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
+```
+
+The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The workspace profile resolves its canonical Jihye location to read sibling `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md` policy without additional symlinks.
 
 ## Requirements
 
@@ -101,7 +118,7 @@ python3 -m venv .venv
 
 ### `subagent` agent definitions
 
-Portable default definitions are tracked in `agents/`:
+Portable default definitions are tracked in `personas/subagents/`:
 
 | Agent | Model | Thinking |
 |---|---|---|
@@ -109,8 +126,9 @@ Portable default definitions are tracked in `agents/`:
 | `researcher` | `openai-codex/gpt-5.6-sol` | medium |
 | `reviewer` | `openai-codex/gpt-5.6-sol` | medium |
 | `worker` | `openai-codex/gpt-5.6-sol` | high |
+| `coordinator` | `openai-codex/gpt-5.6-sol` | high |
 
-Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `agents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `agents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
+Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `personas/subagents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `personas/subagents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 
 ### Pi pet
 

@@ -1,6 +1,6 @@
 # Jihye (지혜)
 
-Personal Pi extensions and skills packaged for installation across workstations.
+Personal Pi extensions, skills, agents, and reusable guidance packaged for installation across workstations.
 
 ## Install / Local Setup
 
@@ -32,7 +32,7 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 
 ## Layout
 
-- `agents/` — Portable default subagent definitions loaded by the subagent extension.
 - `extensions/` — Pi extensions loaded by the package manifest.
+- `personas/` — Global and workspace guidance, local-configuration templates, and portable default subagent definitions.
 - `skills/` — Pi skills loaded by the package manifest.
 - `tests/` — Node test-runner coverage for extension logic and event behavior.

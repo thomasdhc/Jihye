@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { type AgentConfig, buildPiArgs, getAgentDirectories, loadAgentsFromDirectories } from "../extensions/subagent/index.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const BUNDLED_AGENTS_DIR = join(REPO_ROOT, "personas", "subagents");
 
 function extensionArgs(args: string[]): string[] {
 	const paths: string[] = [];
@@ -18,7 +19,7 @@ function extensionArgs(args: string[]): string[] {
 }
 
 test("loads portable bundled agent model specifications", () => {
-	const bundledAgents = loadAgentsFromDirectories([join(REPO_ROOT, "agents")]);
+	const bundledAgents = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
 	const byName = new Map(bundledAgents.map((agent) => [agent.name, agent]));
 
 	assert.deepEqual([...byName.keys()].sort(), ["coordinator", "researcher", "reviewer", "scout", "worker"]);
@@ -33,9 +34,9 @@ test("loads portable bundled agent model specifications", () => {
 });
 
 test("keeps the bundled coordinator recursive but bounded", () => {
-	const coordinator = loadAgentsFromDirectories([join(REPO_ROOT, "agents")])
+	const coordinator = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR])
 		.find((agent) => agent.name === "coordinator");
-	const reviewer = loadAgentsFromDirectories([join(REPO_ROOT, "agents")])
+	const reviewer = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR])
 		.find((agent) => agent.name === "reviewer");
 
 	assert.ok(coordinator);
@@ -48,7 +49,7 @@ test("keeps the bundled coordinator recursive but bounded", () => {
 });
 
 test("keeps the bundled reviewer bounded", () => {
-	const reviewer = loadAgentsFromDirectories([join(REPO_ROOT, "agents")])
+	const reviewer = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR])
 		.find((agent) => agent.name === "reviewer");
 
 	assert.ok(reviewer);
@@ -62,7 +63,7 @@ test("keeps the bundled reviewer bounded", () => {
 test("resolves bundled, user, then package-local agent directories", () => {
 	const workspace = join(tmpdir(), "jihye-workspace-fixture");
 	assert.deepEqual(getAgentDirectories(workspace), [
-		join(REPO_ROOT, "agents"),
+		BUNDLED_AGENTS_DIR,
 		join(process.env.HOME || "", ".pi/agent/agents"),
 		join(REPO_ROOT, ".pi/agents"),
 	]);
@@ -104,7 +105,7 @@ Specialist prompt.
 `);
 
 	try {
-		const bundledDir = join(REPO_ROOT, "agents");
+		const bundledDir = BUNDLED_AGENTS_DIR;
 		const withoutUserOverrides = loadAgentsFromDirectories([bundledDir, join(tempDir, "missing"), packageLocalDir]);
 		const agents = loadAgentsFromDirectories([bundledDir, userDir, packageLocalDir]);
 		const byName = new Map(agents.map((agent) => [agent.name, agent]));
