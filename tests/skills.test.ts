@@ -29,11 +29,9 @@ test("skills have valid identifying frontmatter", () => {
 	}
 	assert.deepEqual(names.sort(), [
 		"examen",
-		"pdf-reader",
 		"review-guidance",
 		"session-digest",
 		"todo",
-		"ui-edit",
 		"vicara",
 	]);
 });
