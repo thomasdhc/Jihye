@@ -4,12 +4,12 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import {
 	removeCompanionWidgetContribution,
 	updateCompanionWidget,
-} from "../../lib/companion-widget.ts";
+} from "../api.ts";
 import {
 	consumeLegacySessionDisplayName,
 	getActiveSessionIdentity,
 	setActiveSessionIdentity,
-} from "../../lib/session-identity.ts";
+} from "./state.ts";
 import {
 	SessionNameAllocator,
 	type SessionNameLease,

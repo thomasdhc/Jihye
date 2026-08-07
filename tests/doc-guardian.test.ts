@@ -11,7 +11,7 @@ import {
 	DOC_GUARDIAN_POLICY,
 	normalizeContextFiles,
 	shouldRemind,
-} from "../extensions/doc-guardian.ts";
+} from "../extensions/widget/doc-guardian.ts";
 
 function contentWithLines(count: number): string {
 	return `${Array.from({ length: count }, (_, index) => `line ${index + 1}`).join("\n")}\n`;

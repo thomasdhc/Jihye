@@ -8,7 +8,7 @@ import {
 	notificationSequence,
 	TERMINAL_NOTIFY_EVENT,
 } from "../extensions/terminal-notify.ts";
-import { setActiveSessionIdentity } from "../lib/session-identity.ts";
+import { setActiveSessionIdentity } from "../extensions/widget/session-identity/state.ts";
 
 test("detects terminal notification protocols with explicit precedence", () => {
 	assert.equal(detectNotificationProtocol({ KITTY_WINDOW_ID: "1", TERM_PROGRAM: "iTerm.app" }), "kitty");

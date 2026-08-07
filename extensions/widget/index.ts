@@ -1,12 +1,16 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
+import contextManagerExtension from "./ctx-manager.ts";
+import docGuardianExtension from "./doc-guardian.ts";
+import piPetExtension from "./pi-pet.ts";
+import sessionIdentityExtension from "./session-identity/index.ts";
 import {
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetContribution,
 	type CompanionWidgetTone,
 	type CompanionWidgetUpdate,
-} from "../lib/companion-widget.ts";
+} from "./api.ts";
 
 const WIDGET_ID = "companion-widget";
 const COLUMN_GAP = 2;
@@ -53,7 +57,7 @@ export function renderCompanionWidgetLines(
 	});
 }
 
-export default function companionWidgetExtension(pi: ExtensionAPI): void {
+export function registerCompanionWidgetHost(pi: ExtensionAPI): void {
 	const contributions = new Map<string, CompanionWidgetContribution>();
 	let requestRender: (() => void) | undefined;
 
@@ -90,4 +94,12 @@ export default function companionWidgetExtension(pi: ExtensionAPI): void {
 		contributions.clear();
 		if (ctx.hasUI) ctx.ui.setWidget(WIDGET_ID, undefined);
 	});
+}
+
+export default function widgetExtension(pi: ExtensionAPI): void {
+	registerCompanionWidgetHost(pi);
+	contextManagerExtension(pi);
+	docGuardianExtension(pi);
+	piPetExtension(pi);
+	sessionIdentityExtension(pi);
 }

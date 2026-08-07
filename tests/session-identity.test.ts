@@ -17,24 +17,24 @@ import {
 	type LeaseOwner,
 	type SessionNameAllocatorDependencies,
 	type SessionNameLease,
-} from "../extensions/session-identity/allocator.ts";
+} from "../extensions/widget/session-identity/allocator.ts";
 import {
 	createSessionIdentityConfig,
 	SESSION_IDENTITY_CONFIG_FILE,
 	type SessionIdentityConfig,
-} from "../extensions/session-identity/config.ts";
+} from "../extensions/widget/session-identity/config.ts";
 import {
 	createSessionIdentityExtension,
 	formatSessionIdentityTitle,
-} from "../extensions/session-identity/index.ts";
+} from "../extensions/widget/session-identity/index.ts";
 import {
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetUpdate,
-} from "../lib/companion-widget.ts";
+} from "../extensions/widget/api.ts";
 import {
 	getActiveSessionIdentity,
 	setActiveSessionIdentity,
-} from "../lib/session-identity.ts";
+} from "../extensions/widget/session-identity/state.ts";
 
 const EXAMPLE_NAMES = [
 	"Agent One",

@@ -5,7 +5,7 @@ import { getAgentDir } from "@earendil-works/pi-coding-agent";
 
 export const SESSION_IDENTITY_CONFIG_FILE = "session-identity.json";
 export const SESSION_IDENTITY_EXAMPLE_CONFIG = fileURLToPath(
-	new URL("../../examples/session-identity.json", import.meta.url),
+	new URL("../../../examples/session-identity.json", import.meta.url),
 );
 
 const DEFAULT_FALLBACK_PREFIX = "pi-agent";

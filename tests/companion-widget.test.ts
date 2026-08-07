@@ -1,8 +1,40 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import companionWidgetExtension, { renderCompanionWidgetLines } from "../extensions/companion-widget.ts";
-import type { CompanionWidgetContribution } from "../lib/companion-widget.ts";
+import widgetExtension, {
+	registerCompanionWidgetHost,
+	renderCompanionWidgetLines,
+} from "../extensions/widget/index.ts";
+import {
+	COMPANION_WIDGET_UPDATE_EVENT,
+	type CompanionWidgetContribution,
+} from "../extensions/widget/api.ts";
+
+test("loads every companion component through one widget extension", () => {
+	const eventHandlers: string[] = [];
+	const commands: string[] = [];
+	const sharedEventSubscriptions: string[] = [];
+
+	widgetExtension({
+		events: {
+			on(event: string) {
+				sharedEventSubscriptions.push(event);
+			},
+			emit() {},
+		},
+		on(event: string) {
+			eventHandlers.push(event);
+		},
+		registerCommand(name: string) {
+			commands.push(name);
+		},
+	} as never);
+
+	assert.deepEqual(sharedEventSubscriptions, [COMPANION_WIDGET_UPDATE_EVENT]);
+	assert.deepEqual(commands.sort(), ["ctx", "doc-status", "review-docs"]);
+	assert.equal(eventHandlers.filter((event) => event === "session_start").length, 5);
+	assert.equal(eventHandlers.filter((event) => event === "session_shutdown").length, 3);
+});
 
 test("composes independent visual and detail contributions", () => {
 	const contributions: CompanionWidgetContribution[] = [
@@ -54,7 +86,7 @@ test("preserves contributions published before the host session-start handler", 
 	let sessionStart: ((event: unknown, ctx: unknown) => Promise<void>) | undefined;
 	let widgetFactory: ((tui: any, theme: any) => { render(width: number): string[] }) | undefined;
 
-	companionWidgetExtension({
+	registerCompanionWidgetHost({
 		events: {
 			on(_event: string, handler: (payload: unknown) => void) {
 				updateHandler = handler;
