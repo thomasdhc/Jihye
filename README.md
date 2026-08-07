@@ -20,11 +20,9 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 | Skill | Purpose |
 |---|---|
 | `examen` | Evidence-based GitHub pull request and GitLab merge request reviews |
-| `pdf-reader` | Read and comprehend PDFs using hybrid text + vision strategy |
 | `review-guidance` | Review the most-specific agent guidance governing a selected path |
 | `session-digest` | Extract and save important session exchanges to markdown |
 | `todo` | Maintain a lean project todo and completion archive |
-| `ui-edit` | Reliable HTML/CSS/JS editing workflow |
 | `vicara` | Explore repositories and rank evidence-backed opportunities |
 
 ## Personas
@@ -104,14 +102,6 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 ```
 
 `auth.json` is gitignored and meant to stay local.
-
-### `pdf-reader` Python venv
-
-```bash
-cd skills/pdf-reader
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-```
 
 ### `subagent` agent definitions
 
