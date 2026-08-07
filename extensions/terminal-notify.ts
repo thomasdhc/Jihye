@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-import { getActiveSessionIdentity } from "../lib/session-identity.ts";
+import { getActiveSessionIdentity } from "./widget/session-identity/state.ts";
 
 export type NotificationProtocol = "iterm" | "kitty" | "osc777";
 

@@ -7,17 +7,13 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 | Extension | Purpose |
 |---|---|
 | `bash-guard` | Interactive prompt for destructive bash and GitHub/GitLab CLI commands; headless hard-block in subagents |
-| `companion-widget` | Composes independent visual and status contributions below the editor |
-| `ctx-manager` | Context usage publisher + auto-compaction at 65% |
 | `custom-header` | Custom Pi startup header |
-| `doc-guardian` | Watches `AGENTS.md` / `CLAUDE.md` for bloat and reminds you to review docs |
 | `project-info` | Footer status showing current git project + branch |
-| `pi-pet` | Placeholder terminal pet widget that reacts to Pi lifecycle events |
-| `session-identity` | Assign collision-free round-robin names to active local Pi sessions |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
 | `web-search` | Search the web via Serper (Google results) |
+| `widget` | Companion widget with pet reactions, context management, doc health, and session identity |
 
 ## Skills
 
@@ -130,6 +126,22 @@ Portable default definitions are tracked in `personas/subagents/`:
 
 Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `personas/subagents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `personas/subagents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 
+### Companion widget
+
+The `widget` extension owns the below-editor companion and loads its `pi-pet`, `ctx-manager`, `doc-guardian`, and `session-identity` components behind one extension interface. Disabling `widget` in Pi disables all four; use `/widget` to enable or disable individual components. Changes are saved globally to `~/.pi/agent/widget.json` (or `$PI_CODING_AGENT_DIR/widget.json`) and reload the extensions automatically.
+
+Useful forms:
+
+```text
+/widget                         # interactive component settings
+/widget status                  # show current component states
+/widget pi-pet off              # disable one component
+/widget session-identity on     # enable one component
+/widget reset                   # enable every component
+```
+
+All components are enabled when no widget configuration exists.
+
 ### Pi pet
 
 `pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere. Top-level subagent tool calls get their own temporary pet instances, each tracking that subagent's working, success, or error state independently. Bundled roles use compact, role-specific silhouettes; custom agents fall back to the generic cat.
@@ -142,7 +154,7 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 | `worker` | Builder in a hard hat |
 | `coordinator` | Conductor joining several paths |
 
-The generic `companion-widget` extension owns the below-editor widget and composes independent contributions from `pi-pet`, `ctx-manager`, `doc-guardian`, and `session-identity`. The pet artwork sits on the left, while context, documentation, and session identity details are right-aligned. Each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
+The pet artwork sits on the left, while context, documentation, and session identity details are right-aligned. At runtime, each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 
 Current state mapping:
 

@@ -15,7 +15,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { removeCompanionWidgetContribution, updateCompanionWidget } from "../lib/companion-widget.ts";
+import { removeCompanionWidgetContribution, updateCompanionWidget } from "./api.ts";
 
 // -- Policy -------------------------------------------------------------------
 

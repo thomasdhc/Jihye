@@ -4,7 +4,7 @@ import {
 	removeCompanionWidgetContribution,
 	updateCompanionWidget,
 	type CompanionWidgetTone,
-} from "../lib/companion-widget.ts";
+} from "./api.ts";
 
 export type PiPetState = "idle" | "thinking" | "working" | "success" | "error";
 

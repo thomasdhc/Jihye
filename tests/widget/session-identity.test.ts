@@ -17,24 +17,24 @@ import {
 	type LeaseOwner,
 	type SessionNameAllocatorDependencies,
 	type SessionNameLease,
-} from "../extensions/session-identity/allocator.ts";
+} from "../../extensions/widget/session-identity/allocator.ts";
 import {
 	createSessionIdentityConfig,
 	SESSION_IDENTITY_CONFIG_FILE,
 	type SessionIdentityConfig,
-} from "../extensions/session-identity/config.ts";
+} from "../../extensions/widget/session-identity/config.ts";
 import {
 	createSessionIdentityExtension,
 	formatSessionIdentityTitle,
-} from "../extensions/session-identity/index.ts";
+} from "../../extensions/widget/session-identity/index.ts";
 import {
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetUpdate,
-} from "../lib/companion-widget.ts";
+} from "../../extensions/widget/api.ts";
 import {
 	getActiveSessionIdentity,
 	setActiveSessionIdentity,
-} from "../lib/session-identity.ts";
+} from "../../extensions/widget/session-identity/state.ts";
 
 const EXAMPLE_NAMES = [
 	"Agent One",
@@ -605,7 +605,7 @@ test("publishes the session identity without taking over the session display nam
 
 		await handlers.get("session_shutdown")?.({ reason: "reload" }, ctx);
 		assert.equal(releaseCount, 0);
-		assert.equal(getActiveSessionIdentity(), "Agent One");
+		assert.equal(getActiveSessionIdentity(), undefined);
 		assert.deepEqual(companionUpdates.at(-1), { id: "session-identity" });
 
 		const reloadedHandlers = registerRuntime();
@@ -638,6 +638,60 @@ test("publishes the session identity without taking over the session display nam
 		assert.equal(releaseCount, 1);
 		assert.equal(getActiveSessionIdentity(), undefined);
 		assert.deepEqual(companionUpdates.at(-1), { id: "session-identity" });
+	} finally {
+		setActiveSessionIdentity(undefined);
+	}
+});
+
+test("releases its lease when the widget disables session identity during reload", async () => {
+	type Handler = (event: Record<string, unknown>, ctx: any) => Promise<void> | void;
+	const handlers = new Map<string, Handler>();
+	const lease: SessionNameLease = {
+		name: "Agent One",
+		leaseId: "lease-1",
+		ownerId: "owner-1",
+	};
+	let releaseCount = 0;
+	let currentName: string | undefined;
+
+	createSessionIdentityExtension({
+		allocator: {
+			async acquire() {
+				return lease;
+			},
+			async release(releasedLease) {
+				assert.deepEqual(releasedLease, lease);
+				releaseCount += 1;
+				return true;
+			},
+		},
+		shouldReleaseOnReload: () => true,
+	})({
+		events: { emit() {} },
+		on(event: string, handler: Handler) {
+			handlers.set(event, handler);
+		},
+		getSessionName() {
+			return currentName;
+		},
+		setSessionName(name: string) {
+			currentName = name;
+		},
+	} as never);
+
+	setActiveSessionIdentity(undefined);
+	try {
+		const ctx = {
+			hasUI: true,
+			cwd: "/workspace/project",
+			ui: { setTitle() {}, notify() {} },
+		};
+		await handlers.get("session_start")?.({ reason: "reload" }, ctx);
+		assert.equal(getActiveSessionIdentity(), "Agent One");
+
+		await handlers.get("session_shutdown")?.({ reason: "reload" }, ctx);
+		assert.equal(releaseCount, 1);
+		assert.equal(getActiveSessionIdentity(), undefined);
 	} finally {
 		setActiveSessionIdentity(undefined);
 	}

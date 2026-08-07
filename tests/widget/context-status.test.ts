@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { contextBar, createContextStatusPayload, formatTokenCount } from "../lib/context-status.ts";
+import { contextBar, createContextStatusPayload, formatTokenCount } from "../../extensions/widget/context-status.ts";
 
 test("formats compact context status payloads", () => {
 	assert.equal(formatTokenCount(999), "999");
