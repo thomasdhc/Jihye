@@ -12,7 +12,6 @@ import { getAgentDir } from "@earendil-works/pi-coding-agent";
 export const WIDGET_CONFIG_FILE = "widget.json";
 export const WIDGET_COMPONENT_IDS = [
 	"ctx-manager",
-	"doc-guardian",
 	"pi-pet",
 	"session-identity",
 ] as const;
@@ -36,7 +35,6 @@ export function createDefaultWidgetConfig(): WidgetConfig {
 	return {
 		components: {
 			"ctx-manager": true,
-			"doc-guardian": true,
 			"pi-pet": true,
 			"session-identity": true,
 		},

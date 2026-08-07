@@ -10,7 +10,6 @@ import {
 	type WidgetConfig,
 } from "./config.ts";
 import contextManagerExtension from "./ctx-manager.ts";
-import docGuardianExtension from "./doc-guardian.ts";
 import piPetExtension from "./pi-pet.ts";
 import { registerWidgetSettings } from "./settings.ts";
 import { createSessionIdentityExtension } from "./session-identity/index.ts";
@@ -29,7 +28,6 @@ const COMPONENT_FACTORIES: ReadonlyArray<[
 	(pi: ExtensionAPI) => void,
 ]> = [
 	["ctx-manager", contextManagerExtension],
-	["doc-guardian", docGuardianExtension],
 	["pi-pet", piPetExtension],
 ];
 

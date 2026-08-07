@@ -27,7 +27,23 @@ test("skills have valid identifying frontmatter", () => {
 		assert.match(frontmatter, /^description: .+$/m, path);
 		names.push(frontmatter.match(/^name: ([a-z0-9-]+)$/m)?.[1] ?? "");
 	}
-	assert.deepEqual(names.sort(), ["examen", "pdf-reader", "session-digest", "todo", "ui-edit", "vicara"]);
+	assert.deepEqual(names.sort(), [
+		"examen",
+		"pdf-reader",
+		"review-guidance",
+		"session-digest",
+		"todo",
+		"ui-edit",
+		"vicara",
+	]);
+});
+
+test("review-guidance requires a narrow subject scope", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "review-guidance", "SKILL.md"), "utf8");
+	assert.match(content, /scope is required/i);
+	assert.match(content, /most-specific guidance/i);
+	assert.match(content, /parent guidance files are references/i);
+	assert.match(content, /Do not review unrelated Markdown files/i);
 });
 
 test("skills remain portable and never instruct autonomous commits", () => {

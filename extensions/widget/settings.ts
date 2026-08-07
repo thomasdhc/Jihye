@@ -20,7 +20,6 @@ import {
 const COMPONENTS: ReadonlyArray<{ id: WidgetComponentId; label: string }> = [
 	{ id: "pi-pet", label: "Pi pet" },
 	{ id: "ctx-manager", label: "Context manager" },
-	{ id: "doc-guardian", label: "Document guardian" },
 	{ id: "session-identity", label: "Session identity" },
 ];
 
