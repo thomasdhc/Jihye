@@ -5,12 +5,12 @@ import {
 	createWidgetExtension,
 	registerCompanionWidgetHost,
 	renderCompanionWidgetLines,
-} from "../extensions/widget/index.ts";
-import { createDefaultWidgetConfig } from "../extensions/widget/config.ts";
+} from "../../extensions/widget/index.ts";
+import { createDefaultWidgetConfig } from "../../extensions/widget/config.ts";
 import {
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetContribution,
-} from "../extensions/widget/api.ts";
+} from "../../extensions/widget/api.ts";
 
 test("loads every companion component through one widget extension", () => {
 	const eventHandlers: string[] = [];

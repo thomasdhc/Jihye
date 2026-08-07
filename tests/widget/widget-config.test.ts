@@ -9,8 +9,8 @@ import {
 	loadWidgetConfig,
 	parseWidgetConfig,
 	saveWidgetConfig,
-} from "../extensions/widget/config.ts";
-import { parseWidgetCommand, registerWidgetSettings } from "../extensions/widget/settings.ts";
+} from "../../extensions/widget/config.ts";
+import { parseWidgetCommand, registerWidgetSettings } from "../../extensions/widget/settings.ts";
 
 test("enables omitted widget components by default", () => {
 	assert.deepEqual(parseWidgetConfig({

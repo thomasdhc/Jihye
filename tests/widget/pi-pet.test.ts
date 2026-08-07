@@ -8,8 +8,8 @@ import {
 	getPiPetResetDelay,
 	renderPiPetLines,
 	renderPiPetStateLines,
-} from "../extensions/widget/pi-pet.ts";
-import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../extensions/widget/api.ts";
+} from "../../extensions/widget/pi-pet.ts";
+import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../../extensions/widget/api.ts";
 
 const ROLE_PET_WORKING_FRAMES = {
 	scout: [" /\\ /\\ ", " (o|o) ", " / V \\ "],
