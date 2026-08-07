@@ -118,7 +118,7 @@ python3 -m venv .venv
 
 ### `subagent` agent definitions
 
-Portable default definitions are tracked in `agents/`:
+Portable default definitions are tracked in `personas/agents/`:
 
 | Agent | Model | Thinking |
 |---|---|---|
@@ -128,7 +128,7 @@ Portable default definitions are tracked in `agents/`:
 | `worker` | `openai-codex/gpt-5.6-sol` | high |
 | `coordinator` | `openai-codex/gpt-5.6-sol` | high |
 
-Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `agents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `agents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
+Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `personas/agents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `personas/agents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 
 ### Pi pet
 

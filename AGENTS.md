@@ -32,8 +32,7 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 
 ## Layout
 
-- `agents/` — Portable default subagent definitions loaded by the subagent extension.
 - `extensions/` — Pi extensions loaded by the package manifest.
-- `personas/` — Global and workspace guidance, local-configuration templates, and portable persona subagent specifications.
+- `personas/` — Global and workspace guidance, local-configuration templates, and portable default subagent definitions.
 - `skills/` — Pi skills loaded by the package manifest.
 - `tests/` — Node test-runner coverage for extension logic and event behavior.

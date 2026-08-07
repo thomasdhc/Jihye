@@ -80,14 +80,16 @@ test("persona policy remains portable", () => {
 	}
 });
 
-test("portable persona subagents are retained but current", () => {
-	const subagentRoot = join(PERSONAS_ROOT, "subagent");
-	const files = readdirSync(subagentRoot).filter((entry) => entry.endsWith(".md")).sort();
-	assert.deepEqual(files, ["researcher.md", "reviewer.md", "scout.md", "worker.md"]);
+test("persona agents are the single current bundled definition set", () => {
+	const agentRoot = join(PERSONAS_ROOT, "agents");
+	const files = readdirSync(agentRoot).filter((entry) => entry.endsWith(".md")).sort();
+	assert.deepEqual(files, ["coordinator.md", "researcher.md", "reviewer.md", "scout.md", "worker.md"]);
+	assert.equal(existsSync(join(REPO_ROOT, "agents")), false);
+	assert.equal(existsSync(join(PERSONAS_ROOT, "subagent")), false);
 
 	for (const file of files) {
-		const content = readFileSync(join(subagentRoot, file), "utf8");
+		const content = readFileSync(join(agentRoot, file), "utf8");
 		assert.match(content, /model: openai-codex\/gpt-5\.6-sol/);
 	}
-	assert.match(readFileSync(join(subagentRoot, "worker.md"), "utf8"), /thinking: high/);
+	assert.match(readFileSync(join(agentRoot, "worker.md"), "utf8"), /thinking: high/);
 });

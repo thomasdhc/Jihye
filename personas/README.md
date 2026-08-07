@@ -13,9 +13,9 @@ Reusable global instructions, workspace policy, local-configuration templates, a
 | `ENVIRONMENT.md` | Command-environment and filesystem conventions. |
 | `GIT.md` | Branch, commit, push, and pull-request policy. |
 | `templates/` | Templates for workspace-local `REPO.md` and `USERNAME.md`. |
-| `subagent/` | Portable Pi-compatible subagent specifications retained with the personas collection. |
+| `agents/` | Portable default subagent definitions loaded by Jihye's bundled subagent extension. |
 
-Jihye's package-level `agents/` directory remains the canonical source loaded by the bundled subagent extension. The specifications under `personas/subagent/` are portable reference copies and are not loaded automatically.
+`personas/agents/` is the single canonical source for Jihye's bundled subagent definitions.
 
 ## Install the guidance chain
 
