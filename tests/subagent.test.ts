@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { type AgentConfig, buildPiArgs, getAgentDirectories, loadAgentsFromDirectories } from "../extensions/subagent/index.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const BUNDLED_AGENTS_DIR = join(REPO_ROOT, "personas", "agents");
+const BUNDLED_AGENTS_DIR = join(REPO_ROOT, "personas", "subagents");
 
 function extensionArgs(args: string[]): string[] {
 	const paths: string[] = [];

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
 	existsSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -81,13 +82,16 @@ test("persona policy remains portable", () => {
 });
 
 test("persona agents are the single current bundled definition set", () => {
-	const agentRoot = join(PERSONAS_ROOT, "agents");
+	const agentRoot = join(PERSONAS_ROOT, "subagents");
 	const files = readdirSync(agentRoot).filter((entry) => entry.endsWith(".md")).sort();
 	assert.deepEqual(files, ["coordinator.md", "researcher.md", "reviewer.md", "scout.md", "worker.md"]);
+	assert.equal(lstatSync(agentRoot).isSymbolicLink(), false);
 	assert.equal(existsSync(join(REPO_ROOT, "agents")), false);
+	assert.equal(existsSync(join(PERSONAS_ROOT, "agents")), false);
 	assert.equal(existsSync(join(PERSONAS_ROOT, "subagent")), false);
 
 	for (const file of files) {
+		assert.equal(lstatSync(join(agentRoot, file)).isSymbolicLink(), false);
 		const content = readFileSync(join(agentRoot, file), "utf8");
 		assert.match(content, /model: openai-codex\/gpt-5\.6-sol/);
 	}
