@@ -644,5 +644,5 @@ test("publishes the session identity without taking over the session display nam
 });
 
 test("formats terminal titles consistently", () => {
-	assert.equal(formatSessionIdentityTitle("Agent Three", "/workspace/pi-extensio"), "π - Agent Three - pi-extensio");
+	assert.equal(formatSessionIdentityTitle("Agent Three", "/workspace/jihye"), "π - Agent Three - jihye");
 });

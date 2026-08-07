@@ -60,7 +60,7 @@ test("keeps the bundled reviewer bounded", () => {
 });
 
 test("resolves bundled, user, then package-local agent directories", () => {
-	const workspace = join(tmpdir(), "pi-extensio-workspace-fixture");
+	const workspace = join(tmpdir(), "jihye-workspace-fixture");
 	assert.deepEqual(getAgentDirectories(workspace), [
 		join(REPO_ROOT, "agents"),
 		join(process.env.HOME || "", ".pi/agent/agents"),
@@ -69,7 +69,7 @@ test("resolves bundled, user, then package-local agent directories", () => {
 });
 
 test("loads user and package-local agents as full sequential overrides of bundled defaults", () => {
-	const tempDir = mkdtempSync(join(tmpdir(), "pi-extensio-subagents-"));
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
 	const packageLocalDir = join(tempDir, "package", ".pi", "agents");
 	const userDir = join(tempDir, "agents");
 	mkdirSync(packageLocalDir, { recursive: true });
@@ -128,7 +128,7 @@ Specialist prompt.
 });
 
 test("rejects duplicate agent names within one directory", () => {
-	const tempDir = mkdtempSync(join(tmpdir(), "pi-extensio-subagents-"));
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
 	writeFileSync(join(tempDir, "first.md"), "---\nname: duplicate\n---\nFirst\n");
 	writeFileSync(join(tempDir, "second.md"), "---\nname: duplicate\n---\nSecond\n");
 

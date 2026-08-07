@@ -1,4 +1,4 @@
-const SESSION_IDENTITY_STATE = Symbol.for("pi-extensio.session-identity.state");
+const SESSION_IDENTITY_STATE = Symbol.for("jihye.session-identity.state");
 
 interface SessionIdentityState {
 	name?: string;

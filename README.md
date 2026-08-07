@@ -1,6 +1,6 @@
-# Pi Extensio
+# Jihye (지혜)
 
-A personal, installable collection of extensions and skills for the [Pi coding agent](https://pi.dev).
+Jihye—Korean for “wisdom”—is a personal, installable collection of extensions and skills for the [Pi coding agent](https://pi.dev).
 
 ## Extensions
 
@@ -35,17 +35,19 @@ A personal, installable collection of extensions and skills for the [Pi coding a
 ## Install
 
 > **Migration note:** `pi install` does not replace extensions manually copied into `~/.pi/agent/extensions/`. Remove or back up old manual copies before installing this package to avoid duplicate tool/flag conflicts. Keep any local config you still need, such as `web-search/auth.json`.
+>
+> **Renaming from Pi Extensio:** Pi identifies Git packages by repository URL and local packages by resolved path. Run `pi list`, remove the old `pi-extensio` source with `pi remove <old-source>`, then install Jihye to avoid loading both package identities. Fully exit all running Pi processes and reopen Pi after migrating.
 
 ### From GitHub
 
 ```bash
-pi install git:git@github.com:thomasdhc/pi-extensio
+pi install git:git@github.com:thomasdhc/jihye
 ```
 
 If SSH is not configured on the machine, HTTPS works too:
 
 ```bash
-pi install git:https://github.com/thomasdhc/pi-extensio.git
+pi install git:https://github.com/thomasdhc/jihye.git
 ```
 
 Pull future package updates with:
@@ -59,8 +61,8 @@ Run `/reload` in an existing Pi session after installing or updating.
 ### From a local checkout
 
 ```bash
-git clone git@github.com:thomasdhc/pi-extensio.git
-cd pi-extensio
+git clone git@github.com:thomasdhc/jihye.git
+cd jihye
 npm install
 pi install .
 ```

@@ -16,7 +16,7 @@ import { promisify } from "node:util";
 import type { SessionIdentityConfig } from "./config.ts";
 
 const execFileAsync = promisify(execFile);
-const PROCESS_LEASE_OWNER = Symbol.for("pi-extensio.session-identity.process-owner");
+const PROCESS_LEASE_OWNER = Symbol.for("jihye.session-identity.process-owner");
 const FORMAT_VERSION = 1;
 const LOCK_FILE_NAME = "owner.json";
 const LEASES_DIRECTORY_NAME = "leases";

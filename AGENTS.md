@@ -1,4 +1,4 @@
-# Pi Extensio
+# Jihye (지혜)
 
 Personal Pi extensions and skills packaged for installation across workstations.
 
