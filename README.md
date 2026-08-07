@@ -36,7 +36,7 @@ Jihye—Korean for “wisdom”—is a personal, installable collection of exten
 
 > **Migration note:** `pi install` does not replace extensions manually copied into `~/.pi/agent/extensions/`. Remove or back up old manual copies before installing this package to avoid duplicate tool/flag conflicts. Keep any local config you still need, such as `web-search/auth.json`.
 >
-> **Renaming from Pi Extensio:** Pi identifies Git packages by repository URL and local packages by resolved path. Run `pi list`, remove the old `pi-extensio` source with `pi remove <old-source>`, then install Jihye to avoid loading both package identities.
+> **Renaming from Pi Extensio:** Pi identifies Git packages by repository URL and local packages by resolved path. Run `pi list`, remove the old `pi-extensio` source with `pi remove <old-source>`, then install Jihye to avoid loading both package identities. Fully exit all running Pi processes and reopen Pi after migrating.
 
 ### From GitHub
 
