@@ -36,14 +36,13 @@ test("loads every companion component through one widget extension", () => {
 	} as never);
 
 	assert.deepEqual(sharedEventSubscriptions, [COMPANION_WIDGET_UPDATE_EVENT]);
-	assert.deepEqual(commands.sort(), ["ctx", "doc-status", "review-docs", "widget"]);
-	assert.equal(eventHandlers.filter((event) => event === "session_start").length, 5);
+	assert.deepEqual(commands.sort(), ["ctx", "widget"]);
+	assert.equal(eventHandlers.filter((event) => event === "session_start").length, 4);
 	assert.equal(eventHandlers.filter((event) => event === "session_shutdown").length, 3);
 });
 
 test("loads only widget components enabled by the widget interface", () => {
 	const config = createDefaultWidgetConfig();
-	config.components["doc-guardian"] = false;
 	config.components["pi-pet"] = false;
 	const eventHandlers: string[] = [];
 	const commands: string[] = [];
@@ -67,14 +66,14 @@ test("loads only widget components enabled by the widget interface", () => {
 
 test("composes independent visual and detail contributions", () => {
 	const contributions: CompanionWidgetContribution[] = [
-		{ id: "docs", region: "details", order: 20, lines: ["docs ○"] },
+		{ id: "session-identity", region: "details", order: 30, lines: ["Agent One"] },
 		{ id: "pet", region: "visual", order: 10, lines: [" /\\_/\\", "( o.o )", " > ^ <"] },
 		{ id: "context", region: "details", order: 10, lines: ["ctx 42%"] },
 	];
 
 	assert.deepEqual(renderCompanionWidgetLines(contributions, undefined, 20), [
 		" /\\_/\\       ctx 42%",
-		"( o.o )       docs ○",
+		"( o.o )    Agent One",
 		" > ^ <",
 	]);
 });
@@ -82,22 +81,22 @@ test("composes independent visual and detail contributions", () => {
 test("removing one contribution does not affect remaining components", () => {
 	const contributions: CompanionWidgetContribution[] = [
 		{ id: "pet", region: "visual", order: 10, lines: ["pet"] },
-		{ id: "docs", region: "details", order: 20, lines: ["docs ○"] },
+		{ id: "context", region: "details", order: 20, lines: ["ctx 42%"] },
 	];
 
-	assert.deepEqual(renderCompanionWidgetLines(contributions), ["pet  docs ○"]);
-	assert.deepEqual(renderCompanionWidgetLines(contributions.filter((item) => item.id !== "pet")), ["docs ○"]);
+	assert.deepEqual(renderCompanionWidgetLines(contributions), ["pet  ctx 42%"]);
+	assert.deepEqual(renderCompanionWidgetLines(contributions.filter((item) => item.id !== "pet")), ["ctx 42%"]);
 });
 
-test("renders the session name below docs in Pi's accent color", () => {
+test("renders the session name below context in Pi's accent color", () => {
 	const contributions: CompanionWidgetContribution[] = [
 		{ id: "session-identity", region: "details", order: 30, lines: ["Agent One"], tone: "accent" },
-		{ id: "docs", region: "details", order: 20, lines: ["docs ○"], tone: "text" },
+		{ id: "context", region: "details", order: 10, lines: ["ctx 42%"], tone: "text" },
 	];
 
 	assert.deepEqual(
 		renderCompanionWidgetLines(contributions, (tone, text) => `${tone}:${text}`),
-		["text:docs ○", "accent:Agent One"],
+		["text:ctx 42%", "accent:Agent One"],
 	);
 });
 

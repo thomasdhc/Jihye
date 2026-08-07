@@ -13,7 +13,7 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
 | `web-search` | Search the web via Serper (Google results) |
-| `widget` | Companion widget with pet reactions, context management, doc health, and session identity |
+| `widget` | Companion widget with pet reactions, context management, and session identity |
 
 ## Skills
 
@@ -21,6 +21,7 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 |---|---|
 | `examen` | Evidence-based GitHub pull request and GitLab merge request reviews |
 | `pdf-reader` | Read and comprehend PDFs using hybrid text + vision strategy |
+| `review-guidance` | Review the most-specific agent guidance governing a selected path |
 | `session-digest` | Extract and save important session exchanges to markdown |
 | `todo` | Maintain a lean project todo and completion archive |
 | `ui-edit` | Reliable HTML/CSS/JS editing workflow |
@@ -126,9 +127,21 @@ Portable default definitions are tracked in `personas/subagents/`:
 
 Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `personas/subagents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `personas/subagents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 
+### Review guidance
+
+Use the `review-guidance` skill with an explicit file or directory scope:
+
+```text
+/skill:review-guidance extensions/widget
+/skill:review-guidance AGENTS.md
+/skill:review-guidance extensions/widget, focusing on stale architecture claims
+```
+
+For a directory, the skill reviews the most-specific agent guidance governing that path. Parent guidance is reference material for conflicts and duplication, not an additional review target. If the scope is missing or ambiguous, the skill asks before reviewing anything.
+
 ### Companion widget
 
-The `widget` extension owns the below-editor companion and loads its `pi-pet`, `ctx-manager`, `doc-guardian`, and `session-identity` components behind one extension interface. Disabling `widget` in Pi disables all four; use `/widget` to enable or disable individual components. Changes are saved globally to `~/.pi/agent/widget.json` (or `$PI_CODING_AGENT_DIR/widget.json`) and reload the extensions automatically.
+The `widget` extension owns the below-editor companion and loads its `pi-pet`, `ctx-manager`, and `session-identity` components behind one extension interface. Disabling `widget` in Pi disables all three; use `/widget` to enable or disable individual components. Changes are saved globally to `~/.pi/agent/widget.json` (or `$PI_CODING_AGENT_DIR/widget.json`) and reload the extensions automatically.
 
 Useful forms:
 
@@ -154,7 +167,7 @@ All components are enabled when no widget configuration exists.
 | `worker` | Builder in a hard hat |
 | `coordinator` | Conductor joining several paths |
 
-The pet artwork sits on the left, while context, documentation, and session identity details are right-aligned. At runtime, each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
+The pet artwork sits on the left, while context and session identity details are right-aligned. At runtime, each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 
 Current state mapping:
 
@@ -186,7 +199,7 @@ The names may be any unique, non-empty labels without terminal control character
 
 Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
 
-The leased name appears below the documentation status in the companion widget using Pi's teal accent color, and it remains part of the terminal tab title and notification title. It does not replace Pi's session display name or appear in the built-in footer. Manual names set with `/name` remain independent of the leased process identity.
+The leased name appears below the context status in the companion widget using Pi's teal accent color, and it remains part of the terminal tab title and notification title. It does not replace Pi's session display name or appear in the built-in footer. Manual names set with `/name` remain independent of the leased process identity.
 
 ### Terminal notifications
 

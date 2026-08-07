@@ -18,7 +18,6 @@ test("enables omitted widget components by default", () => {
 	}), {
 		components: {
 			"ctx-manager": true,
-			"doc-guardian": true,
 			"pi-pet": false,
 			"session-identity": true,
 		},
@@ -31,6 +30,10 @@ test("rejects unknown or non-boolean widget component settings", () => {
 		/unknown component: pet/,
 	);
 	assert.throws(
+		() => parseWidgetConfig({ components: { "doc-guardian": false } }),
+		/unknown component: doc-guardian/,
+	);
+	assert.throws(
 		() => parseWidgetConfig({ components: { "pi-pet": "off" } }),
 		/components\.pi-pet must be a boolean/,
 	);
@@ -41,7 +44,7 @@ test("saves and reloads global widget settings", (t) => {
 	t.after(() => rmSync(directory, { recursive: true, force: true }));
 	const path = join(directory, "widget.json");
 	const config = createDefaultWidgetConfig();
-	config.components["doc-guardian"] = false;
+	config.components["ctx-manager"] = false;
 
 	saveWidgetConfig(config, path);
 	assert.deepEqual(loadWidgetConfig(path), config);
@@ -76,7 +79,7 @@ test("updates one component through the widget interface and reloads", async (t)
 		configPath: path,
 	});
 
-	await command?.handler("doc-guardian off", {
+	await command?.handler("ctx-manager off", {
 		reload: async () => {
 			reloads += 1;
 		},
@@ -84,5 +87,5 @@ test("updates one component through the widget interface and reloads", async (t)
 	});
 
 	assert.equal(reloads, 1);
-	assert.equal(loadWidgetConfig(path).components["doc-guardian"], false);
+	assert.equal(loadWidgetConfig(path).components["ctx-manager"], false);
 });
