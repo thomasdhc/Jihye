@@ -1,6 +1,6 @@
 # Jihye (지혜)
 
-Jihye is a collection of extensions and skills powered by [Pi](https://pi.dev).
+Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your workflow. It bundles focused extensions, reusable skills, and portable agent definitions into one package that works consistently across workstations.
 
 ## Extensions
 
