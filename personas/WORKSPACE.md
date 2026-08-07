@@ -6,10 +6,13 @@ This is a multi-project development workspace.
 
 This profile is intended to be installed as the workspace-root `AGENTS.md` through a symlink.
 
-- Treat the directory containing the loaded `AGENTS.md` symlink as the workspace root.
-- Resolve that symlink to its canonical target and treat the target's directory as the reusable policy directory.
-- Read local configuration from the workspace root.
-- Read reusable workflow policy from the policy directory beside this file.
+Keep the workspace context's symlink path and canonical target distinct:
+
+- Locate the workspace `AGENTS.md` loaded from the active workspace; do not substitute the global `AGENTS.md` or an instruction source path shown by the agent harness.
+- Set the workspace root to the directory containing that symlink **before** resolving it.
+- Resolve that exact symlink, then set the reusable policy directory to the canonical target's directory.
+- Read local configuration from the workspace root and reusable workflow policy from the policy directory.
+- Do not look for policy files beside the unresolved symlink merely because it is the loaded context path.
 
 ## Workspace Context
 

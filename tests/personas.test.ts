@@ -69,6 +69,8 @@ test("personas include the global and workspace guidance chain", () => {
 	for (const path of ["REPO.md", "USERNAME.md", "ENVIRONMENT.md", "DEVELOPMENT.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
+	assert.match(workspace, /before.*resolving/is);
+	assert.match(workspace, /resolve that exact symlink/i);
 	assert.match(workspace, /canonical target/);
 });
 
