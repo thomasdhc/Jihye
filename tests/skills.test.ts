@@ -18,13 +18,16 @@ function skillFiles(directory = SKILLS_ROOT): string[] {
 }
 
 test("skills have valid identifying frontmatter", () => {
+	const names: string[] = [];
 	for (const path of skillFiles()) {
 		const content = readFileSync(path, "utf8");
 		const frontmatter = content.match(/^---\n([\s\S]*?)\n---\n/)?.[1];
 		assert.ok(frontmatter, path);
 		assert.match(frontmatter, /^name: [a-z0-9-]+$/m, path);
 		assert.match(frontmatter, /^description: .+$/m, path);
+		names.push(frontmatter.match(/^name: ([a-z0-9-]+)$/m)?.[1] ?? "");
 	}
+	assert.deepEqual(names.sort(), ["examen", "pdf-reader", "session-digest", "todo", "ui-edit", "vicara"]);
 });
 
 test("skills remain portable and never instruct autonomous commits", () => {
