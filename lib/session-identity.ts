@@ -1,3 +1,4 @@
+// Preserve the legacy key so Jihye upgrades and extension reloads share one state object.
 const SESSION_IDENTITY_STATE = Symbol.for("pi-extensio.session-identity.state");
 
 interface SessionIdentityState {

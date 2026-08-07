@@ -1,8 +1,8 @@
 {
-  "name": "pi-extensio",
+  "name": "jihye",
   "version": "0.2.0",
   "private": true,
-  "description": "A personal collection of extensions and skills for the Pi coding agent",
+  "description": "Jihye, a personal collection of extensions and skills for the Pi coding agent",
   "type": "module",
   "keywords": [
     "pi-package"
