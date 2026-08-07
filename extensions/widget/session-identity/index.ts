@@ -31,6 +31,7 @@ interface SessionIdentityExtensionOptions {
 	createConfig?: () => SessionIdentityConfig;
 	formatTitle?: (name: string, cwd: string) => string;
 	reportWarning?: (message: string) => void;
+	shouldReleaseOnReload?: () => boolean;
 }
 
 export function formatSessionIdentityTitle(name: string, cwd: string): string {
@@ -124,7 +125,10 @@ export function createSessionIdentityExtension(
 		pi.on("session_shutdown", async (event, ctx) => {
 			clearPendingTitleRefresh();
 			removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
-			if (event.reason !== "quit" || !lease || !allocator) return;
+			clearActiveIdentity(lease?.name);
+			const shouldRelease = event.reason === "quit"
+				|| (event.reason === "reload" && options.shouldReleaseOnReload?.() === true);
+			if (!shouldRelease || !lease || !allocator) return;
 			const releasedLease = lease;
 			const releasingAllocator = allocator;
 			lease = undefined;

@@ -1,10 +1,19 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
+import {
+	createDefaultWidgetConfig,
+	getWidgetConfigPath,
+	loadWidgetConfig,
+	parseWidgetConfig,
+	type WidgetComponentId,
+	type WidgetConfig,
+} from "./config.ts";
 import contextManagerExtension from "./ctx-manager.ts";
 import docGuardianExtension from "./doc-guardian.ts";
 import piPetExtension from "./pi-pet.ts";
-import sessionIdentityExtension from "./session-identity/index.ts";
+import { registerWidgetSettings } from "./settings.ts";
+import { createSessionIdentityExtension } from "./session-identity/index.ts";
 import {
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetContribution,
@@ -14,6 +23,20 @@ import {
 
 const WIDGET_ID = "companion-widget";
 const COLUMN_GAP = 2;
+
+const COMPONENT_FACTORIES: ReadonlyArray<[
+	WidgetComponentId,
+	(pi: ExtensionAPI) => void,
+]> = [
+	["ctx-manager", contextManagerExtension],
+	["doc-guardian", docGuardianExtension],
+	["pi-pet", piPetExtension],
+];
+
+export interface WidgetExtensionOptions {
+	config?: WidgetConfig;
+	configPath?: string;
+}
 
 export function renderCompanionWidgetLines(
 	contributions: Iterable<CompanionWidgetContribution>,
@@ -96,10 +119,43 @@ export function registerCompanionWidgetHost(pi: ExtensionAPI): void {
 	});
 }
 
-export default function widgetExtension(pi: ExtensionAPI): void {
-	registerCompanionWidgetHost(pi);
-	contextManagerExtension(pi);
-	docGuardianExtension(pi);
-	piPetExtension(pi);
-	sessionIdentityExtension(pi);
+export function createWidgetExtension(options: WidgetExtensionOptions = {}) {
+	return function widgetExtension(pi: ExtensionAPI): void {
+		const configPath = options.configPath ?? getWidgetConfigPath();
+		let config: WidgetConfig;
+		let configWarning: string | undefined;
+		try {
+			config = options.config
+				? parseWidgetConfig(options.config, configPath)
+				: loadWidgetConfig(configPath);
+		} catch (error) {
+			config = createDefaultWidgetConfig();
+			const message = error instanceof Error ? error.message : String(error);
+			configWarning = `${message}. Using default widget settings.`;
+		}
+
+		registerCompanionWidgetHost(pi);
+		registerWidgetSettings(pi, { config, configPath, configWarning });
+		if (configWarning) {
+			pi.on("session_start", async (_event, ctx) => {
+				if (ctx.hasUI) ctx.ui.notify(configWarning, "warning");
+			});
+		}
+		for (const [id, register] of COMPONENT_FACTORIES) {
+			if (config.components[id]) register(pi);
+		}
+		if (config.components["session-identity"]) {
+			createSessionIdentityExtension({
+				shouldReleaseOnReload: () => {
+					try {
+						return !loadWidgetConfig(configPath).components["session-identity"];
+					} catch {
+						return false;
+					}
+				},
+			})(pi);
+		}
+	};
 }
+
+export default createWidgetExtension();

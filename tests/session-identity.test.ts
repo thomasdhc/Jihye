@@ -605,7 +605,7 @@ test("publishes the session identity without taking over the session display nam
 
 		await handlers.get("session_shutdown")?.({ reason: "reload" }, ctx);
 		assert.equal(releaseCount, 0);
-		assert.equal(getActiveSessionIdentity(), "Agent One");
+		assert.equal(getActiveSessionIdentity(), undefined);
 		assert.deepEqual(companionUpdates.at(-1), { id: "session-identity" });
 
 		const reloadedHandlers = registerRuntime();
@@ -638,6 +638,60 @@ test("publishes the session identity without taking over the session display nam
 		assert.equal(releaseCount, 1);
 		assert.equal(getActiveSessionIdentity(), undefined);
 		assert.deepEqual(companionUpdates.at(-1), { id: "session-identity" });
+	} finally {
+		setActiveSessionIdentity(undefined);
+	}
+});
+
+test("releases its lease when the widget disables session identity during reload", async () => {
+	type Handler = (event: Record<string, unknown>, ctx: any) => Promise<void> | void;
+	const handlers = new Map<string, Handler>();
+	const lease: SessionNameLease = {
+		name: "Agent One",
+		leaseId: "lease-1",
+		ownerId: "owner-1",
+	};
+	let releaseCount = 0;
+	let currentName: string | undefined;
+
+	createSessionIdentityExtension({
+		allocator: {
+			async acquire() {
+				return lease;
+			},
+			async release(releasedLease) {
+				assert.deepEqual(releasedLease, lease);
+				releaseCount += 1;
+				return true;
+			},
+		},
+		shouldReleaseOnReload: () => true,
+	})({
+		events: { emit() {} },
+		on(event: string, handler: Handler) {
+			handlers.set(event, handler);
+		},
+		getSessionName() {
+			return currentName;
+		},
+		setSessionName(name: string) {
+			currentName = name;
+		},
+	} as never);
+
+	setActiveSessionIdentity(undefined);
+	try {
+		const ctx = {
+			hasUI: true,
+			cwd: "/workspace/project",
+			ui: { setTitle() {}, notify() {} },
+		};
+		await handlers.get("session_start")?.({ reason: "reload" }, ctx);
+		assert.equal(getActiveSessionIdentity(), "Agent One");
+
+		await handlers.get("session_shutdown")?.({ reason: "reload" }, ctx);
+		assert.equal(releaseCount, 1);
+		assert.equal(getActiveSessionIdentity(), undefined);
 	} finally {
 		setActiveSessionIdentity(undefined);
 	}

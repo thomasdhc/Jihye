@@ -126,6 +126,22 @@ Portable default definitions are tracked in `personas/subagents/`:
 
 Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `personas/subagents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `personas/subagents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 
+### Companion widget
+
+The `widget` extension owns the below-editor companion and loads its `pi-pet`, `ctx-manager`, `doc-guardian`, and `session-identity` components behind one extension interface. Disabling `widget` in Pi disables all four; use `/widget` to enable or disable individual components. Changes are saved globally to `~/.pi/agent/widget.json` (or `$PI_CODING_AGENT_DIR/widget.json`) and reload the extensions automatically.
+
+Useful forms:
+
+```text
+/widget                         # interactive component settings
+/widget status                  # show current component states
+/widget pi-pet off              # disable one component
+/widget session-identity on     # enable one component
+/widget reset                   # enable every component
+```
+
+All components are enabled when no widget configuration exists.
+
 ### Pi pet
 
 `pi-pet` is a persistent, ground-up placeholder companion rendered below the editor. It uses text-free ASCII frames and distinct Pi theme colors for each lifecycle state without sending prompt, tool, command, path, or output text anywhere. Top-level subagent tool calls get their own temporary pet instances, each tracking that subagent's working, success, or error state independently. Bundled roles use compact, role-specific silhouettes; custom agents fall back to the generic cat.
@@ -138,7 +154,7 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 | `worker` | Builder in a hard hat |
 | `coordinator` | Conductor joining several paths |
 
-The `widget` extension owns the below-editor companion and loads its `pi-pet`, `ctx-manager`, `doc-guardian`, and `session-identity` components as one unit; disabling `widget` disables all four. The pet artwork sits on the left, while context, documentation, and session identity details are right-aligned. At runtime, each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
+The pet artwork sits on the left, while context, documentation, and session identity details are right-aligned. At runtime, each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 
 Current state mapping:
 

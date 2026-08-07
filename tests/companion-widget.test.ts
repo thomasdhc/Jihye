@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import widgetExtension, {
+import {
+	createWidgetExtension,
 	registerCompanionWidgetHost,
 	renderCompanionWidgetLines,
 } from "../extensions/widget/index.ts";
+import { createDefaultWidgetConfig } from "../extensions/widget/config.ts";
 import {
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetContribution,
@@ -15,7 +17,10 @@ test("loads every companion component through one widget extension", () => {
 	const commands: string[] = [];
 	const sharedEventSubscriptions: string[] = [];
 
-	widgetExtension({
+	createWidgetExtension({
+		config: createDefaultWidgetConfig(),
+		configPath: "/tmp/widget-test.json",
+	})({
 		events: {
 			on(event: string) {
 				sharedEventSubscriptions.push(event);
@@ -31,9 +36,33 @@ test("loads every companion component through one widget extension", () => {
 	} as never);
 
 	assert.deepEqual(sharedEventSubscriptions, [COMPANION_WIDGET_UPDATE_EVENT]);
-	assert.deepEqual(commands.sort(), ["ctx", "doc-status", "review-docs"]);
+	assert.deepEqual(commands.sort(), ["ctx", "doc-status", "review-docs", "widget"]);
 	assert.equal(eventHandlers.filter((event) => event === "session_start").length, 5);
 	assert.equal(eventHandlers.filter((event) => event === "session_shutdown").length, 3);
+});
+
+test("loads only widget components enabled by the widget interface", () => {
+	const config = createDefaultWidgetConfig();
+	config.components["doc-guardian"] = false;
+	config.components["pi-pet"] = false;
+	const eventHandlers: string[] = [];
+	const commands: string[] = [];
+
+	createWidgetExtension({ config, configPath: "/tmp/widget-test.json" })({
+		events: { on() {}, emit() {} },
+		on(event: string) {
+			eventHandlers.push(event);
+		},
+		registerCommand(name: string) {
+			commands.push(name);
+		},
+	} as never);
+
+	assert.deepEqual(commands.sort(), ["ctx", "widget"]);
+	assert.equal(eventHandlers.filter((event) => event === "session_start").length, 3);
+	assert.equal(eventHandlers.filter((event) => event === "session_shutdown").length, 2);
+	assert.equal(eventHandlers.includes("before_agent_start"), false);
+	assert.equal(eventHandlers.includes("tool_execution_start"), false);
 });
 
 test("composes independent visual and detail contributions", () => {
