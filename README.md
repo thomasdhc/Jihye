@@ -1,6 +1,6 @@
 # Jihye (지혜)
 
-Jihye—Korean for “wisdom”—is a personal, installable collection of extensions and skills for the [Pi coding agent](https://pi.dev).
+Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your workflow. It bundles focused extensions, reusable skills, and portable agent definitions into one package that works consistently across workstations.
 
 ## Extensions
 
@@ -41,13 +41,13 @@ Jihye—Korean for “wisdom”—is a personal, installable collection of exten
 ### From GitHub
 
 ```bash
-pi install git:git@github.com:thomasdhc/jihye
+pi install git:git@github.com:thomasdhc/Jihye
 ```
 
 If SSH is not configured on the machine, HTTPS works too:
 
 ```bash
-pi install git:https://github.com/thomasdhc/jihye.git
+pi install git:https://github.com/thomasdhc/Jihye.git
 ```
 
 Pull future package updates with:
@@ -61,8 +61,8 @@ Run `/reload` in an existing Pi session after installing or updating.
 ### From a local checkout
 
 ```bash
-git clone git@github.com:thomasdhc/jihye.git
-cd jihye
+git clone git@github.com:thomasdhc/Jihye.git
+cd Jihye
 npm install
 pi install .
 ```
