@@ -60,8 +60,9 @@ export interface AgentProgress {
 	status: "pending" | "running" | "completed" | "failed";
 	task: string;
 	/**
-	 * Chronological log of tool calls — running and done interleaved. The
-	 * renderer prefixes running entries with `▸` and done ones with `  `.
+	 * Chronological log of tool calls — running and done interleaved. Entries are
+	 * appended and then mutated in place; `render.ts` distinguishes them by
+	 * `status`, so this list must never be reordered or filtered.
 	 */
 	recentTools: ToolEvent[];
 	toolCount: number;

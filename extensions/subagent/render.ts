@@ -1,5 +1,9 @@
 /**
  * Terminal rendering for subagent progress and results.
+ *
+ * Presentation only: everything is derived from the `AgentResult` passed in, so
+ * this module holds no state and is never a source of truth. Imports
+ * `types.ts` and the TUI primitives, nothing else in this extension.
  */
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { getMarkdownTheme } from "@earendil-works/pi-coding-agent";
@@ -12,8 +16,6 @@ type Theme = ExtensionContext["ui"]["theme"];
 export function getTermWidth(): number {
 	return process.stdout.columns || 120;
 }
-
-// ── Formatting Utilities ──────────────────────────────────────────────
 
 function formatTokens(n: number): string {
 	return n < 1000 ? String(n) : n < 10000 ? `${(n / 1000).toFixed(1)}k` : `${Math.round(n / 1000)}k`;
@@ -32,6 +34,8 @@ function formatContextUsage(tokens: number, contextWindow: number | undefined): 
 	return `${pct.toFixed(1)}%/${maxStr}`;
 }
 
+// Truncates to visible columns: SGR escapes are copied through uncounted, so
+// colouring a line never changes where it is cut.
 function truncLine(text: string, maxWidth: number): string {
 	if (text.includes("\n") || text.includes("\r")) {
 		text = text.replace(/\r?\n/g, "↵ ");
@@ -58,8 +62,7 @@ function truncLine(text: string, maxWidth: number): string {
 	return result;
 }
 
-// ── Progress Rendering ────────────────────────────────────────────────
-
+/** Renders one agent and, recursively, the agents it spawned. */
 export function renderAgentProgress(
 	r: AgentResult,
 	theme: Theme,

@@ -1,9 +1,8 @@
 /**
  * Agent discovery and registration.
  *
- * Sole owner of the in-process agent registry and of the
- * `globalThis.__pi_subagents` bridge that other extensions use to register
- * agents across separate jiti module instances.
+ * Reads agent definitions from disk and owns the in-process registry. Imports
+ * `config.ts`, `models.ts`, and `types.ts`; never the runner or the renderer.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -20,8 +19,9 @@ import type { AgentConfig } from "./types.ts";
 
 let agents: AgentConfig[] = [];
 
-// Read once at module load. If we're a child subagent process whose parent
-// pinned an allowlist, we silently ignore any agent not in the list.
+// Read once at module load: a parent pins the allowlist before spawn, so it
+// cannot change while this process lives. When set, every agent outside the
+// list is dropped silently rather than reported as an error.
 export const SUBAGENT_ALLOWLIST: string[] | undefined = (() => {
 	const raw = process.env.PI_SUBAGENT_ALLOWED;
 	if (!raw) return undefined;
@@ -41,13 +41,18 @@ export function unregisterAgent(name: string): void {
 	agents = agents.filter((a) => a.name !== name);
 }
 
-/** Replace the registry contents, e.g. after a directory scan at startup. */
+/**
+ * Replace the registry contents, e.g. after `index.ts` scans the agent
+ * directories at startup. A setter exists because `agents` is a module-local
+ * binding that importers cannot assign to; keep this the only way to swap it.
+ */
 export function setAgents(next: AgentConfig[]): void {
 	agents = next;
 }
 
-// Expose registration functions globally so other extensions loaded via jiti
-// (which creates separate module instances) can access the shared agents array.
+// jiti gives each loading extension its own instance of this module, so the
+// registry is only reachable across extensions through a global. This module is
+// the sole owner of that global.
 (globalThis as any).__pi_subagents = { registerAgent, unregisterAgent };
 
 function loadAgentDirectory(directory: string): AgentConfig[] {

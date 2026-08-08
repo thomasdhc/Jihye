@@ -2,9 +2,10 @@
  * Subagent configuration: package-relative paths, extension config, the tool
  * catalogue used to build a child pi invocation, and pi binary resolution.
  *
- * Paths are resolved relative to this file so local, Git, and npm package
- * installations all work without workstation-specific paths. This file must
- * stay in `extensions/subagent/` for those paths to keep resolving.
+ * Data and path resolution only; imports `types.ts` and nothing else in this
+ * extension. Every exported path derives from this file's own location so
+ * local, Git, and npm package installs all work without workstation-specific
+ * paths — moving the module moves the agent and extension directories with it.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -34,12 +35,12 @@ export function loadConfig(): ExtensionConfig {
 	return {};
 }
 
-// Built-in tools that pi provides natively (no extension needed)
+// Tools pi registers natively; the runner allowlists these with no `--extension`.
 export const BUILTIN_TOOLS = new Set(["read", "write", "edit", "bash", "grep", "find", "ls"]);
 
-// Custom tools that require loading an extension into the subagent process.
-// Resolve package-owned extensions relative to this file so local, Git, and npm
-// package installations all work without workstation-specific paths.
+// Tools that exist only once an extension is loaded into the child process,
+// keyed by tool name so the runner can turn an agent's tool list into
+// `--extension` paths.
 export const BASH_GUARD_EXTENSION = path.join(EXTENSIONS_DIR, "bash-guard", "index.ts");
 export const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
 	web_search: path.join(EXTENSIONS_DIR, "web-search", "index.ts"),
@@ -52,8 +53,12 @@ export const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
 	subagent: path.join(EXT_DIR, "index.ts"),
 };
 
-// ── Pi Binary Resolution ──────────────────────────────────────────────
-
+/**
+ * Locate the pi executable for a child process. When the parent itself runs
+ * from a JS entry point, re-run that exact entry under the current node binary
+ * so the child is the same build as the parent; otherwise fall back to whatever
+ * `pi` resolves to on PATH.
+ */
 export function resolvePiBinary(): { command: string; baseArgs: string[] } {
 	const entry = process.argv[1];
 	if (entry) {

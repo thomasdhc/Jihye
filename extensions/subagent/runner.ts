@@ -1,6 +1,9 @@
 /**
  * Subagent execution: builds the child `pi` invocation, spawns it, and parses
  * its JSON event stream into live `AgentProgress` / `AgentResult` state.
+ *
+ * Sole owner of the child-process contract. Imports `config.ts` and `types.ts`;
+ * it knows nothing about tool registration or terminal rendering.
  */
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -39,6 +42,8 @@ export async function buildPiArgs(
 		}
 	}
 
+	// Start the child from zero extensions and add back only what its declared
+	// tools require, so a tool the agent did not ask for cannot appear.
 	args.push("--no-extensions");
 
 	if (allowlist.length > 0) {
@@ -55,6 +60,8 @@ export async function buildPiArgs(
 	args.push("--thinking", agent.thinking);
 	args.push("--append-system-prompt", promptPath);
 
+	// Long tasks are passed as a file reference rather than argv, which is
+	// size-limited by the OS.
 	const TASK_LIMIT = 8000;
 	if (task.length > TASK_LIMIT) {
 		const taskPath = path.join(tempDir, "task.md");
@@ -74,6 +81,8 @@ export async function buildPiArgs(
 		...process.env,
 		PI_SUBAGENT_DEPTH: String(normalizedDepth + 1),
 	};
+	// Clear before re-setting: an allowlist inherited from our own parent must
+	// not leak into a grandchild that this agent did not scope.
 	delete childEnv.PI_SUBAGENT_ALLOWED;
 	if (agent.tools.includes("subagent") && agent.subagentAgents && agent.subagentAgents.length > 0) {
 		childEnv.PI_SUBAGENT_ALLOWED = agent.subagentAgents.join(",");
@@ -252,7 +261,8 @@ export async function runSubagent(
 					fireUpdate();
 				}
 			} catch {
-				// Non-JSON lines are expected
+				// The child emits one JSON event per line, but stray non-JSON output
+				// (warnings, banners) must not abort stream parsing.
 			}
 		};
 
@@ -278,6 +288,8 @@ export async function runSubagent(
 		proc.on("error", () => resolve(1));
 
 		if (signal) {
+			// Give the child a chance to exit cleanly, then escalate so an ignored
+			// SIGTERM cannot keep the parent's tool call pending forever.
 			const kill = () => {
 				proc.kill("SIGTERM");
 				setTimeout(() => !proc.killed && proc.kill("SIGKILL"), 3000);
@@ -307,8 +319,7 @@ export async function runSubagent(
 	return result;
 }
 
-// ── Throttle ──────────────────────────────────────────────────────────
-
+/** Leading-edge throttle with a trailing call, so the final update is never lost. */
 function throttle<T extends (...args: any[]) => void>(fn: T, ms: number): T {
 	let lastCall = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -329,8 +340,7 @@ function throttle<T extends (...args: any[]) => void>(fn: T, ms: number): T {
 	}) as T;
 }
 
-// ── Semaphore ─────────────────────────────────────────────────────────
-
+/** Bounds how many child pi processes one parent session runs at once. */
 export class Semaphore {
 	private inFlight = 0;
 	private readonly waiters: Array<() => void> = [];

@@ -1,13 +1,12 @@
 /**
  * Subagents extension.
  *
- * Registers a single `subagent` tool. Supports single execution; parallel
- * execution is achieved by emitting multiple `subagent` tool calls in one turn.
- * Output is verbal only (no file handoff).
+ * The only entrypoint pi discovers for this extension; the sibling modules are
+ * internal. Composition only: it wires configuration, discovery, model
+ * resolution, the runner, and the renderer into a single `subagent` tool.
  *
- * Composition only — the moving parts live in sibling modules:
- * `types.ts` (shapes), `config.ts` (paths and tool catalogue), `discovery.ts`
- * (agent registry), `runner.ts` (child process), `render.ts` (terminal output).
+ * One call runs one agent. Parallelism comes from emitting several `subagent`
+ * tool calls in one turn. Output is verbal only (no file handoff).
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Container, Spacer, Text } from "@earendil-works/pi-tui";
