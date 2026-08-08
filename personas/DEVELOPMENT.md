@@ -14,6 +14,7 @@ Discover current checkouts from the filesystem rather than relying on a manually
 ## Validation
 
 - Find and follow the repository's established commands and nearby implementation patterns.
+- Run repository-provided commands from the repository root unless its documentation specifies another working directory. For cross-repository invocations, use an explicit working-directory or prefix option rather than relying on the harness's current directory.
 - Run the narrowest relevant checks while iterating, then the broader validation required by the repository before committing.
 - Keep generated output and ordinary scratch files in the locations configured by workspace-root `REPO.md`.
 - Report commands run, results, and any checks that could not be completed.
