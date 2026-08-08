@@ -23,4 +23,5 @@ Discover current checkouts from the filesystem rather than relying on a manually
 - Use a separate Git worktree when concurrent work or isolation would prevent interference with the canonical checkout.
 - Keep the canonical checkout untouched and use the isolated-worktree location configured in workspace-root `REPO.md`.
 - Inspect repository and worktree state before creating, integrating, moving, or removing work. Never stash, reset, overwrite, or discard existing changes, and never remove a worktree containing uncommitted or untracked work.
+- When the user asks to commit or prepare isolated work for pushing, commit it on its branch in the worktree, then remove the clean worktree and switch the clean canonical checkout to that branch; the repository is shared, so never copy the files between them.
 - Follow `ENVIRONMENT.md` for commands and filesystem locations, and `GIT.md` for branching, validation, commits, and pushing.
