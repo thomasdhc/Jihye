@@ -29,10 +29,12 @@ Treat `workspace_directory/REPO.md` and `workspace_directory/USERNAME.md` as the
 
 ## Task Guidance
 
-- Read `personas_directory/DEVELOPMENT.md` before exploring, changing, testing, or planning repository code.
+The reads below are mandatory gates, not references. Satisfy the gate in the current session, before the first tool call that touches the target.
+
+- Read `personas_directory/DEVELOPMENT.md` before exploring, changing, testing, or planning repository files.
 - Read `personas_directory/GIT.md` before changing tracked files or Git state, or handling commits, pushes, pull requests, or merge requests.
 
-Read guidance when it becomes relevant rather than loading every file by default.
+Load guidance when its gate opens rather than loading every file by default. A gate opens on the nature of the action, never on the size or obviousness of the change: a documentation-only edit to a tracked file opens both. User approval of a plan approves the change, not the skipping of a gate.
 
 ## Instruction Boundaries
 
