@@ -7,12 +7,11 @@
 - Unless the user directs a different base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`, using the branch namespace from workspace-root `USERNAME.md`.
 - Never assume local `main` is current, and do not develop directly on `main`.
 - If the latest remote `main` cannot be fetched, ask before using another base.
-- For parallel or explicitly isolated work, follow the review-worktree flow in policy-directory `DEVELOPMENT.md`. Keep the canonical checkout untouched until the user explicitly asks to move the approved branch there.
+- For parallel or isolated work, use a separate worktree as described in policy-directory `DEVELOPMENT.md` and keep the canonical checkout untouched.
 
 ## Staging, Commits, and Pushing
 
-- For ordinary work in the canonical checkout, validate the change, stage only the task's files, review the staged diff, and commit automatically unless the user asks otherwise.
-- For review worktrees, do not stage or commit in the canonical checkout until the user explicitly approves integration.
+- Validate the change, stage only the task's files, review the staged diff, and commit automatically unless the user asks otherwise.
 - Prefer additional follow-up commits over amending existing commits. Amend only when the user explicitly asks.
 - Use the applicable commit command configured in workspace-root `USERNAME.md` so required signing and attribution are preserved.
 - Never push. Pushing is delegated to the user; provide a ready-to-run push command instead.
@@ -34,7 +33,9 @@ Supported primary types include:
 
 Use another Conventional Commit type only when it describes the change more accurately.
 
-## Merge Request and Pull Request Descriptions
+## Merge Requests and Pull Requests
+
+When the user asks to open a merge request or pull request, fetch `origin` and verify whether the current branch exists remotely before claiming that it needs to be pushed. If it exists, create the request directly; otherwise, provide the ready-to-run push command and resume creation after the user confirms the push.
 
 Before drafting a merge request or pull request, look for a repository-owned template. Preserve its required headings and checklists, and fit the summary and motivation into the closest equivalent sections. Do not add duplicate `Summary` or `Why` headings when the template already covers them.
 
