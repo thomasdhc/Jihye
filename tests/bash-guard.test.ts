@@ -199,6 +199,22 @@ test("detects dangerous GitLab CLI operations", () => {
 	}
 });
 
+test("expands policy table entries into exact guard reasons", () => {
+	const cases = [
+		["gh repo delete owner/repo --yes", ["gh repo delete (repository deletion)"]],
+		["gh pr merge 42 --squash", ["gh pr merge (pull request merge)"]],
+		["glab cluster agent token revoke 123 456", ["glab cluster agent token revoke (agent token revocation)"]],
+		["glab repo update example/project --archive=true", ["glab repo update --archive (project archival state change)"]],
+		["glab repo update example/project --defaultBranch trunk", ["glab repo update --defaultBranch (default branch change)"]],
+	] as const;
+
+	for (const [command, expectedReasons] of cases) {
+		const risk = analyzeBashCommand(command);
+		assert.ok(risk, command);
+		assert.deepEqual(risk.reasons, expectedReasons, command);
+	}
+});
+
 test("allows non-dangerous GitHub CLI operations", () => {
 	const commands = [
 		"gh auth status",

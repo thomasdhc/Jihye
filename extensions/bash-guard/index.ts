@@ -5,8 +5,19 @@ import { Container, SelectList, Text } from "@earendil-works/pi-tui";
 import { parse as shellParse, quote as shellQuote } from "shell-quote";
 
 import { TERMINAL_NOTIFY_EVENT, type TerminalNotificationRequest } from "../terminal-notify.ts";
+import {
+	DANGEROUS_GITHUB_CLI_COMMANDS,
+	DANGEROUS_GITLAB_CLI_COMMANDS,
+	HEADLESS_BLOCKED,
+	SAFE_DEV_PATHS,
+	SYSTEM_PATH_PREFIXES,
+	type CliRule,
+	type CliRulePolicy,
+	type CliRuleTable,
+	type Severity,
+} from "./policy.ts";
 
-export type Severity = "high" | "medium";
+export type { Severity } from "./policy.ts";
 
 type RiskDetails = {
 	severity: Severity;
@@ -103,186 +114,25 @@ type HostedCliRule = RiskDetails & {
 	excludedOptions?: readonly string[];
 };
 
-// Keep this policy narrow: ordinary GitHub writes such as creating issues, editing
-// descriptions, and posting comments are intentionally not guarded.
-const DANGEROUS_GITHUB_CLI_COMMANDS: readonly HostedCliRule[] = [
-	{ command: ["repo", "delete"], severity: "high", reasons: ["gh repo delete (repository deletion)"] },
-	{ command: ["repo", "archive"], severity: "high", reasons: ["gh repo archive (repository archival)"] },
-	{ command: ["repo", "rename"], severity: "high", reasons: ["gh repo rename (repository identity change)"] },
-	{
-		command: ["repo", "edit"],
-		anyOptions: ["--visibility"],
-		severity: "high",
-		reasons: ["gh repo edit --visibility (repository visibility change)"],
-	},
-	{
-		command: ["repo", "sync"],
-		anyOptions: ["--force"],
-		severity: "high",
-		reasons: ["gh repo sync --force (remote branch overwrite)"],
-	},
-	{ command: ["repo", "deploy-key", "add"], severity: "high", reasons: ["gh repo deploy-key add (repository access change)"] },
-	{ command: ["repo", "deploy-key", "delete"], severity: "high", reasons: ["gh repo deploy-key delete (repository access change)"] },
-	{ command: ["repo", "autolink", "delete"], severity: "high", reasons: ["gh repo autolink delete (autolink deletion)"] },
-	{
-		command: ["pr", "merge"],
-		excludedOptions: ["--disable-auto"],
-		severity: "high",
-		reasons: ["gh pr merge (pull request merge)"],
-	},
-	{ command: ["pr", "close"], severity: "medium", reasons: ["gh pr close (pull request closure)"] },
-	{ command: ["pr", "revert"], severity: "high", reasons: ["gh pr revert (remote history change)"] },
-	{ command: ["issue", "close"], severity: "medium", reasons: ["gh issue close (issue closure)"] },
-	{ command: ["issue", "delete"], severity: "high", reasons: ["gh issue delete (issue deletion)"] },
-	{ command: ["issue", "transfer"], severity: "high", reasons: ["gh issue transfer (issue ownership change)"] },
-	{ command: ["release", "delete"], severity: "high", reasons: ["gh release delete (release deletion)"] },
-	{ command: ["release", "delete-asset"], severity: "high", reasons: ["gh release delete-asset (release asset deletion)"] },
-	{ command: ["workflow", "disable"], severity: "high", reasons: ["gh workflow disable (workflow disruption)"] },
-	{ command: ["workflow", "run"], severity: "medium", reasons: ["gh workflow run (remote workflow execution)"] },
-	{ command: ["run", "cancel"], severity: "medium", reasons: ["gh run cancel (workflow run cancellation)"] },
-	{ command: ["run", "delete"], severity: "high", reasons: ["gh run delete (workflow run deletion)"] },
-	{ command: ["run", "rerun"], severity: "medium", reasons: ["gh run rerun (remote workflow execution)"] },
-	{ command: ["cache", "delete"], severity: "high", reasons: ["gh cache delete (Actions cache deletion)"] },
-	{ command: ["secret", "set"], severity: "high", reasons: ["gh secret set (secret configuration change)"] },
-	{ command: ["secret", "delete"], severity: "high", reasons: ["gh secret delete (secret configuration change)"] },
-	{ command: ["variable", "set"], severity: "high", reasons: ["gh variable set (Actions configuration change)"] },
-	{ command: ["variable", "delete"], severity: "high", reasons: ["gh variable delete (Actions configuration change)"] },
-	{ command: ["ssh-key", "add"], severity: "high", reasons: ["gh ssh-key add (account access change)"] },
-	{ command: ["ssh-key", "delete"], severity: "high", reasons: ["gh ssh-key delete (account access change)"] },
-	{ command: ["gpg-key", "add"], severity: "high", reasons: ["gh gpg-key add (account signing-key change)"] },
-	{ command: ["gpg-key", "delete"], severity: "high", reasons: ["gh gpg-key delete (account signing-key change)"] },
-	{ command: ["project", "close"], severity: "medium", reasons: ["gh project close (project closure)"] },
-	{ command: ["project", "delete"], severity: "high", reasons: ["gh project delete (project deletion)"] },
-	{ command: ["project", "field-delete"], severity: "high", reasons: ["gh project field-delete (project field deletion)"] },
-	{ command: ["project", "item-archive"], severity: "medium", reasons: ["gh project item-archive (project item archival)"] },
-	{ command: ["project", "item-delete"], severity: "high", reasons: ["gh project item-delete (project item deletion)"] },
-	{ command: ["gist", "delete"], severity: "high", reasons: ["gh gist delete (gist deletion)"] },
-	{ command: ["codespace", "delete"], severity: "high", reasons: ["gh codespace delete (codespace deletion)"] },
-	{ command: ["label", "delete"], severity: "high", reasons: ["gh label delete (repository label deletion)"] },
-];
+// A policy entry is either a single rule or several variants of the same subcommand.
+function ruleVariants(policy: CliRulePolicy): readonly CliRule[] {
+	return typeof policy[0] === "string" ? [policy as CliRule] : (policy as readonly CliRule[]);
+}
 
-// Mirror the GitHub policy for GitLab while covering GitLab-specific CI schedules,
-// access credentials, and destructive project operations. Ordinary writes such as
-// creating issues, posting notes, and approving merge requests remain unguarded.
-const DANGEROUS_GITLAB_CLI_COMMANDS: readonly HostedCliRule[] = [
-	{ command: ["repo", "delete"], severity: "high", reasons: ["glab repo delete (project deletion)"] },
-	{ command: ["repo", "transfer"], severity: "high", reasons: ["glab repo transfer (project ownership change)"] },
-	{ command: ["repo", "mirror"], severity: "high", reasons: ["glab repo mirror (repository mirroring change)"] },
-	{
-		command: ["repo", "update"],
-		anyOptions: ["--archive"],
-		severity: "high",
-		reasons: ["glab repo update --archive (project archival state change)"],
-	},
-	{
-		command: ["repo", "update"],
-		anyOptions: ["--defaultBranch"],
-		severity: "high",
-		reasons: ["glab repo update --defaultBranch (default branch change)"],
-	},
-	{ command: ["repo", "members", "add"], severity: "high", reasons: ["glab repo members add (project access change)"] },
-	{ command: ["repo", "members", "remove"], severity: "high", reasons: ["glab repo members remove (project access change)"] },
-	{ command: ["repo", "publish", "catalog"], severity: "high", reasons: ["glab repo publish catalog (catalog publication)"] },
-	{ command: ["mr", "merge"], severity: "high", reasons: ["glab mr merge (merge request merge)"] },
-	{ command: ["mr", "accept"], severity: "high", reasons: ["glab mr accept (merge request merge)"] },
-	{ command: ["mr", "close"], severity: "medium", reasons: ["glab mr close (merge request closure)"] },
-	{ command: ["mr", "delete"], severity: "high", reasons: ["glab mr delete (merge request deletion)"] },
-	{ command: ["mr", "del"], severity: "high", reasons: ["glab mr del (merge request deletion)"] },
-	{ command: ["mr", "rebase"], severity: "high", reasons: ["glab mr rebase (remote source branch rewrite)"] },
-	{ command: ["mr", "note", "delete"], severity: "high", reasons: ["glab mr note delete (merge request note deletion)"] },
-	{ command: ["issue", "close"], severity: "medium", reasons: ["glab issue close (issue closure)"] },
-	{ command: ["issue", "delete"], severity: "high", reasons: ["glab issue delete (issue deletion)"] },
-	{ command: ["issue", "del"], severity: "high", reasons: ["glab issue del (issue deletion)"] },
-	{ command: ["incident", "close"], severity: "medium", reasons: ["glab incident close (incident closure)"] },
-	{ command: ["work-items", "delete"], severity: "high", reasons: ["glab work-items delete (work item deletion)"] },
-	{ command: ["release", "delete"], severity: "high", reasons: ["glab release delete (release deletion)"] },
-	{
-		command: ["ci", "cancel"],
-		excludedOptions: ["--dry-run"],
-		severity: "medium",
-		reasons: ["glab ci cancel (pipeline or job cancellation)"],
-	},
-	{
-		command: ["ci", "delete"],
-		excludedOptions: ["--dry-run"],
-		severity: "high",
-		reasons: ["glab ci delete (pipeline deletion)"],
-	},
-	{
-		command: ["ci", "run"],
-		excludedOptions: ["-w", "--web"],
-		severity: "medium",
-		reasons: ["glab ci run (remote pipeline execution)"],
-	},
-	{ command: ["ci", "run-trig"], severity: "medium", reasons: ["glab ci run-trig (remote pipeline execution)"] },
-	{ command: ["ci", "retry"], severity: "medium", reasons: ["glab ci retry (remote job execution)"] },
-	{ command: ["ci", "trigger"], severity: "medium", reasons: ["glab ci trigger (remote job execution)"] },
-	{ command: ["schedule", "create"], severity: "high", reasons: ["glab schedule create (recurring pipeline configuration)"] },
-	{ command: ["schedule", "delete"], severity: "high", reasons: ["glab schedule delete (pipeline schedule deletion)"] },
-	{
-		command: ["schedule", "update"],
-		anyOptions: [
-			"--active",
-			"--cron",
-			"--cronTimeZone",
-			"--ref",
-			"--create-variable",
-			"--update-variable",
-			"--delete-variable",
-		],
-		severity: "high",
-		reasons: ["glab schedule update (recurring pipeline configuration change)"],
-	},
-	{ command: ["schedule", "run"], severity: "medium", reasons: ["glab schedule run (remote pipeline execution)"] },
-	{ command: ["variable", "set"], severity: "high", reasons: ["glab variable set (CI/CD configuration change)"] },
-	{ command: ["variable", "update"], severity: "high", reasons: ["glab variable update (CI/CD configuration change)"] },
-	{ command: ["variable", "delete"], severity: "high", reasons: ["glab variable delete (CI/CD configuration change)"] },
-	{ command: ["deploy-key", "add"], severity: "high", reasons: ["glab deploy-key add (project access change)"] },
-	{ command: ["deploy-key", "delete"], severity: "high", reasons: ["glab deploy-key delete (project access change)"] },
-	{ command: ["ssh-key", "add"], severity: "high", reasons: ["glab ssh-key add (account access change)"] },
-	{ command: ["ssh-key", "delete"], severity: "high", reasons: ["glab ssh-key delete (account access change)"] },
-	{ command: ["gpg-key", "add"], severity: "high", reasons: ["glab gpg-key add (account signing-key change)"] },
-	{ command: ["gpg-key", "delete"], severity: "high", reasons: ["glab gpg-key delete (account signing-key change)"] },
-	{ command: ["token", "create"], severity: "high", reasons: ["glab token create (access token creation)"] },
-	{ command: ["token", "revoke"], severity: "high", reasons: ["glab token revoke (access token revocation)"] },
-	{ command: ["token", "rm"], severity: "high", reasons: ["glab token rm (access token revocation)"] },
-	{ command: ["token", "rotate"], severity: "high", reasons: ["glab token rotate (access token rotation)"] },
-	{ command: ["securefile", "create"], severity: "high", reasons: ["glab securefile create (secure CI file upload)"] },
-	{ command: ["securefile", "upload"], severity: "high", reasons: ["glab securefile upload (secure CI file upload)"] },
-	{ command: ["securefile", "remove"], severity: "high", reasons: ["glab securefile remove (secure CI file deletion)"] },
-	{ command: ["securefile", "delete"], severity: "high", reasons: ["glab securefile delete (secure CI file deletion)"] },
-	{ command: ["securefile", "rm"], severity: "high", reasons: ["glab securefile rm (secure CI file deletion)"] },
-	{ command: ["label", "delete"], severity: "high", reasons: ["glab label delete (project label deletion)"] },
-	{ command: ["milestone", "delete"], severity: "high", reasons: ["glab milestone delete (milestone deletion)"] },
-	{ command: ["runner", "assign"], severity: "high", reasons: ["glab runner assign (runner assignment change)"] },
-	{ command: ["runner", "unassign"], severity: "high", reasons: ["glab runner unassign (runner assignment change)"] },
-	{ command: ["runner", "delete"], severity: "high", reasons: ["glab runner delete (runner deletion)"] },
-	{
-		command: ["runner", "update"],
-		anyOptions: ["--pause"],
-		severity: "medium",
-		reasons: ["glab runner update --pause (runner disruption)"],
-	},
-	{ command: ["cluster", "agent", "bootstrap"], severity: "high", reasons: ["glab cluster agent bootstrap (cluster and repository mutation)"] },
-	{ command: ["cluster", "agent", "get-token"], severity: "high", reasons: ["glab cluster agent get-token (access token creation)"] },
-	{ command: ["cluster", "agent", "token", "revoke"], severity: "high", reasons: ["glab cluster agent token revoke (agent token revocation)"] },
-	{ command: ["cluster", "agent", "token-cache", "clear"], severity: "high", reasons: ["glab cluster agent token-cache clear (cached token revocation)"] },
-	{ command: ["opentofu", "state", "delete"], severity: "high", reasons: ["glab opentofu state delete (infrastructure state deletion)"] },
-	{ command: ["runner-controller", "create"], severity: "high", reasons: ["glab runner-controller create (runner infrastructure creation)"] },
-	{ command: ["runner-controller", "delete"], severity: "high", reasons: ["glab runner-controller delete (runner controller deletion)"] },
-	{
-		command: ["runner-controller", "update"],
-		anyOptions: ["--state"],
-		severity: "high",
-		reasons: ["glab runner-controller update --state (runner infrastructure state change)"],
-	},
-	{ command: ["runner-controller", "scope", "create"], severity: "high", reasons: ["glab runner-controller scope create (runner controller access change)"] },
-	{ command: ["runner-controller", "scope", "delete"], severity: "high", reasons: ["glab runner-controller scope delete (runner controller access change)"] },
-	{ command: ["runner-controller", "token", "create"], severity: "high", reasons: ["glab runner-controller token create (access token creation)"] },
-	{ command: ["runner-controller", "token", "revoke"], severity: "high", reasons: ["glab runner-controller token revoke (access token revocation)"] },
-	{ command: ["runner-controller", "token", "rotate"], severity: "high", reasons: ["glab runner-controller token rotate (access token rotation)"] },
-	{ command: ["changelog", "generate"], severity: "high", reasons: ["glab changelog generate (remote repository write)"] },
-];
+// Expand the readable policy tables into the flat, pre-split rule list the matcher walks.
+function toHostedCliRules(table: CliRuleTable): readonly HostedCliRule[] {
+	return Object.entries(table).flatMap(([command, policy]) =>
+		ruleVariants(policy).map(([severity, reason, options]) => ({
+			command: command.split(/\s+/),
+			severity,
+			reasons: [reason],
+			...options,
+		})),
+	);
+}
+
+const DANGEROUS_GITHUB_CLI_RULES = toHostedCliRules(DANGEROUS_GITHUB_CLI_COMMANDS);
+const DANGEROUS_GITLAB_CLI_RULES = toHostedCliRules(DANGEROUS_GITLAB_CLI_COMMANDS);
 
 function optionValues(args: string[], shortOption: string, longOption: string): string[] {
 	const values: string[] = [];
@@ -425,9 +275,9 @@ function analyzeGitHubCliArgs(rawArgs: string[]): RiskDetails | null {
 	const commandArgs = withoutHostedCliContextOptions(ghArgs);
 	if (commandArgs[0] === "api") return analyzeGitHubApi(commandArgs.slice(1));
 
-	const dynamicCommandRisk = analyzeDynamicHostedCliCommand(commandArgs, DANGEROUS_GITHUB_CLI_COMMANDS, "gh");
+	const dynamicCommandRisk = analyzeDynamicHostedCliCommand(commandArgs, DANGEROUS_GITHUB_CLI_RULES, "gh");
 	if (dynamicCommandRisk) return dynamicCommandRisk;
-	for (const rule of DANGEROUS_GITHUB_CLI_COMMANDS) {
+	for (const rule of DANGEROUS_GITHUB_CLI_RULES) {
 		if (!rule.command.every((part, index) => commandArgs[index] === part)) continue;
 		if (rule.anyOptions && !rule.anyOptions.some((option) => hasOption(ghArgs, option))) continue;
 		if (rule.excludedOptions && enabledBooleanOption(ghArgs, rule.excludedOptions)) continue;
@@ -455,9 +305,9 @@ function analyzeGitLabCliArgs(rawArgs: string[]): RiskDetails | null {
 	if (commandArgs[0] === "api") return analyzeGitLabApi(commandArgs.slice(1));
 
 	if (commandArgs[0] === "pipe" || commandArgs[0] === "pipeline") commandArgs[0] = "ci";
-	const dynamicCommandRisk = analyzeDynamicHostedCliCommand(commandArgs, DANGEROUS_GITLAB_CLI_COMMANDS, "glab");
+	const dynamicCommandRisk = analyzeDynamicHostedCliCommand(commandArgs, DANGEROUS_GITLAB_CLI_RULES, "glab");
 	if (dynamicCommandRisk) return dynamicCommandRisk;
-	for (const rule of DANGEROUS_GITLAB_CLI_COMMANDS) {
+	for (const rule of DANGEROUS_GITLAB_CLI_RULES) {
 		if (!rule.command.every((part, index) => commandArgs[index] === part)) continue;
 		if (rule.anyOptions && !rule.anyOptions.some((option) => hasOption(glabArgs, option))) continue;
 		if (rule.excludedOptions && enabledBooleanOption(glabArgs, rule.excludedOptions)) continue;
@@ -678,9 +528,6 @@ function analyzeSegment(seg: Token[]): RiskDetails | null {
 	return { severity, reasons };
 }
 
-const SYSTEM_PATH_PREFIXES = ["/dev/", "/etc/", "/sys/", "/proc/", "/boot/"];
-const SAFE_DEV_PATHS = new Set(["/dev/null", "/dev/zero", "/dev/urandom", "/dev/stdin", "/dev/stdout", "/dev/stderr"]);
-
 function redirectsToSystemPath(tokens: Token[]): string | null {
 	const redirectOps = new Set([">", ">>", "2>", "2>>"]);
 	for (let i = 0; i < tokens.length - 1; i++) {
@@ -811,41 +658,6 @@ async function promptRunOrAbort(ctx: any, command: string, risk: Risk): Promise<
 // for catastrophic operations in subagents (where stdin is /dev/null and no UI is available).
 const _subagentDepth = Number(process.env.PI_SUBAGENT_DEPTH ?? "0");
 const _isSubagent = Number.isFinite(_subagentDepth) && _subagentDepth >= 1;
-
-// Hard-block patterns for subagent (headless) mode. Criteria: unrecoverable by default AND
-// unlikely to be intentional in an automated context. Fewer false positives over broad coverage —
-// the interactive prompt handles the rest for main sessions.
-const HEADLESS_BLOCKED: Array<{ pattern: RegExp; reason: string }> = [
-	// Recursive deletion
-	{ pattern: /(?<!\bgit\s+)\brm\b[^#\n]*\s-(?:[a-zA-Z]*[rR]|-\brecursive\b)/, reason: "recursive delete (rm -r / -rf / -Rf)" },
-	// Privilege escalation
-	{ pattern: /\bsudo\b/, reason: "elevated privileges (sudo)" },
-	// Remote code execution via pipe-to-shell
-	{ pattern: /\b(curl|wget)\b[^#\n]*\|\s*(ba?sh|zsh|fish|dash|sh)\b/, reason: "pipe to shell (remote code execution)" },
-	// Disk / filesystem destruction
-	{ pattern: /\bmkfs/, reason: "filesystem formatting (mkfs)" },
-	{ pattern: /\bnewfs_\w+/, reason: "filesystem formatting (newfs_*)" },
-	{ pattern: /\bwipefs\b/, reason: "disk signature wipe" },
-	{ pattern: /\bdiskutil\s+(erase|zeroDisk|secureErase|reformat)/i, reason: "destructive disk operation (diskutil)" },
-	{ pattern: /\bdd\b[^#\n]*\bof=\/dev\//, reason: "raw disk write (dd of=/dev/...)" },
-	{ pattern: /\b(parted|fdisk|gdisk|sgdisk)\b/, reason: "partition table management" },
-	{ pattern: /\bcryptsetup\b/, reason: "disk encryption management" },
-	{ pattern: /\bzpool\b/, reason: "ZFS pool management" },
-	// System power
-	{ pattern: /\b(shutdown|reboot|halt|poweroff)\b/, reason: "system power operation" },
-	// Infrastructure teardown
-	{ pattern: /\bterraform\s+destroy\b/, reason: "infrastructure teardown (terraform destroy)" },
-	{ pattern: /\bkubectl\s+delete\b/, reason: "Kubernetes resource deletion" },
-	{ pattern: /\baws\s+s3\s+rm\b[^#\n]*--recursive/, reason: "bulk S3 deletion (aws s3 rm --recursive)" },
-	// Destructive git operations
-	{ pattern: /\bgit\s+commit\b/, reason: "git commit (commits are main-session operations)" },
-	{ pattern: /\bgit\s+pull\b/, reason: "git pull (pulls are main-session operations)" },
-	{ pattern: /\bgit\s+push\b/, reason: "git push (pushes are main-session operations)" },
-	{ pattern: /\bgit\s+reset\b[^#\n]*--hard\b/, reason: "discard all uncommitted changes (git reset --hard)" },
-	{ pattern: /\bgit\s+clean\b[^#\n]*-[a-zA-Z]*f/, reason: "delete untracked files (git clean -f)" },
-	{ pattern: /\bgit\s+reflog\s+expire\b/, reason: "expire reflog (removes recovery history)" },
-	{ pattern: /\bgit\s+gc\b[^#\n]*--prune\b/, reason: "prune unreachable objects (git gc --prune)" },
-];
 
 export default function (pi: ExtensionAPI) {
 	if (_isSubagent) {
