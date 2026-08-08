@@ -33,7 +33,9 @@ Supported primary types include:
 
 Use another Conventional Commit type only when it describes the change more accurately.
 
-## Merge Request and Pull Request Descriptions
+## Merge Requests and Pull Requests
+
+When the user asks to open a merge request or pull request, fetch `origin` and verify whether the current branch exists remotely before claiming that it needs to be pushed. If it exists, create the request directly; otherwise, provide the ready-to-run push command and resume creation after the user confirms the push.
 
 Before drafting a merge request or pull request, look for a repository-owned template. Preserve its required headings and checklists, and fit the summary and motivation into the closest equivalent sections. Do not add duplicate `Summary` or `Why` headings when the template already covers them.
 
