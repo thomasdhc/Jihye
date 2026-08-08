@@ -39,7 +39,7 @@ When the user asks to open a merge request or pull request, fetch `origin` and v
 
 Use Conventional Commit format for every merge request and pull request title: `<type>(<optional-scope>): <message>`. Follow the same type rules as commit messages. Do not use a plain prose title unless the user explicitly requests it.
 
-Before drafting or updating a merge request or pull request description, look for a repository-owned template. If one exists, show its headings and checklists to the user and agree with them how to format the description before proceeding.
+Before drafting or updating a merge request or pull request description, look for a repository-owned template. Check that candidate template files or directories exist before reading or searching them. If one exists, show its headings and checklists to the user and agree with them how to format the description before proceeding.
 
 When the user asks to add or update a description, update the open MR or PR for the current branch directly with the repository's CLI or API and verify the result. If no open MR or PR exists, or access is unavailable, provide the drafted description and state the limitation. Do not create an MR or PR unless the user asks.
 
