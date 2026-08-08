@@ -7,12 +7,11 @@
 - Unless the user directs a different base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`, using the branch namespace from workspace-root `USERNAME.md`.
 - Never assume local `main` is current, and do not develop directly on `main`.
 - If the latest remote `main` cannot be fetched, ask before using another base.
-- For parallel or explicitly isolated work, follow the review-worktree flow in policy-directory `DEVELOPMENT.md`. Keep the canonical checkout untouched until the user explicitly asks to move the approved branch there.
+- For parallel or isolated work, use a separate worktree as described in policy-directory `DEVELOPMENT.md` and keep the canonical checkout untouched.
 
 ## Staging, Commits, and Pushing
 
-- For ordinary work in the canonical checkout, validate the change, stage only the task's files, review the staged diff, and commit automatically unless the user asks otherwise.
-- For review worktrees, do not stage or commit in the canonical checkout until the user explicitly approves integration.
+- Validate the change, stage only the task's files, review the staged diff, and commit automatically unless the user asks otherwise.
 - Prefer additional follow-up commits over amending existing commits. Amend only when the user explicitly asks.
 - Use the applicable commit command configured in workspace-root `USERNAME.md` so required signing and attribution are preserved.
 - Never push. Pushing is delegated to the user; provide a ready-to-run push command instead.
