@@ -15,13 +15,28 @@ import { getAgentDir, getMarkdownTheme, parseFrontmatter, truncateHead, withFile
 import { Container, Markdown, Spacer, Text, visibleWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
+import {
+	isModelTier,
+	loadModelProfiles,
+	resolveAgentModel,
+	type ActiveModel,
+	type ModelProfiles,
+	type ModelTier,
+} from "./models.ts";
+
 // ── Types ──────────────────────────────────────────────────────────────
 
 export interface AgentConfig {
 	name: string;
 	description: string;
 	tools: string[];
-	model: string;
+	/**
+	 * Model pinned by agent frontmatter. Left undefined by the bundled
+	 * definitions so the tier decides per provider at spawn time.
+	 */
+	model?: string;
+	/** Capability tier used to select a model for the active provider. */
+	modelTier?: ModelTier;
 	thinking: string;
 	systemPrompt: string;
 	filePath: string;
@@ -33,6 +48,9 @@ export interface AgentConfig {
 	 */
 	subagentAgents?: string[];
 }
+
+/** Agent whose model has been resolved for the current parent session. */
+export type ResolvedAgentConfig = AgentConfig & { model: string };
 
 interface ToolEvent {
 	tool: string;
@@ -92,6 +110,8 @@ interface Details {
 
 interface ExtensionConfig {
 	maxConcurrency?: number;
+	/** Partial override of the bundled provider tier maps. */
+	modelProfiles?: unknown;
 }
 
 const EXT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -102,8 +122,8 @@ const PACKAGE_LOCAL_AGENTS_DIR = path.join(PACKAGE_ROOT, ".pi", "agents");
 const USER_AGENTS_DIR = path.join(getAgentDir(), "agents");
 const TOOLS_DIR = path.join(EXT_DIR, "tools");
 const CONFIG_PATH = path.join(EXT_DIR, "config.json");
+const MODEL_PROFILES_PATH = path.join(EXT_DIR, "model-profiles.json");
 const DEFAULT_MAX_CONCURRENCY = 4;
-const DEFAULT_AGENT_MODEL = "openai-codex/gpt-5.6-sol";
 const DEFAULT_AGENT_THINKING = "medium";
 
 function loadConfig(): ExtensionConfig {
@@ -186,11 +206,16 @@ function loadAgentDirectory(directory: string): AgentConfig[] {
 		const subagentAgents = rawSubagentAgents
 			? rawSubagentAgents.split(",").map((t) => t.trim()).filter(Boolean)
 			: undefined;
+		const rawModelTier = (frontmatter as Record<string, string>).model_tier;
+		if (rawModelTier && !isModelTier(rawModelTier)) {
+			throw new Error(`Invalid model_tier "${rawModelTier}" for agent "${frontmatter.name}" in ${filePath}`);
+		}
 		loadedAgents.push({
 			name: frontmatter.name,
 			description: frontmatter.description || "",
 			tools,
-			model: frontmatter.model || DEFAULT_AGENT_MODEL,
+			model: frontmatter.model || undefined,
+			modelTier: rawModelTier as ModelTier | undefined,
 			thinking: frontmatter.thinking || DEFAULT_AGENT_THINKING,
 			systemPrompt: body,
 			filePath,
@@ -309,7 +334,7 @@ function truncLine(text: string, maxWidth: number): string {
 // ── Subagent Execution ────────────────────────────────────────────────
 
 export async function buildPiArgs(
-	agent: AgentConfig,
+	agent: ResolvedAgentConfig,
 	task: string,
 	cwd: string,
 ): Promise<{ args: string[]; tempDir: string; childEnv: NodeJS.ProcessEnv }> {
@@ -415,7 +440,7 @@ function extractToolArgsPreview(args: Record<string, unknown>): string {
 }
 
 async function runSubagent(
-	agent: AgentConfig,
+	agent: ResolvedAgentConfig,
 	task: string,
 	cwd: string,
 	signal: AbortSignal | undefined,
@@ -755,6 +780,7 @@ function renderAgentProgress(
 
 export default function (pi: ExtensionAPI) {
 	const config = loadConfig();
+	const modelProfiles: ModelProfiles = loadModelProfiles(MODEL_PROFILES_PATH, config.modelProfiles);
 	const semaphore = new Semaphore(config.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY);
 	agents = loadAgents();
 
@@ -797,21 +823,31 @@ export default function (pi: ExtensionAPI) {
 				throw new Error(`Unknown agent: ${params.agent}. Available agents: ${available}`);
 			}
 
-			const [provider, modelId] = (agent.model || "").split("/");
+			const resolvedAgent: ResolvedAgentConfig = {
+				...agent,
+				model: resolveAgentModel({
+					pinnedModel: agent.model,
+					tier: agent.modelTier,
+					profiles: modelProfiles,
+					activeModel: ctx.model as ActiveModel | undefined,
+				}),
+			};
+
+			const [provider, modelId] = resolvedAgent.model.split("/");
 			const contextWindow = provider && modelId ? ctx.modelRegistry.find(provider, modelId)?.contextWindow : undefined;
 			const liveResult: AgentResult = {
 				agent: params.agent,
 				task: params.task,
 				output: "",
 				exitCode: -1,
-				model: agent.model,
+				model: resolvedAgent.model,
 				contextWindow,
 				usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, turns: 0 },
 				progress: { agent: params.agent, status: "running" as const, task: params.task, recentTools: [], toolCount: 0, tokens: 0, durationMs: 0, lastMessage: "" },
 			};
 
 			const result = await semaphore.run(() =>
-				runSubagent(agent, params.task!, cwd, signal, (progress, usage) => {
+				runSubagent(resolvedAgent, params.task!, cwd, signal, (progress, usage) => {
 					liveResult.progress = progress;
 					liveResult.usage = { ...usage };
 					onUpdate?.({

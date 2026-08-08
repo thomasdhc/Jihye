@@ -105,7 +105,8 @@ test("persona agents are the single current bundled definition set", () => {
 	for (const file of files) {
 		assert.equal(lstatSync(join(agentRoot, file)).isSymbolicLink(), false);
 		const content = readFileSync(join(agentRoot, file), "utf8");
-		assert.match(content, /model: openai-codex\/gpt-5\.6-sol/);
+		assert.match(content, /^model_tier: (standard|deep)$/m);
+		assert.doesNotMatch(content, /^model: /m);
 	}
 	assert.match(readFileSync(join(agentRoot, "worker.md"), "utf8"), /thinking: high/);
 });

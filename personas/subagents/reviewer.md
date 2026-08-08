@@ -2,7 +2,7 @@
 name: reviewer
 description: Bounded reviewer that tests specific claims, challenges assumptions, and returns only decisive findings.
 tools: read, grep, find, ls, safe_bash, web_search, web_fetch
-model: openai-codex/gpt-5.6-sol
+model_tier: standard
 thinking: medium
 ---
 

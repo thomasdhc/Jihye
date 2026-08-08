@@ -16,6 +16,8 @@ Reusable global instructions, workspace policy, local-configuration templates, a
 
 `personas/subagents/` is the single canonical source for Jihye's bundled subagent definitions. The extension references this directory directly; no agent-definition symlink or duplicate copy is installed.
 
+Bundled definitions declare `model_tier: standard` or `model_tier: deep` instead of a provider-specific model, so they follow the provider backing the parent session. Tier maps and override rules are documented in the root [`README.md`](../README.md). Pin `model:` in an override definition when one exact model is required.
+
 ## Install the guidance chain
 
 Pi packages do not install context files automatically. Configure two symlinks after installing Jihye. These commands expect both destinations not to exist; inspect and remove obsolete symlinks first, and never overwrite a regular context file.

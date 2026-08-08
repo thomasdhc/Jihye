@@ -1,4 +1,4 @@
-# Jihye ◦ 지혜 ◦ 智慧
+# Jihye 🞄 지혜 🞄 智慧
 
 Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your workflow. It bundles focused extensions, reusable skills, portable agent definitions, and global/workspace guidance into one package that works consistently across workstations.
 
@@ -105,15 +105,42 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 
 ### `subagent` agent definitions
 
-Portable default definitions are tracked in `personas/subagents/`:
+Portable default definitions are tracked in `personas/subagents/`. They declare a capability tier instead of a fixed model, so the same definitions follow whichever provider backs the parent session:
 
-| Agent | Model | Thinking |
+| Agent | Tier | Thinking |
 |---|---|---|
-| `scout` | `openai-codex/gpt-5.6-sol` | medium |
-| `researcher` | `openai-codex/gpt-5.6-sol` | medium |
-| `reviewer` | `openai-codex/gpt-5.6-sol` | medium |
-| `worker` | `openai-codex/gpt-5.6-sol` | high |
-| `coordinator` | `openai-codex/gpt-5.6-sol` | high |
+| `scout` | standard | medium |
+| `researcher` | standard | medium |
+| `reviewer` | standard | medium |
+| `worker` | deep | high |
+| `coordinator` | deep | high |
+
+Tier maps live in `extensions/subagent/model-profiles.json`:
+
+| Provider | standard | deep |
+|---|---|---|
+| `openai-codex` | `gpt-5.6-sol` | `gpt-5.6-sol` |
+| `anthropic` | `claude-sonnet-5` | `claude-opus-5` |
+
+A model is resolved per spawn in this order:
+
+1. an explicit `model` in agent frontmatter, so an override can pin one model exactly;
+2. the tier entry for the parent session's provider;
+3. the parent session's own active model, when its provider has no tier map;
+4. the default provider's tier entry, when no active model is known.
+
+Override the maps per workstation in the untracked `extensions/subagent/config.json`. Existing providers may override a single tier; a new provider must supply both:
+
+```json
+{
+  "modelProfiles": {
+    "providers": {
+      "anthropic": { "deep": "anthropic/claude-opus-4-8" },
+      "google": { "standard": "google/gemini-3-flash", "deep": "google/gemini-3-pro" }
+    }
+  }
+}
+```
 
 Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `personas/subagents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `personas/subagents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 

@@ -24,8 +24,13 @@ test("loads portable bundled agent model specifications", () => {
 
 	assert.deepEqual([...byName.keys()].sort(), ["coordinator", "researcher", "reviewer", "scout", "worker"]);
 	for (const agent of bundledAgents) {
-		assert.equal(agent.model, "openai-codex/gpt-5.6-sol");
+		assert.equal(agent.model, undefined, `${agent.name} must not pin a provider-specific model`);
 	}
+	assert.equal(byName.get("scout")?.modelTier, "standard");
+	assert.equal(byName.get("researcher")?.modelTier, "standard");
+	assert.equal(byName.get("reviewer")?.modelTier, "standard");
+	assert.equal(byName.get("coordinator")?.modelTier, "deep");
+	assert.equal(byName.get("worker")?.modelTier, "deep");
 	assert.equal(byName.get("scout")?.thinking, "medium");
 	assert.equal(byName.get("researcher")?.thinking, "medium");
 	assert.equal(byName.get("reviewer")?.thinking, "medium");
@@ -121,8 +126,23 @@ Specialist prompt.
 		assert.equal(scout?.thinking, "medium");
 		assert.equal(scout?.systemPrompt.trim(), "Package-local scout prompt.");
 		assert.equal(scout?.filePath, join(packageLocalDir, "scout.md"));
-		assert.equal(specialist?.model, "openai-codex/gpt-5.6-sol");
+		assert.equal(specialist?.model, undefined);
+		assert.equal(specialist?.modelTier, undefined);
 		assert.equal(specialist?.thinking, "medium");
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("rejects an unknown model tier in agent frontmatter", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\nmodel_tier: turbo\n---\nBroken\n");
+
+	try {
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Invalid model_tier "turbo" for agent "broken"/,
+		);
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });
 	}

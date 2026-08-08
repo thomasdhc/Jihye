@@ -2,7 +2,7 @@
 name: scout
 description: Read-only codebase explorer for tracing execution paths, comparing existing patterns, and locating decisive evidence without changing files.
 tools: read, grep, find, ls, safe_bash
-model: openai-codex/gpt-5.6-sol
+model_tier: standard
 thinking: medium
 ---
 
