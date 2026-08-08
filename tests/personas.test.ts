@@ -77,6 +77,15 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.match(workspace, /do not derive either directory from.*repository root/i);
 });
 
+test("merge requests and pull requests use strict title and description defaults", () => {
+	const git = readPersona("GIT.md");
+	assert.match(git, /Use Conventional Commit format for every merge request and pull request title/);
+	assert.match(git, /Do not use a plain prose title unless the user explicitly requests it/);
+	assert.match(git, /show its headings and checklists to the user/);
+	assert.match(git, /When no repository template exists, use only:/);
+	assert.match(git, /Do not add other headings, checklists, validation notes, or supporting sections unless the user explicitly requests them/);
+});
+
 test("persona policy remains portable", () => {
 	for (const path of POLICY_FILES) {
 		const content = readPersona(path);

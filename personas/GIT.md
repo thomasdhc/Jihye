@@ -37,11 +37,13 @@ Use another Conventional Commit type only when it describes the change more accu
 
 When the user asks to open a merge request or pull request, fetch `origin` and verify whether the current branch exists remotely before claiming that it needs to be pushed. If it exists, create the request directly; otherwise, provide the ready-to-run push command and resume creation after the user confirms the push.
 
-Before drafting a merge request or pull request, look for a repository-owned template. Preserve its required headings and checklists, and fit the summary and motivation into the closest equivalent sections. Do not add duplicate `Summary` or `Why` headings when the template already covers them.
+Use Conventional Commit format for every merge request and pull request title: `<type>(<optional-scope>): <message>`. Follow the same type rules as commit messages. Do not use a plain prose title unless the user explicitly requests it.
+
+Before drafting or updating a merge request or pull request description, look for a repository-owned template. If one exists, show its headings and checklists to the user and agree with them how to format the description before proceeding.
 
 When the user asks to add or update a description, update the open MR or PR for the current branch directly with the repository's CLI or API and verify the result. If no open MR or PR exists, or access is unavailable, provide the drafted description and state the limitation. Do not create an MR or PR unless the user asks.
 
-When no repository template exists, use:
+When no repository template exists, use only:
 
 ```markdown
 ## Summary
@@ -52,4 +54,4 @@ When no repository template exists, use:
 <brief motivation or problem being addressed>
 ```
 
-Keep the summary to one or two concise bullets.
+Keep the summary to one or two concise bullets. Do not add other headings, checklists, validation notes, or supporting sections unless the user explicitly requests them.
