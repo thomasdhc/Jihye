@@ -191,6 +191,98 @@ export const DANGEROUS_GITLAB_CLI_COMMANDS = {
 	"changelog generate": ["high", "glab changelog generate (remote repository write)"],
 } satisfies CliRuleTable;
 
+/**
+ * One positional slot of a command pattern: an exact token, any one of several
+ * tokens, or a command-name prefix (`mkfs.ext4`, `newfs_hfs`).
+ */
+export type CommandToken = string | readonly string[] | { readonly prefix: string };
+
+/**
+ * Argument conditions, deliberately limited to the shapes the guarded commands need.
+ *
+ * `hasArg` is exact token equality (`--force` must not match `--force-with-lease`),
+ * while `argContains` is a substring test that intentionally catches bundled short
+ * flags (`-fd` counts as `-f`). The two are never interchangeable.
+ */
+export type ArgCondition =
+	| { readonly hasArg: string }
+	| { readonly argContains: string }
+	| { readonly argStartsWith: string }
+	| { readonly anyOf: readonly ArgCondition[] }
+	| { readonly allOf: readonly ArgCondition[] };
+
+/**
+ * A guarded local command: a positional command pattern, an optional condition on
+ * the arguments that follow it, a severity, and the user-facing reason.
+ *
+ * `{command}` in a reason is replaced with the command name exactly as written.
+ */
+export type LocalCommandRule = {
+	readonly command: readonly CommandToken[];
+	readonly when?: ArgCondition;
+	readonly severity: Severity;
+	readonly reason: string;
+};
+
+/**
+ * Guarded local commands, in the order their reasons are reported.
+ *
+ * Only rules that are a command lookup — command name, optional subcommand, and a
+ * declarable condition on the remaining arguments — belong here. Token-stream
+ * pattern detectors stay in the analysis module because they read shell operators
+ * or accumulate several ordered sub-reasons from one command, neither of which this
+ * vocabulary can express without turning it into a general expression language:
+ *
+ * - `rm`/`rmdir`/`unlink`: base reason plus up to three accumulated sub-reasons.
+ * - `diskutil`: base reason plus an additive erase reason.
+ * - pipe-to-shell, `curl`/`wget` piped: depend on shell operators, not arguments.
+ * - redirects to system paths: a token-position scan, not a command lookup.
+ */
+export const RISKY_LOCAL_COMMANDS: readonly LocalCommandRule[] = [
+	{ command: ["sudo"], severity: "high", reason: "sudo (elevated privileges)" },
+	{ command: ["find"], when: { hasArg: "-delete" }, severity: "high", reason: "find -delete (bulk deletion)" },
+
+	// git — only explicitly destructive subcommands are guarded.
+	{ command: ["git", "rm"], severity: "high", reason: "git rm (deletes files from working tree and stages deletions)" },
+	{ command: ["git", "clean"], when: { anyOf: [{ argContains: "-f" }, { hasArg: "-d" }, { hasArg: "-x" }] }, severity: "high", reason: "git clean (can delete untracked files)" },
+	{ command: ["git", "reset"], when: { hasArg: "--hard" }, severity: "high", reason: "git reset --hard (discard changes)" },
+	{ command: ["git", ["checkout", "restore"]], when: { anyOf: [{ hasArg: "." }, { hasArg: "--" }, { hasArg: "--source" }] }, severity: "medium", reason: "git checkout/restore (can overwrite working tree)" },
+	{ command: ["git", "push"], when: { anyOf: [{ hasArg: "--force" }, { hasArg: "--force-with-lease" }, { hasArg: "-f" }] }, severity: "high", reason: "git push --force (rewrite remote history)" },
+	{ command: ["git", "reflog"], when: { hasArg: "expire" }, severity: "high", reason: "git reflog expire (can remove recovery history)" },
+	{ command: ["git", "gc"], when: { argStartsWith: "--prune" }, severity: "high", reason: "git gc --prune (can permanently delete objects)" },
+
+	{ command: ["dd"], when: { anyOf: [{ argStartsWith: "of=" }, { hasArg: "of" }] }, severity: "high", reason: "dd with output file/device (can overwrite data)" },
+
+	// Disk / volume management (prompt aggressively; high risk)
+	// Linux: mkfs.*, wipefs, parted, fdisk, gdisk/sgdisk, cryptsetup, LVM tools, zpool
+	// macOS: diskutil (detector), hdiutil, gpt, newfs_*, asr
+	{ command: [{ prefix: "mkfs" }], severity: "high", reason: "mkfs (filesystem formatting)" },
+	{ command: [{ prefix: "newfs_" }], severity: "high", reason: "newfs_* (filesystem formatting)" },
+	{ command: ["wipefs"], severity: "high", reason: "wipefs (disk signature wipe)" },
+	{ command: ["hdiutil"], severity: "high", reason: "hdiutil (disk image management command)" },
+	{ command: ["gpt"], severity: "high", reason: "gpt (partition table manipulation)" },
+	{ command: ["asr"], severity: "high", reason: "asr (Apple Software Restore; can overwrite volumes)" },
+	{ command: [["parted", "fdisk", "gdisk", "sgdisk"]], severity: "high", reason: "{command} (disk/partition management)" },
+	{ command: ["cryptsetup"], severity: "high", reason: "cryptsetup (disk encryption management)" },
+	{ command: [["pvcreate", "vgcreate", "lvcreate"]], severity: "high", reason: "{command} (LVM volume management)" },
+	{ command: ["zpool"], severity: "high", reason: "zpool (ZFS pool management)" },
+
+	{ command: ["chmod"], when: { anyOf: [{ hasArg: "-R" }, { hasArg: "--recursive" }] }, severity: "medium", reason: "chmod -R (recursive permission changes)" },
+	{ command: ["chown"], when: { anyOf: [{ hasArg: "-R" }, { hasArg: "--recursive" }] }, severity: "medium", reason: "chown -R (recursive ownership changes)" },
+	{ command: ["perl"], when: { anyOf: [{ hasArg: "-pi" }, { allOf: [{ hasArg: "-p" }, { hasArg: "-i" }] }] }, severity: "medium", reason: "perl -pi/-i (in-place file modification)" },
+
+	// kill — only flag SIGKILL (-9), routine process termination is normal
+	{ command: [["kill", "pkill", "killall"]], when: { anyOf: [{ hasArg: "-9" }, { hasArg: "-SIGKILL" }] }, severity: "high", reason: "{command} -9 (SIGKILL — force-kills processes)" },
+	{ command: [["shutdown", "reboot"]], severity: "high", reason: "{command} (system power operation)" },
+	{ command: ["systemctl"], when: { anyOf: [{ hasArg: "stop" }, { hasArg: "disable" }] }, severity: "medium", reason: "systemctl stop/disable (service disruption)" },
+
+	// Infra deletes
+	{ command: ["kubectl", "delete"], severity: "high", reason: "kubectl delete (resource deletion)" },
+	{ command: ["terraform", "destroy"], severity: "high", reason: "terraform destroy (infrastructure teardown)" },
+	{ command: ["aws", "s3", "rm"], when: { hasArg: "--recursive" }, severity: "high", reason: "aws s3 rm --recursive (bulk deletion)" },
+	{ command: ["gcloud"], when: { hasArg: "delete" }, severity: "high", reason: "gcloud delete (resource deletion)" },
+];
+
 export const SYSTEM_PATH_PREFIXES = ["/dev/", "/etc/", "/sys/", "/proc/", "/boot/"];
 export const SAFE_DEV_PATHS = new Set(["/dev/null", "/dev/zero", "/dev/urandom", "/dev/stdin", "/dev/stdout", "/dev/stderr"]);
 

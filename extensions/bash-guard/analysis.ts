@@ -7,11 +7,15 @@
 import {
 	DANGEROUS_GITHUB_CLI_COMMANDS,
 	DANGEROUS_GITLAB_CLI_COMMANDS,
+	RISKY_LOCAL_COMMANDS,
 	SAFE_DEV_PATHS,
 	SYSTEM_PATH_PREFIXES,
+	type ArgCondition,
 	type CliRule,
 	type CliRulePolicy,
 	type CliRuleTable,
+	type CommandToken,
+	type LocalCommandRule,
 	type Severity,
 } from "./policy.ts";
 import {
@@ -197,6 +201,71 @@ function analyzeGitLabCliSegment(seg: Token[]): RiskDetails | null {
 	};
 }
 
+function matchesCommandToken(arg: string | undefined, token: CommandToken): boolean {
+	if (arg === undefined) return false;
+	if (typeof token === "string") return arg === token;
+	if ("prefix" in token) return arg.startsWith(token.prefix);
+	return token.includes(arg);
+}
+
+function matchesArgCondition(args: string[], condition: ArgCondition): boolean {
+	if ("hasArg" in condition) return args.includes(condition.hasArg);
+	if ("argContains" in condition) {
+		const fragment = condition.argContains;
+		return args.some((arg) => arg.includes(fragment));
+	}
+	if ("argStartsWith" in condition) return anyArgStartsWith(args, condition.argStartsWith);
+	if ("anyOf" in condition) return condition.anyOf.some((nested) => matchesArgCondition(args, nested));
+	return condition.allOf.every((nested) => matchesArgCondition(args, nested));
+}
+
+// Conditions apply to the arguments that follow the matched command pattern.
+function analyzeLocalCommandRule(args: string[], rule: LocalCommandRule): RiskDetails | null {
+	if (!rule.command.every((token, index) => matchesCommandToken(args[index], token))) return null;
+	if (rule.when && !matchesArgCondition(args.slice(rule.command.length), rule.when)) return null;
+	return { severity: rule.severity, reasons: [rule.reason.replace("{command}", args[0])] };
+}
+
+const PIPE_TARGET_SHELLS = ["sh", "bash", "zsh", "fish"];
+
+// Pipe to a shell: needs a pipe operator and a shell name anywhere in the segment.
+function analyzePipeToShell(args: string[], ops: string[]): RiskDetails | null {
+	if (!ops.includes("|") || !args.some((arg) => PIPE_TARGET_SHELLS.includes(arg))) return null;
+	return { severity: "high", reasons: ["pipe to a shell (possible remote code execution)"] };
+}
+
+// rm/rmdir/unlink: one base reason plus up to three accumulated sub-reasons.
+function analyzeFileDeletion(cmd: string, rest: string[], ops: string[]): RiskDetails | null {
+	if (cmd !== "rm" && cmd !== "rmdir" && cmd !== "unlink") return null;
+	const reasons = [`${cmd} (file deletion)`];
+	if (rest.some((a) => a.includes("-r") || a.includes("-R"))) reasons.push("recursive delete (-r/-R)");
+	if (rest.some((a) => a.includes("-f"))) reasons.push("forced delete (-f)");
+	if (ops.includes("glob")) reasons.push("glob pattern expansion (may delete many files)");
+	return { severity: "high", reasons };
+}
+
+// diskutil: base reason plus an additive erase reason, kept together so their order is local.
+function analyzeDiskutil(cmd: string, rest: string[]): RiskDetails | null {
+	if (cmd !== "diskutil") return null;
+	const reasons = ["diskutil (disk management command)"];
+	if (rest.includes("eraseDisk") || rest.includes("eraseVolume")) {
+		reasons.push("diskutil erase (destructive disk operation)");
+	}
+	return { severity: "high", reasons };
+}
+
+// curl/wget feeding a pipeline: the command alone is not enough, the operator matters.
+function analyzeDownloadPipe(cmd: string, ops: string[]): RiskDetails | null {
+	if ((cmd !== "curl" && cmd !== "wget") || !ops.includes("|")) return null;
+	return { severity: "high", reasons: ["curl/wget piped (possible remote code execution)"] };
+}
+
+function analyzeSystemPathRedirect(seg: Token[]): RiskDetails | null {
+	const systemTarget = redirectsToSystemPath(seg);
+	if (!systemTarget) return null;
+	return { severity: "high", reasons: [`output redirected to system path: ${systemTarget}`] };
+}
+
 function analyzeSegment(seg: Token[]): RiskDetails | null {
 	const reasons: string[] = [];
 	let severity: Severity = "medium";
@@ -208,191 +277,25 @@ function analyzeSegment(seg: Token[]): RiskDetails | null {
 	const cmd = args[0];
 	const rest = args.slice(1);
 
-	for (const hostedCliRisk of [analyzeGitHubCliSegment(seg), analyzeGitLabCliSegment(seg)]) {
-		if (!hostedCliRisk) continue;
-		reasons.push(...hostedCliRisk.reasons);
-		if (hostedCliRisk.severity === "high") severity = "high";
-	}
+	// Severity only ever escalates: the worst matching rule wins.
+	const apply = (risk: RiskDetails | null) => {
+		if (!risk) return;
+		reasons.push(...risk.reasons);
+		if (risk.severity === "high") severity = "high";
+	};
 
-	const systemTarget = redirectsToSystemPath(seg);
-	if (systemTarget) {
-		reasons.push(`output redirected to system path: ${systemTarget}`);
-		severity = "high";
-	}
-
-	// Shell pipe checks.
-	if (ops.includes("|") && (args.includes("sh") || args.includes("bash") || args.includes("zsh") || args.includes("fish"))) {
-		reasons.push("pipe to a shell (possible remote code execution)");
-		severity = "high";
-	}
-
-	// sudo
-	if (cmd === "sudo") {
-		reasons.push("sudo (elevated privileges)");
-		severity = "high";
-	}
-
-	// rm/rmdir/unlink
-	if (cmd === "rm" || cmd === "rmdir" || cmd === "unlink") {
-		severity = "high";
-		reasons.push(`${cmd} (file deletion)`);
-		if (rest.some((a) => a.includes("-r") || a.includes("-R"))) reasons.push("recursive delete (-r/-R)");
-		if (rest.some((a) => a.includes("-f"))) reasons.push("forced delete (-f)");
-		if (ops.includes("glob")) reasons.push("glob pattern expansion (may delete many files)");
-	}
-
-	// find -delete
-	if (cmd === "find" && rest.includes("-delete")) {
-		severity = "high";
-		reasons.push("find -delete (bulk deletion)");
-	}
-
-	// git operations — only flag explicitly destructive subcommands
-	if (cmd === "git") {
-		const sub = rest[0];
-		const subArgs = rest.slice(1);
-
-		if (sub === "rm") {
-			severity = "high";
-			reasons.push("git rm (deletes files from working tree and stages deletions)");
-		}
-		if (sub === "clean" && (subArgs.some((a) => a.includes("-f")) || subArgs.includes("-d") || subArgs.includes("-x"))) {
-			severity = "high";
-			reasons.push("git clean (can delete untracked files)");
-		}
-		if (sub === "reset" && subArgs.includes("--hard")) {
-			severity = "high";
-			reasons.push("git reset --hard (discard changes)");
-		}
-		if ((sub === "checkout" || sub === "restore") && (subArgs.includes(".") || subArgs.includes("--") || subArgs.includes("--source"))) {
-			severity = severity === "high" ? "high" : "medium";
-			reasons.push("git checkout/restore (can overwrite working tree)");
-		}
-		if (sub === "push" && (subArgs.includes("--force") || subArgs.includes("--force-with-lease") || subArgs.includes("-f"))) {
-			severity = "high";
-			reasons.push("git push --force (rewrite remote history)");
-		}
-		if (sub === "reflog" && subArgs.includes("expire")) {
-			severity = "high";
-			reasons.push("git reflog expire (can remove recovery history)");
-		}
-		if (sub === "gc" && subArgs.some((a) => a.startsWith("--prune"))) {
-			severity = "high";
-			reasons.push("git gc --prune (can permanently delete objects)");
-		}
-	}
-
-	// dd of=
-	if (cmd === "dd" && (anyArgStartsWith(rest, "of=") || rest.includes("of"))) {
-		severity = "high";
-		reasons.push("dd with output file/device (can overwrite data)");
-	}
-
-	// Disk / volume management (prompt aggressively; high risk)
-	// Linux: mkfs.*, wipefs, parted, fdisk, gdisk/sgdisk, lsblk, cryptsetup, LVM tools, zpool
-	// macOS: diskutil, hdiutil, gpt, newfs_*, asr
-	if (cmd.startsWith("mkfs")) {
-		severity = "high";
-		reasons.push("mkfs (filesystem formatting)");
-	}
-	if (cmd.startsWith("newfs_")) {
-		severity = "high";
-		reasons.push("newfs_* (filesystem formatting)");
-	}
-	if (cmd === "wipefs") {
-		severity = "high";
-		reasons.push("wipefs (disk signature wipe)");
-	}
-	if (cmd === "diskutil") {
-		severity = "high";
-		reasons.push("diskutil (disk management command)");
-		if (rest.includes("eraseDisk") || rest.includes("eraseVolume")) {
-			reasons.push("diskutil erase (destructive disk operation)");
-		}
-	}
-	if (cmd === "hdiutil") {
-		severity = "high";
-		reasons.push("hdiutil (disk image management command)");
-	}
-	if (cmd === "gpt") {
-		severity = "high";
-		reasons.push("gpt (partition table manipulation)");
-	}
-	if (cmd === "asr") {
-		severity = "high";
-		reasons.push("asr (Apple Software Restore; can overwrite volumes)");
-	}
-	if (cmd === "parted" || cmd === "fdisk" || cmd === "gdisk" || cmd === "sgdisk") {
-		severity = "high";
-		reasons.push(`${cmd} (disk/partition management)`);
-	}
-
-	if (cmd === "cryptsetup") {
-		severity = "high";
-		reasons.push("cryptsetup (disk encryption management)");
-	}
-	if (cmd === "pvcreate" || cmd === "vgcreate" || cmd === "lvcreate") {
-		severity = "high";
-		reasons.push(`${cmd} (LVM volume management)`);
-	}
-	if (cmd === "zpool") {
-		severity = "high";
-		reasons.push("zpool (ZFS pool management)");
-	}
-
-	// chmod/chown recursive
-	if (cmd === "chmod" && (rest.includes("-R") || rest.includes("--recursive"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("chmod -R (recursive permission changes)");
-	}
-	if (cmd === "chown" && (rest.includes("-R") || rest.includes("--recursive"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("chown -R (recursive ownership changes)");
-	}
-
-	// perl in-place
-	if (cmd === "perl" && (rest.includes("-pi") || (rest.includes("-p") && rest.includes("-i")))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("perl -pi/-i (in-place file modification)");
-	}
-
-	// kill — only flag SIGKILL (-9), routine process termination is normal
-	if ((cmd === "kill" || cmd === "pkill" || cmd === "killall") && (rest.includes("-9") || rest.includes("-SIGKILL"))) {
-		severity = "high";
-		reasons.push(`${cmd} -9 (SIGKILL — force-kills processes)`);
-	}
-	if (cmd === "shutdown" || cmd === "reboot") {
-		severity = "high";
-		reasons.push(`${cmd} (system power operation)`);
-	}
-	if (cmd === "systemctl" && (rest.includes("stop") || rest.includes("disable"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("systemctl stop/disable (service disruption)");
-	}
-
-	// Remote execution patterns
-	if ((cmd === "curl" || cmd === "wget") && ops.includes("|")) {
-		severity = "high";
-		reasons.push("curl/wget piped (possible remote code execution)");
-	}
-
-	// Infra deletes
-	if (cmd === "kubectl" && rest[0] === "delete") {
-		severity = "high";
-		reasons.push("kubectl delete (resource deletion)");
-	}
-	if (cmd === "terraform" && rest[0] === "destroy") {
-		severity = "high";
-		reasons.push("terraform destroy (infrastructure teardown)");
-	}
-	if (cmd === "aws" && rest[0] === "s3" && rest[1] === "rm" && rest.includes("--recursive")) {
-		severity = "high";
-		reasons.push("aws s3 rm --recursive (bulk deletion)");
-	}
-	if (cmd === "gcloud" && rest.includes("delete")) {
-		severity = "high";
-		reasons.push("gcloud delete (resource deletion)");
-	}
+	// This sequence is the reason order users see, so it is explicit and ordered.
+	// The policy-table pass sits between the shell-operator detectors and the
+	// multi-reason detectors; no policy rule names a detector command, so one pass
+	// cannot interleave with detector reasons.
+	apply(analyzeGitHubCliSegment(seg));
+	apply(analyzeGitLabCliSegment(seg));
+	apply(analyzeSystemPathRedirect(seg));
+	apply(analyzePipeToShell(args, ops));
+	for (const rule of RISKY_LOCAL_COMMANDS) apply(analyzeLocalCommandRule(args, rule));
+	apply(analyzeFileDeletion(cmd, rest, ops));
+	apply(analyzeDiskutil(cmd, rest));
+	apply(analyzeDownloadPipe(cmd, ops));
 
 	if (reasons.length === 0) return null;
 	return { severity, reasons };
