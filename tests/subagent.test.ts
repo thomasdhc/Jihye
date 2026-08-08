@@ -66,8 +66,7 @@ test("keeps the bundled reviewer bounded", () => {
 });
 
 test("resolves bundled, user, then package-local agent directories", () => {
-	const workspace = join(tmpdir(), "jihye-workspace-fixture");
-	assert.deepEqual(getAgentDirectories(workspace), [
+	assert.deepEqual(getAgentDirectories(), [
 		BUNDLED_AGENTS_DIR,
 		join(process.env.HOME || "", ".pi/agent/agents"),
 		join(REPO_ROOT, ".pi/agents"),

@@ -130,10 +130,14 @@ export function loadAgentsFromDirectories(directories: string[]): AgentConfig[] 
 	return [...mergedAgents.values()];
 }
 
-export function getAgentDirectories(_cwd?: string): string[] {
+/**
+ * Package, user, then package-local. The set is fixed: it never depends on a
+ * tool call's working directory, so project-local agents are not discovered.
+ */
+export function getAgentDirectories(): string[] {
 	return [PACKAGE_AGENTS_DIR, USER_AGENTS_DIR, PACKAGE_LOCAL_AGENTS_DIR];
 }
 
-export function loadAgents(cwd?: string): AgentConfig[] {
-	return loadAgentsFromDirectories(getAgentDirectories(cwd));
+export function loadAgents(): AgentConfig[] {
+	return loadAgentsFromDirectories(getAgentDirectories());
 }

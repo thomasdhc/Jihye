@@ -49,7 +49,7 @@ export default function (pi: ExtensionAPI) {
 
 		async execute(toolCallId, params, signal, onUpdate, ctx) {
 			const cwd = params.cwd ?? ctx.cwd;
-			const scopedAgents = loadAgents(cwd).filter((a) => isAgentAllowed(a.name));
+			const scopedAgents = loadAgents().filter((a) => isAgentAllowed(a.name));
 
 			if (!params.agent || !params.task) {
 				throw new Error("`subagent` requires both `agent` and `task`. To fan out work, emit multiple `subagent` tool calls in the same turn — they run in parallel.");
