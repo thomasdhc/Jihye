@@ -30,8 +30,17 @@ export const SUBAGENT_ALLOWLIST: string[] | undefined = (() => {
 	return list.length > 0 ? list : undefined;
 })();
 
+/**
+ * The single allowlist check. Every place that decides whether an agent is
+ * reachable goes through here, so registration and the directory scans cannot
+ * drift apart. No allowlist means no restriction.
+ */
+export function isAgentAllowed(name: string): boolean {
+	return !SUBAGENT_ALLOWLIST || SUBAGENT_ALLOWLIST.includes(name);
+}
+
 export function registerAgent(config: AgentConfig): void {
-	if (SUBAGENT_ALLOWLIST && !SUBAGENT_ALLOWLIST.includes(config.name)) return;
+	if (!isAgentAllowed(config.name)) return;
 	if (agents.find((a) => a.name === config.name)) {
 		throw new Error(`Agent already registered: ${config.name}`);
 	}

@@ -13,7 +13,7 @@ import { Container, Spacer, Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
 import { DEFAULT_MAX_CONCURRENCY, MODEL_PROFILES_PATH, loadConfig } from "./config.ts";
-import { SUBAGENT_ALLOWLIST, loadAgents, setAgents } from "./discovery.ts";
+import { isAgentAllowed, loadAgents, setAgents } from "./discovery.ts";
 import { loadModelProfiles, resolveAgentModel, type ActiveModel, type ModelProfiles } from "./models.ts";
 import { getTermWidth, renderAgentProgress } from "./render.ts";
 import { Semaphore, runSubagent } from "./runner.ts";
@@ -27,12 +27,7 @@ export default function (pi: ExtensionAPI) {
 	const config = loadConfig();
 	const modelProfiles: ModelProfiles = loadModelProfiles(MODEL_PROFILES_PATH, config.modelProfiles);
 	const semaphore = new Semaphore(config.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY);
-	const loadedAgents = loadAgents();
-	setAgents(
-		SUBAGENT_ALLOWLIST
-			? loadedAgents.filter((a) => SUBAGENT_ALLOWLIST.includes(a.name))
-			: loadedAgents,
-	);
+	setAgents(loadAgents().filter((a) => isAgentAllowed(a.name)));
 
 	pi.registerTool({
 		name: "subagent",
@@ -54,10 +49,7 @@ export default function (pi: ExtensionAPI) {
 
 		async execute(toolCallId, params, signal, onUpdate, ctx) {
 			const cwd = params.cwd ?? ctx.cwd;
-			const availableAgents = loadAgents(cwd);
-			const scopedAgents = SUBAGENT_ALLOWLIST
-				? availableAgents.filter((a) => SUBAGENT_ALLOWLIST.includes(a.name))
-				: availableAgents;
+			const scopedAgents = loadAgents(cwd).filter((a) => isAgentAllowed(a.name));
 
 			if (!params.agent || !params.task) {
 				throw new Error("`subagent` requires both `agent` and `task`. To fan out work, emit multiple `subagent` tool calls in the same turn — they run in parallel.");

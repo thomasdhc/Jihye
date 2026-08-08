@@ -212,6 +212,63 @@ test("skips a markdown file without a name and keeps valid siblings", () => {
 	}
 });
 
+/**
+ * `SUBAGENT_ALLOWLIST` is read once at module load, so each case needs its own
+ * module instance. A distinct query string gives one without touching state
+ * shared with the rest of the suite.
+ */
+async function importDiscoveryWithAllowlist(allowed: string | undefined, cacheKey: string) {
+	const previous = process.env.PI_SUBAGENT_ALLOWED;
+	if (allowed === undefined) delete process.env.PI_SUBAGENT_ALLOWED;
+	else process.env.PI_SUBAGENT_ALLOWED = allowed;
+	try {
+		return await import(`../extensions/subagent/discovery.ts?allowlist=${cacheKey}`);
+	} finally {
+		if (previous === undefined) delete process.env.PI_SUBAGENT_ALLOWED;
+		else process.env.PI_SUBAGENT_ALLOWED = previous;
+	}
+}
+
+test("treats an unset, empty, or whitespace-only allowlist as no restriction", async () => {
+	const openCases: Array<string | undefined> = [undefined, "", "   ", " , "];
+
+	for (const [index, value] of openCases.entries()) {
+		const discovery = await importDiscoveryWithAllowlist(value, `open-${index}`);
+		assert.equal(discovery.SUBAGENT_ALLOWLIST, undefined, `case ${index}`);
+		assert.equal(discovery.isAgentAllowed("scout"), true, `case ${index}`);
+		assert.equal(discovery.isAgentAllowed("no-such-agent"), true, `case ${index}`);
+	}
+});
+
+test("applies a set allowlist to both registration and directory scans", async () => {
+	const discovery = await importDiscoveryWithAllowlist("scout, reviewer", "scoped");
+	const fixture = (name: string): AgentConfig => ({
+		name,
+		description: `${name} fixture`,
+		tools: ["read"],
+		thinking: "medium",
+		systemPrompt: "Fixture",
+		filePath: "<fixture>",
+	});
+
+	assert.deepEqual(discovery.SUBAGENT_ALLOWLIST, ["scout", "reviewer"]);
+	assert.equal(discovery.isAgentAllowed("scout"), true);
+	assert.equal(discovery.isAgentAllowed("engineer"), false);
+	assert.equal(discovery.isAgentAllowed("no-such-agent"), false);
+
+	const bundled = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
+	assert.deepEqual(
+		bundled.filter((agent) => discovery.isAgentAllowed(agent.name)).map((agent) => agent.name).sort(),
+		["reviewer", "scout"],
+	);
+
+	// A registration that was kept collides on the second attempt; a dropped one never does.
+	discovery.registerAgent(fixture("scout"));
+	assert.throws(() => discovery.registerAgent(fixture("scout")), /Agent already registered: scout/);
+	discovery.registerAgent(fixture("engineer"));
+	discovery.registerAgent(fixture("engineer"));
+});
+
 test("builds portable child arguments with the requested model and safety guard", async () => {
 	const previousDepth = process.env.PI_SUBAGENT_DEPTH;
 	const previousAllowlist = process.env.PI_SUBAGENT_ALLOWED;
