@@ -45,7 +45,8 @@ If a new rule needs a condition the vocabulary cannot express, prefer a named de
 - Exact flag matching (`hasArg`) and substring matching (`argContains`) are distinct on purpose. `argContains: "-f"` catches bundled forms like `-fd`; `hasArg: "--force"` must not match `--force-with-lease`.
 - The matcher must not stop at the first match. Multiple rules may contribute reasons to one segment.
 - `index.ts` must remain the only entrypoint Pi discovers, and must keep re-exporting `analyzeBashCommand`, `analyzeGitHubCliCommand`, and `analyzeGitLabCliCommand`.
-- A rule that guards an ordinary read or a routine write is a bug. Listing, viewing, and commenting are not guarded.
+- Guard operations whose effects escape the session: irreversible locally, disruptive to shared systems, or broad enough that review is cheaper than recovery. Additive, self-authored, trivially-undone writes — creating an issue, editing your own description, posting a comment — are intentionally not guarded, and reads never are.
+- `high` means unrecoverable. `medium` means recoverable but externally visible or wide-reaching. If a proposed rule fits neither, it probably should not exist.
 
 ## Adding a Rule
 
@@ -59,5 +60,3 @@ If a new rule needs a condition the vocabulary cannot express, prefer a named de
 ## Changing the Analyzer
 
 When restructuring rather than adding, prove equivalence mechanically instead of by inspection: keep the previous implementation as a reference, run both across a corpus that covers every rule and detector, and diff severity, reasons including order, and `flaggedCommands`. Guard behavior is security-relevant and the reason strings are asserted, so a passing suite alone is weak evidence for a large refactor.
-
-Run `npm test` after changes.
