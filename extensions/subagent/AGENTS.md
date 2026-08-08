@@ -29,7 +29,7 @@ Dependency direction is strict and acyclic: `types.ts` → `config.ts` → `{dis
 - `runner.ts` owns the child-process contract:
   - The child runs `--mode json -p --no-session --no-skills --no-extensions`, then gets back only the tools its definition declares — built-ins via `--tools`, custom tools via explicit `--extension` paths. `bash` implies loading `bash-guard`.
   - Child stdout is one JSON event per line. `tool_execution_start`/`_update`/`_end` maintain `progress.recentTools` keyed by `toolCallId`; `message_end` accumulates usage and the last assistant prose. Unparseable lines are ignored, never fatal.
-  - `onUpdate` is throttled to 150 ms, leading edge with a trailing call, so the final state always reaches the parent.
+  - `onUpdate` is throttled to 150 ms, leading edge with a trailing call, so the final state always reaches the parent. The pending trailing call is flushed before `runSubagent` returns, so no update arrives after the tool call's final result and no timer outlives it.
   - Abort sends `SIGTERM` and escalates to `SIGKILL` after 3 s.
   - The task is inlined in argv up to 8000 characters and spilled to a temp file beyond it. The temp directory is removed after the process closes.
   - Output over `DEFAULT_MAX_BYTES` is truncated with `truncateHead` and marked `[Output truncated]`. Tool argument previews are capped at 4000 characters.

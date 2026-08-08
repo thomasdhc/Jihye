@@ -348,6 +348,11 @@ export async function runSubagent(
 	progress.durationMs = Date.now() - startTime;
 	if (progress.error) result.output = result.output || `Error: ${progress.error}`;
 
+	// Settle the throttle before returning: a trailing timer that survived this
+	// point would call `onUpdate` after the tool call has already reported its
+	// final result, and would keep the event loop alive until it fired.
+	fireUpdate.flush();
+
 	if (result.output.length > DEFAULT_MAX_BYTES) {
 		const trunc = truncateHead(result.output, { maxLines: DEFAULT_MAX_LINES, maxBytes: DEFAULT_MAX_BYTES });
 		result.output = trunc.content;
@@ -359,25 +364,43 @@ export async function runSubagent(
 	return result;
 }
 
+/** A throttled function plus the escape hatch that settles its pending call. */
+export type Throttled<T extends (...args: any[]) => void> = T & {
+	/** Run a pending trailing call now and clear its timer. No-op when nothing is pending. */
+	flush(): void;
+};
+
 /** Leading-edge throttle with a trailing call, so the final update is never lost. */
-function throttle<T extends (...args: any[]) => void>(fn: T, ms: number): T {
+export function throttle<T extends (...args: any[]) => void>(fn: T, ms: number): Throttled<T> {
 	let lastCall = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
-	return ((...args: any[]) => {
-		const now = Date.now();
-		const remaining = ms - (now - lastCall);
+	let pending: (() => void) | undefined;
+
+	const run = (args: any[]) => {
+		timer = undefined;
+		pending = undefined;
+		lastCall = Date.now();
+		fn(...args);
+	};
+
+	const throttled = ((...args: any[]) => {
+		const remaining = ms - (Date.now() - lastCall);
 		if (remaining <= 0) {
-			lastCall = now;
-			if (timer) { clearTimeout(timer); timer = undefined; }
-			fn(...args);
+			if (timer) clearTimeout(timer);
+			run(args);
 		} else if (!timer) {
-			timer = setTimeout(() => {
-				lastCall = Date.now();
-				timer = undefined;
-				fn(...args);
-			}, remaining);
+			pending = () => run(args);
+			timer = setTimeout(() => pending?.(), remaining);
 		}
-	}) as T;
+	}) as Throttled<T>;
+
+	throttled.flush = () => {
+		if (!timer) return;
+		clearTimeout(timer);
+		pending?.();
+	};
+
+	return throttled;
 }
 
 /** Bounds how many child pi processes one parent session runs at once. */

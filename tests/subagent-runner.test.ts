@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
 
-import { SIGKILL_ESCALATION_MS, type TerminableChild, terminateChild } from "../extensions/subagent/runner.ts";
+import { SIGKILL_ESCALATION_MS, type TerminableChild, terminateChild, throttle } from "../extensions/subagent/runner.ts";
 
 /** Child-process stand-in: records signals and only exits when told to. */
 class FakeChild implements TerminableChild {
@@ -55,6 +55,43 @@ test("skips escalation entirely for an already exited child", async () => {
 
 	await delay(60);
 	assert.deepEqual(child.signals, ["SIGTERM"]);
+});
+
+test("throttle keeps the leading call and defers the next one", async () => {
+	const calls: number[] = [];
+	const throttled = throttle((value: number) => calls.push(value), 20);
+
+	throttled(1);
+	throttled(2);
+	assert.deepEqual(calls, [1], "only the leading call runs immediately");
+
+	await delay(60);
+	assert.deepEqual(calls, [1, 2], "the trailing call still delivers the latest state");
+});
+
+test("throttle flush delivers the pending call and leaves no timer behind", (t) => {
+	const clearSpy = t.mock.method(globalThis, "clearTimeout");
+	const calls: number[] = [];
+	const throttled = throttle((value: number) => calls.push(value), 20);
+
+	throttled(1);
+	throttled(2);
+	throttled.flush();
+
+	assert.deepEqual(calls, [1, 2], "flush must not lose the pending trailing update");
+	assert.equal(clearSpy.mock.callCount(), 1, "flush must clear the trailing timer");
+});
+
+test("throttle flush is a no-op when nothing is pending", async () => {
+	const calls: number[] = [];
+	const throttled = throttle((value: number) => calls.push(value), 20);
+
+	throttled(1);
+	throttled.flush();
+	throttled.flush();
+
+	await delay(60);
+	assert.deepEqual(calls, [1], "no update fires after the pending one is settled");
 });
 
 test("clears the escalation timer when the child exits", (t) => {
