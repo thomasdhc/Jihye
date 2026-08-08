@@ -2,7 +2,7 @@
 name: coordinator
 description: Read-only orchestration agent that delegates bounded investigations, reconciles findings, and returns an evidence-backed synthesis.
 tools: read, grep, find, ls, safe_bash, subagent
-model: openai-codex/gpt-5.6-sol
+model_tier: deep
 thinking: high
 subagent_agents: scout,researcher,reviewer
 ---

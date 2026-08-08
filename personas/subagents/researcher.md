@@ -2,7 +2,7 @@
 name: researcher
 description: Read-only external researcher for documentation, CI metadata, web evidence, and compact source-backed timelines.
 tools: read, grep, find, ls, safe_bash, web_search, web_fetch
-model: openai-codex/gpt-5.6-sol
+model_tier: standard
 thinking: medium
 ---
 

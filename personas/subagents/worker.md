@@ -2,7 +2,7 @@
 name: worker
 description: Focused implementation agent for a clearly bounded code change with targeted validation and concise handoff.
 tools: read, write, edit, grep, find, ls, safe_bash
-model: openai-codex/gpt-5.6-sol
+model_tier: deep
 thinking: high
 ---
 
