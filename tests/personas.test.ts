@@ -69,10 +69,12 @@ test("personas include the global and workspace guidance chain", () => {
 	for (const path of ["REPO.md", "USERNAME.md", "ENVIRONMENT.md", "DEVELOPMENT.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
-	assert.match(workspace, /before.*resolving/is);
-	assert.match(workspace, /resolve that exact file/i);
-	assert.match(workspace, /`personas-directory`:.*canonical target/);
-	assert.match(workspace, /never resolve a personas-directory file relative to.*repository root/i);
+	assert.match(workspace, /workspace_directory=.*dirname/);
+	assert.match(workspace, /personas_directory=.*readlink -f/);
+	assert.match(workspace, /location-resolution commands may run before reading the environment guidance/i);
+	assert.match(workspace, /workspace_directory.*machine- and workspace-specific configuration/is);
+	assert.match(workspace, /personas_directory.*reusable workflow guidance/is);
+	assert.match(workspace, /do not derive either directory from.*repository root/i);
 });
 
 test("persona policy remains portable", () => {
