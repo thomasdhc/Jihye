@@ -13,7 +13,7 @@ Dependency direction is strict and acyclic: `types.ts` → `config.ts` → `{dis
 - `index.ts` is the sole Pi extension entrypoint; every other module is internal. It loads configuration and model profiles, scans the agent directories once at startup, builds the concurrency semaphore, and registers the `subagent` tool with its `execute`, `renderCall`, and `renderResult` handlers. It also re-exports the registration, directory, and argv helpers that form this extension's public surface.
 - `types.ts` is shapes only: `AgentConfig`, `AgentProgress`, `ToolEvent`, `AgentResult`, `Details`, `ExtensionConfig`.
 - `config.ts` is data and path resolution: the agent directories, the built-in tool set, the custom-tool→extension map, `config.json` loading, and pi binary resolution. No control flow beyond that.
-- `discovery.ts` parses agent markdown frontmatter into `AgentConfig`, merges directories, and owns the registry plus the `globalThis.__pi_subagents` bridge.
+- `discovery.ts` parses agent markdown frontmatter into `AgentConfig`, validates it, merges directories, and owns the registry plus the `globalThis.__pi_subagents` bridge. Frontmatter validation lives here, not in the runner; `isKnownTool` in `config.ts` is the single definition of a usable tool name.
 - `runner.ts` owns the child process end to end: argv construction, environment, spawn, event-stream parsing, abort, and output truncation.
 - `render.ts` turns an `AgentResult` into TUI components, recursing into nested subagent results.
 - `models.ts` owns tier→model resolution; `model-profiles.json` is its data, optionally overridden by a local `config.json` that is not part of the package. Bundled agents declare a `model_tier`, so the same definitions work whichever provider backs the parent session.
@@ -38,9 +38,9 @@ Dependency direction is strict and acyclic: `types.ts` → `config.ts` → `{dis
 
 ## Adding an Agent
 
-1. Add a markdown file to `personas/subagents/` with `name`, `description`, and comma-separated `tools` frontmatter. Names must be unique within a directory; a duplicate throws at load.
+1. Add a markdown file to `personas/subagents/` with `name`, `description`, and comma-separated `tools` frontmatter. Names must be unique within a directory; a duplicate throws at load. A non-empty `description` is required, since it is what the parent model selects on. A markdown file with no `name` is skipped, so a stray `README.md` can sit in an agents directory.
 2. Prefer `model_tier` (`standard` or `deep`) over a pinned `model`, so the agent follows the parent session's provider. A pinned model always wins.
-3. Every tool must be in `BUILTIN_TOOLS` or `CUSTOM_TOOL_EXTENSIONS`; unknown names are dropped silently, leaving the agent without that capability.
+3. Every tool must be in `BUILTIN_TOOLS` or `CUSTOM_TOOL_EXTENSIONS`; an unknown name throws at load rather than leaving the agent quietly without that capability.
 4. If the agent gets the `subagent` tool, set `subagent_agents` to the agents it may spawn. Omitting it grants the whole registry.
 5. Extend `tests/personas.test.ts`, which pins the exact bundled definition set and requires `model_tier` with no pinned `model`, and add prompt-boundary coverage in `tests/subagent.test.ts` alongside the existing coordinator and reviewer assertions.
 

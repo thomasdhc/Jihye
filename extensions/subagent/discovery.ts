@@ -10,6 +10,7 @@ import { parseFrontmatter } from "@earendil-works/pi-coding-agent";
 
 import {
 	DEFAULT_AGENT_THINKING,
+	isKnownTool,
 	PACKAGE_AGENTS_DIR,
 	PACKAGE_LOCAL_AGENTS_DIR,
 	USER_AGENTS_DIR,
@@ -71,10 +72,22 @@ function loadAgentDirectory(directory: string): AgentConfig[] {
 		}
 		seenNames.add(frontmatter.name);
 
+		// A declared tool the child could never receive, or an empty description
+		// the parent model cannot select on, is a definition bug: fail at load
+		// rather than silently shipping a degraded agent.
 		const tools = (frontmatter.tools || "")
 			.split(",")
 			.map((t) => t.trim())
 			.filter(Boolean);
+		for (const tool of tools) {
+			if (!isKnownTool(tool)) {
+				throw new Error(`Unknown tool "${tool}" for agent "${frontmatter.name}" in ${filePath}`);
+			}
+		}
+		const description = (frontmatter.description || "").trim();
+		if (!description) {
+			throw new Error(`Missing description for agent "${frontmatter.name}" in ${filePath}`);
+		}
 		const rawSubagentAgents = (frontmatter as Record<string, string>).subagent_agents;
 		const subagentAgents = rawSubagentAgents
 			? rawSubagentAgents.split(",").map((t) => t.trim()).filter(Boolean)
@@ -85,7 +98,7 @@ function loadAgentDirectory(directory: string): AgentConfig[] {
 		}
 		loadedAgents.push({
 			name: frontmatter.name,
-			description: frontmatter.description || "",
+			description,
 			tools,
 			model: frontmatter.model || undefined,
 			modelTier: rawModelTier as ModelTier | undefined,

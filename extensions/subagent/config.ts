@@ -54,6 +54,15 @@ export const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
 };
 
 /**
+ * Single source of truth for what counts as a usable tool name, so discovery
+ * (which rejects an agent declaring anything else) and the runner (which turns
+ * the same names into argv) cannot disagree.
+ */
+export function isKnownTool(tool: string): boolean {
+	return BUILTIN_TOOLS.has(tool) || tool in CUSTOM_TOOL_EXTENSIONS;
+}
+
+/**
  * Locate the pi executable for a child process. When the parent itself runs
  * from a JS entry point, re-run that exact entry under the current node binary
  * so the child is the same build as the parent; otherwise fall back to whatever

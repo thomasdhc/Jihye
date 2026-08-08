@@ -136,7 +136,7 @@ Specialist prompt.
 
 test("rejects an unknown model tier in agent frontmatter", () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
-	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\nmodel_tier: turbo\n---\nBroken\n");
+	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\ndescription: Broken fixture\nmodel_tier: turbo\n---\nBroken\n");
 
 	try {
 		assert.throws(
@@ -150,14 +150,63 @@ test("rejects an unknown model tier in agent frontmatter", () => {
 
 test("rejects duplicate agent names within one directory", () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
-	writeFileSync(join(tempDir, "first.md"), "---\nname: duplicate\n---\nFirst\n");
-	writeFileSync(join(tempDir, "second.md"), "---\nname: duplicate\n---\nSecond\n");
+	writeFileSync(join(tempDir, "first.md"), "---\nname: duplicate\ndescription: First fixture\n---\nFirst\n");
+	writeFileSync(join(tempDir, "second.md"), "---\nname: duplicate\ndescription: Second fixture\n---\nSecond\n");
 
 	try {
 		assert.throws(
 			() => loadAgentsFromDirectories([tempDir]),
 			/Duplicate agent name "duplicate"/,
 		);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("rejects a tool no child process could ever receive", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\ndescription: Broken fixture\ntools: read, telepathy\n---\nBroken\n");
+
+	try {
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Unknown tool "telepathy" for agent "broken"/,
+		);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("rejects an agent without a description", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "blank.md"), "---\nname: blank\ndescription: \"   \"\ntools: read\n---\nBlank\n");
+	writeFileSync(join(tempDir, "missing.md"), "---\nname: missing\ntools: read\n---\nMissing\n");
+
+	try {
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Missing description for agent "blank"/,
+		);
+		rmSync(join(tempDir, "blank.md"));
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Missing description for agent "missing"/,
+		);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("skips a markdown file without a name and keeps valid siblings", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "README.md"), "# Agents\n\nStray notes, no frontmatter.\n");
+	writeFileSync(join(tempDir, "valid.md"), "---\nname: valid\ndescription: Valid fixture\ntools: read, web_search\n---\nValid\n");
+
+	try {
+		const agents = loadAgentsFromDirectories([tempDir]);
+		assert.deepEqual(agents.map((agent) => agent.name), ["valid"]);
+		assert.deepEqual(agents[0]?.tools, ["read", "web_search"]);
+		assert.equal(agents[0]?.description, "Valid fixture");
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
