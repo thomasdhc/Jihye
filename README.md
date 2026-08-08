@@ -8,6 +8,7 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 |---|---|
 | `bash-guard` | Interactive prompt for destructive bash and GitHub/GitLab CLI commands; headless hard-block in subagents |
 | `custom-header` | Custom Pi startup header |
+| `jihye-setup` | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts |
 | `project-info` | Footer status showing current git project + branch |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
@@ -37,7 +38,7 @@ ln -s "$JIHYE/personas/JIHYE.md" ~/.pi/agent/AGENTS.md
 ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
 ```
 
-The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The workspace profile resolves its canonical Jihye location to read sibling `DEVELOPMENT.md` and `GIT.md` policy without additional symlinks.
+The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `jihye-setup` extension resolves the package, personas, and workspace locations behind those symlinks, so guidance can reference sibling `DEVELOPMENT.md` and `GIT.md` policy without an agent deriving any path by hand.
 
 ## Requirements
 
@@ -155,6 +156,23 @@ Use the `review-guidance` skill with an explicit file or directory scope:
 ```
 
 For a directory, the skill reviews the most-specific agent guidance governing that path. Parent guidance is reference material for conflicts and duplication, not an additional review target. If the scope is missing or ambiguous, the skill asks before reviewing anything.
+
+### Jihye setup facts
+
+The `jihye-setup` extension resolves the installed package root, its `personas/` directory, the active global persona, and the nearest workspace root, then appends them to the system prompt each turn. Guidance files can therefore name `workspace_directory` and `personas_directory` without asking an agent to run `readlink` and `dirname` first. A session-start card repeats the summary in the terminal only; it never enters the conversation.
+
+```text
+/jihye-setup            # resolved paths, guidance health, legacy leftovers
+```
+
+Workspace roots are discovered by walking up from the working directory, looking for a context file linked into `personas/` or a directory holding `REPO.md` and `USERNAME.md`. Override discovery, or hide the card, in `~/.pi/agent/jihye-setup.json` (or `$PI_CODING_AGENT_DIR/jihye-setup.json`):
+
+```json
+{
+  "workspaceRoots": ["/home/me/Workspace"],
+  "card": false
+}
+```
 
 ### Companion widget
 
