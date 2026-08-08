@@ -26,13 +26,25 @@ export const MODEL_PROFILES_PATH = path.join(EXT_DIR, "model-profiles.json");
 export const DEFAULT_MAX_CONCURRENCY = 4;
 export const DEFAULT_AGENT_THINKING = "medium";
 
-export function loadConfig(): ExtensionConfig {
+/**
+ * Read the optional workstation config. No file is the normal case and means
+ * "no overrides"; unreadable or malformed content throws, because silently
+ * discarding settings the user did write is worse than failing to start.
+ */
+export function loadConfig(configPath: string = CONFIG_PATH): ExtensionConfig {
+	let content: string;
 	try {
-		if (fs.existsSync(CONFIG_PATH)) {
-			return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8")) as ExtensionConfig;
-		}
-	} catch {}
-	return {};
+		content = fs.readFileSync(configPath, "utf-8");
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+		throw error;
+	}
+	try {
+		return JSON.parse(content) as ExtensionConfig;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		throw new Error(`Invalid JSON at ${configPath}: ${message}`, { cause: error });
+	}
 }
 
 // Tools pi registers natively; the runner allowlists these with no `--extension`.

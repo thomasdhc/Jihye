@@ -12,7 +12,7 @@ Dependency direction is strict and acyclic: `types.ts` → `config.ts` → `{dis
 
 - `index.ts` is the sole Pi extension entrypoint; every other module is internal. It loads configuration and model profiles, scans the agent directories once at startup, builds the concurrency semaphore, and registers the `subagent` tool with its `execute`, `renderCall`, and `renderResult` handlers. It also re-exports the registration, directory, and argv helpers that form this extension's public surface.
 - `types.ts` is shapes only: `AgentConfig`, `AgentProgress`, `ToolEvent`, `AgentResult`, `Details`, `ExtensionConfig`.
-- `config.ts` is data and path resolution: the agent directories, the built-in tool set, the custom-tool→extension map, `config.json` loading, and pi binary resolution. No control flow beyond that.
+- `config.ts` is data and path resolution: the agent directories, the built-in tool set, the custom-tool→extension map, `config.json` loading, and pi binary resolution. No control flow beyond that. A missing `config.json` means "no overrides"; malformed content throws with its path rather than being silently ignored, matching how `models.ts` treats a bad `modelProfiles` override in the same file.
 - `discovery.ts` parses agent markdown frontmatter into `AgentConfig`, validates it, merges directories, and owns the registry plus the `globalThis.__pi_subagents` bridge. Frontmatter validation lives here, not in the runner; `isKnownTool` in `config.ts` is the single definition of a usable tool name.
 - `runner.ts` owns the child process end to end: argv construction, environment, spawn, event-stream parsing, abort, and output truncation.
 - `render.ts` turns an `AgentResult` into TUI components, recursing into nested subagent results.
