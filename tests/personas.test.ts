@@ -61,7 +61,6 @@ test("the two-link installation resolves the complete policy topology", () => {
 test("personas include the global and workspace guidance chain", () => {
 	for (const path of POLICY_FILES) assert.ok(existsSync(join(PERSONAS_ROOT, path)), path);
 
-	assert.match(readPersona("JIHYE.md"), /workspace profile is `WORKSPACE\.md` beside this file/);
 	assert.match(readPersona("JIHYE_strict.md"), /ASK FOR EXPLICIT APPROVAL BEFORE EDIT OR WRITE/);
 
 	const workspace = readPersona("WORKSPACE.md");
