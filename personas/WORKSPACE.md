@@ -4,15 +4,7 @@ This is a multi-project development workspace.
 
 ## Workspace Guidance
 
-Locate the workspace `AGENTS.md` loaded by Pi, then run:
-
-```bash
-workspace_agents="<absolute-path-to-the-loaded-workspace-AGENTS.md>"
-workspace_directory="$(dirname -- "$workspace_agents")"
-personas_directory="$(dirname -- "$(readlink -f -- "$workspace_agents")")"
-```
-
-In all subsequent commands and file accesses, use the resolved `workspace_directory` and `personas_directory` paths directly; do not reconstruct, shorten, or hardcode them.
+The `jihye-setup` extension resolves `workspace_directory` and `personas_directory` and states them under `## Jihye Setup` in the system prompt. Use those paths directly; do not re-derive, reconstruct, shorten, or hardcode them. If they are absent or `workspace_directory` is unresolved, run `/jihye-setup` or ask, rather than guessing a path.
 
 Use each directory for its intended purpose:
 
