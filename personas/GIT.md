@@ -7,7 +7,7 @@
 - Unless the user directs a different base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`, using the branch namespace from workspace-root `USERNAME.md`.
 - Never assume local `main` is current, and do not develop directly on `main`.
 - If the latest remote `main` cannot be fetched, ask before using another base.
-- For parallel or isolated work, use a separate worktree as described in policy-directory `DEVELOPMENT.md` and keep the canonical checkout untouched.
+- For parallel or isolated work, use a separate worktree as described in `personas-directory/DEVELOPMENT.md` and keep the canonical checkout untouched.
 
 ## Staging, Commits, and Pushing
 
