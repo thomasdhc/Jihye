@@ -73,6 +73,9 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.match(workspace, /personas_directory.*reusable workflow guidance/is);
 	assert.match(workspace, /REPO\.md.*source of truth for environment-specific values/i);
 	assert.match(workspace, /Begin each independent shell invocation with the configured environment activation command/i);
+	assert.match(workspace, /mandatory gates, not references/, "guidance reads are gates rather than optional references");
+	assert.match(workspace, /before the first tool call that touches the target/);
+	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
 });
 
 test("merge requests and pull requests use strict title and description defaults", () => {
