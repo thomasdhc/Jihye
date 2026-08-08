@@ -91,6 +91,47 @@ export async function buildPiArgs(
 	return { args: [piBin.command, ...args], tempDir, childEnv };
 }
 
+/** Grace period between SIGTERM and SIGKILL for a child that ignores the first signal. */
+export const SIGKILL_ESCALATION_MS = 3000;
+
+/** The child-process surface `terminateChild` needs, so it can be tested with a fake. */
+export interface TerminableChild {
+	/** `null` while the child is still running. */
+	readonly exitCode: number | null;
+	kill(signal: NodeJS.Signals): boolean;
+	once(event: "close", listener: () => void): unknown;
+}
+
+/**
+ * Terminate a child, escalating to SIGKILL only if it is still running after
+ * `timeoutMs`. `ChildProcess.killed` only reports that a signal was delivered,
+ * so exit has to be tracked separately or the escalation never fires.
+ *
+ * Returns a cancel function; the escalation timer is also cleared on exit, so
+ * it cannot outlive the child and keep the event loop alive.
+ */
+export function terminateChild(child: TerminableChild, timeoutMs = SIGKILL_ESCALATION_MS): () => void {
+	let exited = child.exitCode !== null;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const cancel = () => {
+		if (timer) clearTimeout(timer);
+		timer = undefined;
+	};
+
+	child.once("close", () => {
+		exited = true;
+		cancel();
+	});
+	child.kill("SIGTERM");
+	if (exited) return cancel;
+
+	timer = setTimeout(() => {
+		timer = undefined;
+		if (!exited) child.kill("SIGKILL");
+	}, timeoutMs);
+	return cancel;
+}
+
 function extractTextFromContent(content: unknown): string {
 	if (!content) return "";
 	if (typeof content === "string") return content;
@@ -291,8 +332,7 @@ export async function runSubagent(
 			// Give the child a chance to exit cleanly, then escalate so an ignored
 			// SIGTERM cannot keep the parent's tool call pending forever.
 			const kill = () => {
-				proc.kill("SIGTERM");
-				setTimeout(() => !proc.killed && proc.kill("SIGKILL"), 3000);
+				terminateChild(proc);
 			};
 			if (signal.aborted) kill();
 			else signal.addEventListener("abort", kill, { once: true });
