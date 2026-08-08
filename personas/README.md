@@ -20,17 +20,11 @@ Bundled definitions declare `model_tier: standard` or `model_tier: deep` instead
 
 ## Install the guidance chain
 
-Pi packages do not install context files automatically. Configure two symlinks after installing Jihye. These commands expect both destinations not to exist; inspect and remove obsolete symlinks first, and never overwrite a regular context file.
+Pi packages do not install context files automatically. The two required symlink commands live in the root [`README.md`](../README.md); this section covers the caveats around them.
 
-```bash
-JIHYE=/path/to/Jihye
-WORKSPACE=/path/to/workspace
+Both destinations are expected not to exist: inspect and remove obsolete symlinks first, and never overwrite a regular context file. Use `JIHYE_strict.md` as the global target when explicit approval should be required before every edit or write.
 
-ln -s "$JIHYE/personas/JIHYE.md" ~/.pi/agent/AGENTS.md
-ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
-```
-
-Use `JIHYE_strict.md` as the global target when explicit approval should be required before every edit or write.
+Verify the result with `/jihye-setup`. Both guidance locations should report as managed and loaded, `workspace_profile` should read `standard` or `strict`, and `REPO.md` and `USERNAME.md` should be listed as local environment files.
 
 After the two links resolve correctly, remove obsolete workspace `CLAUDE.md`, `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md` links plus any separately installed personas skill link. Keep these as regular, machine-local files at the workspace root:
 
@@ -43,20 +37,16 @@ Initialize them from `templates/` when needed. Do not link machine-specific conf
 
 ## Guidance resolution
 
-The global profile points to the workspace profile installed beside it. The workspace profile distinguishes two locations:
+Pi loads the global and workspace context files independently; neither profile imports the other. The workspace profile distinguishes two locations:
 
 - **workspace root** — local `REPO.md` and `USERNAME.md` configuration;
 - **policy directory** — the workspace profile plus sibling `DEVELOPMENT.md` and `GIT.md` files distributed by Jihye.
 
-Resolve the context-file symlink to locate the policy directory. Markdown links alone are not automatic Pi context imports; the profiles explicitly instruct the agent when to read each file.
+The `jihye-setup` extension states both locations as `workspace_directory` and `personas_directory`, so the policy directory is a given fact rather than something an agent resolves from a symlink. Markdown links alone are not automatic Pi context imports; the profiles explicitly instruct the agent when to read each file.
 
 ## Skills
 
-Personas skills now live in Jihye's package-level `skills/` directory and load through the Pi package manifest:
-
-- `examen`
-- `todo`
-- `vicara`
+Personas skills live in Jihye's package-level `skills/` directory and load through the Pi package manifest. The root [`README.md`](../README.md) lists them.
 
 Do not install a second copied or symlinked set into `~/.pi/agent/skills` or `~/.agents/skills`; duplicate skill names produce discovery warnings.
 

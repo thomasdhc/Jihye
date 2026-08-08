@@ -40,6 +40,8 @@ ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
 
 The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `jihye-setup` extension resolves the package, personas, and workspace locations behind those symlinks, so guidance can reference sibling `DEVELOPMENT.md` and `GIT.md` policy without an agent deriving any path by hand.
 
+Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard` or `strict`, and the two local environment files should be listed.
+
 ## Requirements
 
 - Pi coding agent `0.83.0` or newer.
@@ -47,7 +49,7 @@ The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `j
 
 ## Install
 
-> **Migration note:** `pi install` does not replace extensions manually copied into `~/.pi/agent/extensions/`. Remove or back up old manual copies before installing this package to avoid duplicate tool/flag conflicts. Keep any local config you still need, such as `web-search/auth.json`.
+> **Migration note:** `pi install` does not replace extensions manually copied into `~/.pi/agent/extensions/`. Remove or back up old manual copies before installing this package to avoid duplicate tool/flag conflicts. Keep any local config you still need, such as `web-search/auth.json`. Run `/jihye-setup` to list manual copies that shadow bundled extensions.
 >
 > **Renaming from Pi Extensio:** Pi identifies Git packages by repository URL and local packages by resolved path. Run `pi list`, remove the old `pi-extensio` source with `pi remove <old-source>`, then install Jihye to avoid loading both package identities. Fully exit all running Pi processes and reopen Pi after migrating.
 
