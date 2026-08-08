@@ -34,4 +34,4 @@ Keep the host generic. Components should own their state and behavior without kn
 5. Implement shutdown cleanup and verify reload behavior when the component is turned off.
 6. Add focused component tests, selective-loading coverage, and configuration parsing coverage.
 
-Run `npm test` after changes. Also verify Pi discovers only `extensions/widget/index.ts` as the widget extension entrypoint.
+Verify that Pi discovers only `extensions/widget/index.ts` as the widget extension entrypoint.
