@@ -1,9 +1,8 @@
 /**
  * Agent discovery and registration.
  *
- * Sole owner of the in-process agent registry and of the
- * `globalThis.__pi_subagents` bridge that other extensions use to register
- * agents across separate jiti module instances.
+ * Reads agent definitions from disk and owns the in-process registry. Imports
+ * `config.ts`, `models.ts`, and `types.ts`; never the runner or the renderer.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -11,6 +10,7 @@ import { parseFrontmatter } from "@earendil-works/pi-coding-agent";
 
 import {
 	DEFAULT_AGENT_THINKING,
+	isKnownTool,
 	PACKAGE_AGENTS_DIR,
 	PACKAGE_LOCAL_AGENTS_DIR,
 	USER_AGENTS_DIR,
@@ -20,8 +20,9 @@ import type { AgentConfig } from "./types.ts";
 
 let agents: AgentConfig[] = [];
 
-// Read once at module load. If we're a child subagent process whose parent
-// pinned an allowlist, we silently ignore any agent not in the list.
+// Read once at module load: a parent pins the allowlist before spawn, so it
+// cannot change while this process lives. When set, every agent outside the
+// list is dropped silently rather than reported as an error.
 export const SUBAGENT_ALLOWLIST: string[] | undefined = (() => {
 	const raw = process.env.PI_SUBAGENT_ALLOWED;
 	if (!raw) return undefined;
@@ -29,8 +30,17 @@ export const SUBAGENT_ALLOWLIST: string[] | undefined = (() => {
 	return list.length > 0 ? list : undefined;
 })();
 
+/**
+ * The single allowlist check. Every place that decides whether an agent is
+ * reachable goes through here, so registration and the directory scans cannot
+ * drift apart. No allowlist means no restriction.
+ */
+export function isAgentAllowed(name: string): boolean {
+	return !SUBAGENT_ALLOWLIST || SUBAGENT_ALLOWLIST.includes(name);
+}
+
 export function registerAgent(config: AgentConfig): void {
-	if (SUBAGENT_ALLOWLIST && !SUBAGENT_ALLOWLIST.includes(config.name)) return;
+	if (!isAgentAllowed(config.name)) return;
 	if (agents.find((a) => a.name === config.name)) {
 		throw new Error(`Agent already registered: ${config.name}`);
 	}
@@ -41,13 +51,18 @@ export function unregisterAgent(name: string): void {
 	agents = agents.filter((a) => a.name !== name);
 }
 
-/** Replace the registry contents, e.g. after a directory scan at startup. */
+/**
+ * Replace the registry contents, e.g. after `index.ts` scans the agent
+ * directories at startup. A setter exists because `agents` is a module-local
+ * binding that importers cannot assign to; keep this the only way to swap it.
+ */
 export function setAgents(next: AgentConfig[]): void {
 	agents = next;
 }
 
-// Expose registration functions globally so other extensions loaded via jiti
-// (which creates separate module instances) can access the shared agents array.
+// jiti gives each loading extension its own instance of this module, so the
+// registry is only reachable across extensions through a global. This module is
+// the sole owner of that global.
 (globalThis as any).__pi_subagents = { registerAgent, unregisterAgent };
 
 function loadAgentDirectory(directory: string): AgentConfig[] {
@@ -66,10 +81,22 @@ function loadAgentDirectory(directory: string): AgentConfig[] {
 		}
 		seenNames.add(frontmatter.name);
 
+		// A declared tool the child could never receive, or an empty description
+		// the parent model cannot select on, is a definition bug: fail at load
+		// rather than silently shipping a degraded agent.
 		const tools = (frontmatter.tools || "")
 			.split(",")
 			.map((t) => t.trim())
 			.filter(Boolean);
+		for (const tool of tools) {
+			if (!isKnownTool(tool)) {
+				throw new Error(`Unknown tool "${tool}" for agent "${frontmatter.name}" in ${filePath}`);
+			}
+		}
+		const description = (frontmatter.description || "").trim();
+		if (!description) {
+			throw new Error(`Missing description for agent "${frontmatter.name}" in ${filePath}`);
+		}
 		const rawSubagentAgents = (frontmatter as Record<string, string>).subagent_agents;
 		const subagentAgents = rawSubagentAgents
 			? rawSubagentAgents.split(",").map((t) => t.trim()).filter(Boolean)
@@ -80,7 +107,7 @@ function loadAgentDirectory(directory: string): AgentConfig[] {
 		}
 		loadedAgents.push({
 			name: frontmatter.name,
-			description: frontmatter.description || "",
+			description,
 			tools,
 			model: frontmatter.model || undefined,
 			modelTier: rawModelTier as ModelTier | undefined,
@@ -103,10 +130,14 @@ export function loadAgentsFromDirectories(directories: string[]): AgentConfig[] 
 	return [...mergedAgents.values()];
 }
 
-export function getAgentDirectories(_cwd?: string): string[] {
+/**
+ * Package, user, then package-local. The set is fixed: it never depends on a
+ * tool call's working directory, so project-local agents are not discovered.
+ */
+export function getAgentDirectories(): string[] {
 	return [PACKAGE_AGENTS_DIR, USER_AGENTS_DIR, PACKAGE_LOCAL_AGENTS_DIR];
 }
 
-export function loadAgents(cwd?: string): AgentConfig[] {
-	return loadAgentsFromDirectories(getAgentDirectories(cwd));
+export function loadAgents(): AgentConfig[] {
+	return loadAgentsFromDirectories(getAgentDirectories());
 }

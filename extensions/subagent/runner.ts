@@ -1,6 +1,9 @@
 /**
  * Subagent execution: builds the child `pi` invocation, spawns it, and parses
  * its JSON event stream into live `AgentProgress` / `AgentResult` state.
+ *
+ * Sole owner of the child-process contract. Imports `config.ts` and `types.ts`;
+ * it knows nothing about tool registration or terminal rendering.
  */
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -39,6 +42,8 @@ export async function buildPiArgs(
 		}
 	}
 
+	// Start the child from zero extensions and add back only what its declared
+	// tools require, so a tool the agent did not ask for cannot appear.
 	args.push("--no-extensions");
 
 	if (allowlist.length > 0) {
@@ -55,6 +60,8 @@ export async function buildPiArgs(
 	args.push("--thinking", agent.thinking);
 	args.push("--append-system-prompt", promptPath);
 
+	// Long tasks are passed as a file reference rather than argv, which is
+	// size-limited by the OS.
 	const TASK_LIMIT = 8000;
 	if (task.length > TASK_LIMIT) {
 		const taskPath = path.join(tempDir, "task.md");
@@ -74,12 +81,55 @@ export async function buildPiArgs(
 		...process.env,
 		PI_SUBAGENT_DEPTH: String(normalizedDepth + 1),
 	};
+	// Clear before re-setting: an allowlist inherited from our own parent must
+	// not leak into a grandchild that this agent did not scope.
 	delete childEnv.PI_SUBAGENT_ALLOWED;
 	if (agent.tools.includes("subagent") && agent.subagentAgents && agent.subagentAgents.length > 0) {
 		childEnv.PI_SUBAGENT_ALLOWED = agent.subagentAgents.join(",");
 	}
 
 	return { args: [piBin.command, ...args], tempDir, childEnv };
+}
+
+/** Grace period between SIGTERM and SIGKILL for a child that ignores the first signal. */
+export const SIGKILL_ESCALATION_MS = 3000;
+
+/** The child-process surface `terminateChild` needs, so it can be tested with a fake. */
+export interface TerminableChild {
+	/** `null` while the child is still running. */
+	readonly exitCode: number | null;
+	kill(signal: NodeJS.Signals): boolean;
+	once(event: "close", listener: () => void): unknown;
+}
+
+/**
+ * Terminate a child, escalating to SIGKILL only if it is still running after
+ * `timeoutMs`. `ChildProcess.killed` only reports that a signal was delivered,
+ * so exit has to be tracked separately or the escalation never fires.
+ *
+ * Returns a cancel function; the escalation timer is also cleared on exit, so
+ * it cannot outlive the child and keep the event loop alive.
+ */
+export function terminateChild(child: TerminableChild, timeoutMs = SIGKILL_ESCALATION_MS): () => void {
+	let exited = child.exitCode !== null;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const cancel = () => {
+		if (timer) clearTimeout(timer);
+		timer = undefined;
+	};
+
+	child.once("close", () => {
+		exited = true;
+		cancel();
+	});
+	child.kill("SIGTERM");
+	if (exited) return cancel;
+
+	timer = setTimeout(() => {
+		timer = undefined;
+		if (!exited) child.kill("SIGKILL");
+	}, timeoutMs);
+	return cancel;
 }
 
 function extractTextFromContent(content: unknown): string {
@@ -252,7 +302,8 @@ export async function runSubagent(
 					fireUpdate();
 				}
 			} catch {
-				// Non-JSON lines are expected
+				// The child emits one JSON event per line, but stray non-JSON output
+				// (warnings, banners) must not abort stream parsing.
 			}
 		};
 
@@ -278,9 +329,10 @@ export async function runSubagent(
 		proc.on("error", () => resolve(1));
 
 		if (signal) {
+			// Give the child a chance to exit cleanly, then escalate so an ignored
+			// SIGTERM cannot keep the parent's tool call pending forever.
 			const kill = () => {
-				proc.kill("SIGTERM");
-				setTimeout(() => !proc.killed && proc.kill("SIGKILL"), 3000);
+				terminateChild(proc);
 			};
 			if (signal.aborted) kill();
 			else signal.addEventListener("abort", kill, { once: true });
@@ -296,6 +348,11 @@ export async function runSubagent(
 	progress.durationMs = Date.now() - startTime;
 	if (progress.error) result.output = result.output || `Error: ${progress.error}`;
 
+	// Settle the throttle before returning: a trailing timer that survived this
+	// point would call `onUpdate` after the tool call has already reported its
+	// final result, and would keep the event loop alive until it fired.
+	fireUpdate.flush();
+
 	if (result.output.length > DEFAULT_MAX_BYTES) {
 		const trunc = truncateHead(result.output, { maxLines: DEFAULT_MAX_LINES, maxBytes: DEFAULT_MAX_BYTES });
 		result.output = trunc.content;
@@ -307,30 +364,46 @@ export async function runSubagent(
 	return result;
 }
 
-// ── Throttle ──────────────────────────────────────────────────────────
+/** A throttled function plus the escape hatch that settles its pending call. */
+export type Throttled<T extends (...args: any[]) => void> = T & {
+	/** Run a pending trailing call now and clear its timer. No-op when nothing is pending. */
+	flush(): void;
+};
 
-function throttle<T extends (...args: any[]) => void>(fn: T, ms: number): T {
+/** Leading-edge throttle with a trailing call, so the final update is never lost. */
+export function throttle<T extends (...args: any[]) => void>(fn: T, ms: number): Throttled<T> {
 	let lastCall = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
-	return ((...args: any[]) => {
-		const now = Date.now();
-		const remaining = ms - (now - lastCall);
+	let pending: (() => void) | undefined;
+
+	const run = (args: any[]) => {
+		timer = undefined;
+		pending = undefined;
+		lastCall = Date.now();
+		fn(...args);
+	};
+
+	const throttled = ((...args: any[]) => {
+		const remaining = ms - (Date.now() - lastCall);
 		if (remaining <= 0) {
-			lastCall = now;
-			if (timer) { clearTimeout(timer); timer = undefined; }
-			fn(...args);
+			if (timer) clearTimeout(timer);
+			run(args);
 		} else if (!timer) {
-			timer = setTimeout(() => {
-				lastCall = Date.now();
-				timer = undefined;
-				fn(...args);
-			}, remaining);
+			pending = () => run(args);
+			timer = setTimeout(() => pending?.(), remaining);
 		}
-	}) as T;
+	}) as Throttled<T>;
+
+	throttled.flush = () => {
+		if (!timer) return;
+		clearTimeout(timer);
+		pending?.();
+	};
+
+	return throttled;
 }
 
-// ── Semaphore ─────────────────────────────────────────────────────────
-
+/** Bounds how many child pi processes one parent session runs at once. */
 export class Semaphore {
 	private inFlight = 0;
 	private readonly waiters: Array<() => void> = [];

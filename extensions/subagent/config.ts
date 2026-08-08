@@ -2,9 +2,10 @@
  * Subagent configuration: package-relative paths, extension config, the tool
  * catalogue used to build a child pi invocation, and pi binary resolution.
  *
- * Paths are resolved relative to this file so local, Git, and npm package
- * installations all work without workstation-specific paths. This file must
- * stay in `extensions/subagent/` for those paths to keep resolving.
+ * Data and path resolution only; imports `types.ts` and nothing else in this
+ * extension. Every exported path derives from this file's own location so
+ * local, Git, and npm package installs all work without workstation-specific
+ * paths — moving the module moves the agent and extension directories with it.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -25,21 +26,33 @@ export const MODEL_PROFILES_PATH = path.join(EXT_DIR, "model-profiles.json");
 export const DEFAULT_MAX_CONCURRENCY = 4;
 export const DEFAULT_AGENT_THINKING = "medium";
 
-export function loadConfig(): ExtensionConfig {
+/**
+ * Read the optional workstation config. No file is the normal case and means
+ * "no overrides"; unreadable or malformed content throws, because silently
+ * discarding settings the user did write is worse than failing to start.
+ */
+export function loadConfig(configPath: string = CONFIG_PATH): ExtensionConfig {
+	let content: string;
 	try {
-		if (fs.existsSync(CONFIG_PATH)) {
-			return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8")) as ExtensionConfig;
-		}
-	} catch {}
-	return {};
+		content = fs.readFileSync(configPath, "utf-8");
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+		throw error;
+	}
+	try {
+		return JSON.parse(content) as ExtensionConfig;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		throw new Error(`Invalid JSON at ${configPath}: ${message}`, { cause: error });
+	}
 }
 
-// Built-in tools that pi provides natively (no extension needed)
+// Tools pi registers natively; the runner allowlists these with no `--extension`.
 export const BUILTIN_TOOLS = new Set(["read", "write", "edit", "bash", "grep", "find", "ls"]);
 
-// Custom tools that require loading an extension into the subagent process.
-// Resolve package-owned extensions relative to this file so local, Git, and npm
-// package installations all work without workstation-specific paths.
+// Tools that exist only once an extension is loaded into the child process,
+// keyed by tool name so the runner can turn an agent's tool list into
+// `--extension` paths.
 export const BASH_GUARD_EXTENSION = path.join(EXTENSIONS_DIR, "bash-guard", "index.ts");
 export const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
 	web_search: path.join(EXTENSIONS_DIR, "web-search", "index.ts"),
@@ -52,8 +65,21 @@ export const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
 	subagent: path.join(EXT_DIR, "index.ts"),
 };
 
-// ── Pi Binary Resolution ──────────────────────────────────────────────
+/**
+ * Single source of truth for what counts as a usable tool name, so discovery
+ * (which rejects an agent declaring anything else) and the runner (which turns
+ * the same names into argv) cannot disagree.
+ */
+export function isKnownTool(tool: string): boolean {
+	return BUILTIN_TOOLS.has(tool) || tool in CUSTOM_TOOL_EXTENSIONS;
+}
 
+/**
+ * Locate the pi executable for a child process. When the parent itself runs
+ * from a JS entry point, re-run that exact entry under the current node binary
+ * so the child is the same build as the parent; otherwise fall back to whatever
+ * `pi` resolves to on PATH.
+ */
 export function resolvePiBinary(): { command: string; baseArgs: string[] } {
 	const entry = process.argv[1];
 	if (entry) {

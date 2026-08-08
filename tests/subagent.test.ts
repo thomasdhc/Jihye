@@ -66,8 +66,7 @@ test("keeps the bundled reviewer bounded", () => {
 });
 
 test("resolves bundled, user, then package-local agent directories", () => {
-	const workspace = join(tmpdir(), "jihye-workspace-fixture");
-	assert.deepEqual(getAgentDirectories(workspace), [
+	assert.deepEqual(getAgentDirectories(), [
 		BUNDLED_AGENTS_DIR,
 		join(process.env.HOME || "", ".pi/agent/agents"),
 		join(REPO_ROOT, ".pi/agents"),
@@ -136,7 +135,7 @@ Specialist prompt.
 
 test("rejects an unknown model tier in agent frontmatter", () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
-	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\nmodel_tier: turbo\n---\nBroken\n");
+	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\ndescription: Broken fixture\nmodel_tier: turbo\n---\nBroken\n");
 
 	try {
 		assert.throws(
@@ -150,8 +149,8 @@ test("rejects an unknown model tier in agent frontmatter", () => {
 
 test("rejects duplicate agent names within one directory", () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
-	writeFileSync(join(tempDir, "first.md"), "---\nname: duplicate\n---\nFirst\n");
-	writeFileSync(join(tempDir, "second.md"), "---\nname: duplicate\n---\nSecond\n");
+	writeFileSync(join(tempDir, "first.md"), "---\nname: duplicate\ndescription: First fixture\n---\nFirst\n");
+	writeFileSync(join(tempDir, "second.md"), "---\nname: duplicate\ndescription: Second fixture\n---\nSecond\n");
 
 	try {
 		assert.throws(
@@ -161,6 +160,112 @@ test("rejects duplicate agent names within one directory", () => {
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
+});
+
+test("rejects a tool no child process could ever receive", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\ndescription: Broken fixture\ntools: read, telepathy\n---\nBroken\n");
+
+	try {
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Unknown tool "telepathy" for agent "broken"/,
+		);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("rejects an agent without a description", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "blank.md"), "---\nname: blank\ndescription: \"   \"\ntools: read\n---\nBlank\n");
+	writeFileSync(join(tempDir, "missing.md"), "---\nname: missing\ntools: read\n---\nMissing\n");
+
+	try {
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Missing description for agent "blank"/,
+		);
+		rmSync(join(tempDir, "blank.md"));
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Missing description for agent "missing"/,
+		);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("skips a markdown file without a name and keeps valid siblings", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "README.md"), "# Agents\n\nStray notes, no frontmatter.\n");
+	writeFileSync(join(tempDir, "valid.md"), "---\nname: valid\ndescription: Valid fixture\ntools: read, web_search\n---\nValid\n");
+
+	try {
+		const agents = loadAgentsFromDirectories([tempDir]);
+		assert.deepEqual(agents.map((agent) => agent.name), ["valid"]);
+		assert.deepEqual(agents[0]?.tools, ["read", "web_search"]);
+		assert.equal(agents[0]?.description, "Valid fixture");
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+/**
+ * `SUBAGENT_ALLOWLIST` is read once at module load, so each case needs its own
+ * module instance. A distinct query string gives one without touching state
+ * shared with the rest of the suite.
+ */
+async function importDiscoveryWithAllowlist(allowed: string | undefined, cacheKey: string) {
+	const previous = process.env.PI_SUBAGENT_ALLOWED;
+	if (allowed === undefined) delete process.env.PI_SUBAGENT_ALLOWED;
+	else process.env.PI_SUBAGENT_ALLOWED = allowed;
+	try {
+		return await import(`../extensions/subagent/discovery.ts?allowlist=${cacheKey}`);
+	} finally {
+		if (previous === undefined) delete process.env.PI_SUBAGENT_ALLOWED;
+		else process.env.PI_SUBAGENT_ALLOWED = previous;
+	}
+}
+
+test("treats an unset, empty, or whitespace-only allowlist as no restriction", async () => {
+	const openCases: Array<string | undefined> = [undefined, "", "   ", " , "];
+
+	for (const [index, value] of openCases.entries()) {
+		const discovery = await importDiscoveryWithAllowlist(value, `open-${index}`);
+		assert.equal(discovery.SUBAGENT_ALLOWLIST, undefined, `case ${index}`);
+		assert.equal(discovery.isAgentAllowed("scout"), true, `case ${index}`);
+		assert.equal(discovery.isAgentAllowed("no-such-agent"), true, `case ${index}`);
+	}
+});
+
+test("applies a set allowlist to both registration and directory scans", async () => {
+	const discovery = await importDiscoveryWithAllowlist("scout, reviewer", "scoped");
+	const fixture = (name: string): AgentConfig => ({
+		name,
+		description: `${name} fixture`,
+		tools: ["read"],
+		thinking: "medium",
+		systemPrompt: "Fixture",
+		filePath: "<fixture>",
+	});
+
+	assert.deepEqual(discovery.SUBAGENT_ALLOWLIST, ["scout", "reviewer"]);
+	assert.equal(discovery.isAgentAllowed("scout"), true);
+	assert.equal(discovery.isAgentAllowed("engineer"), false);
+	assert.equal(discovery.isAgentAllowed("no-such-agent"), false);
+
+	const bundled = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
+	assert.deepEqual(
+		bundled.filter((agent) => discovery.isAgentAllowed(agent.name)).map((agent) => agent.name).sort(),
+		["reviewer", "scout"],
+	);
+
+	// A registration that was kept collides on the second attempt; a dropped one never does.
+	discovery.registerAgent(fixture("scout"));
+	assert.throws(() => discovery.registerAgent(fixture("scout")), /Agent already registered: scout/);
+	discovery.registerAgent(fixture("engineer"));
+	discovery.registerAgent(fixture("engineer"));
 });
 
 test("builds portable child arguments with the requested model and safety guard", async () => {
