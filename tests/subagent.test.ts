@@ -22,7 +22,7 @@ test("loads portable bundled agent model specifications", () => {
 	const bundledAgents = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
 	const byName = new Map(bundledAgents.map((agent) => [agent.name, agent]));
 
-	assert.deepEqual([...byName.keys()].sort(), ["coordinator", "researcher", "reviewer", "scout", "worker"]);
+	assert.deepEqual([...byName.keys()].sort(), ["coordinator", "engineer", "researcher", "reviewer", "scout"]);
 	for (const agent of bundledAgents) {
 		assert.equal(agent.model, undefined, `${agent.name} must not pin a provider-specific model`);
 	}
@@ -30,12 +30,12 @@ test("loads portable bundled agent model specifications", () => {
 	assert.equal(byName.get("researcher")?.modelTier, "standard");
 	assert.equal(byName.get("reviewer")?.modelTier, "standard");
 	assert.equal(byName.get("coordinator")?.modelTier, "deep");
-	assert.equal(byName.get("worker")?.modelTier, "deep");
+	assert.equal(byName.get("engineer")?.modelTier, "deep");
 	assert.equal(byName.get("scout")?.thinking, "medium");
 	assert.equal(byName.get("researcher")?.thinking, "medium");
 	assert.equal(byName.get("reviewer")?.thinking, "medium");
 	assert.equal(byName.get("coordinator")?.thinking, "high");
-	assert.equal(byName.get("worker")?.thinking, "high");
+	assert.equal(byName.get("engineer")?.thinking, "high");
 });
 
 test("keeps the bundled coordinator recursive but bounded", () => {
@@ -48,7 +48,7 @@ test("keeps the bundled coordinator recursive but bounded", () => {
 	assert.deepEqual(coordinator.tools, ["read", "grep", "find", "ls", "safe_bash", "subagent"]);
 	assert.deepEqual(coordinator.subagentAgents, ["scout", "researcher", "reviewer"]);
 	assert.ok(!coordinator.subagentAgents?.includes("coordinator"));
-	assert.ok(!coordinator.subagentAgents?.includes("worker"));
+	assert.ok(!coordinator.subagentAgents?.includes("engineer"));
 	assert.ok(reviewer);
 	assert.ok(!reviewer.tools.includes("subagent"));
 });

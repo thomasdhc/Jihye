@@ -15,7 +15,7 @@ const ROLE_PET_WORKING_FRAMES = {
 	scout: [" /\\ /\\ ", " (o|o) ", " / V \\ "],
 	researcher: [" ,___, ", " (o,o) ", " /===\\ "],
 	reviewer: [" .---. ", " (o)-Q ", " /___\\ "],
-	worker: [" /===\\ ", "( o.o )", " /|_|\\ "],
+	engineer: [" /===\\ ", "( o.o )", " /|_|\\ "],
 	coordinator: [" \\ | / ", "( o.o )", " /_^_\\ "],
 } as const;
 

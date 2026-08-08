@@ -113,7 +113,7 @@ Portable default definitions are tracked in `personas/subagents/`. They declare 
 | `scout` | standard | medium |
 | `researcher` | standard | medium |
 | `reviewer` | standard | medium |
-| `worker` | deep | high |
+| `engineer` | deep | high |
 | `coordinator` | deep | high |
 
 Tier maps live in `extensions/subagent/model-profiles.json`:
@@ -199,7 +199,7 @@ All components are enabled when no widget configuration exists.
 | `scout` | Fox with binoculars |
 | `researcher` | Owl behind a book |
 | `reviewer` | Inspector with a magnifier |
-| `worker` | Builder in a hard hat |
+| `engineer` | Builder in a hard hat |
 | `coordinator` | Conductor joining several paths |
 
 The pet artwork sits on the left, while context and session identity details are right-aligned. At runtime, each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.

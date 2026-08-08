@@ -143,7 +143,7 @@ Use after candidate opportunities exist:
 
 Reviewer tasks should be narrow and falsifiable.
 
-### `worker`
+### `engineer`
 
 Use only if the user explicitly asks to implement a selected opportunity. Implementation is separate from opportunity discovery.
 
