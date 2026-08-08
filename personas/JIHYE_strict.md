@@ -2,15 +2,7 @@
 
 - ASK FOR EXPLICIT APPROVAL BEFORE EDIT OR WRITE.
 
-## Guidance Chain
-
-This profile is intended to be installed as Pi's global `AGENTS.md` through a symlink.
-
-- Resolve the loaded global context file to its canonical path before locating related Jihye guidance.
-- The reusable workspace profile is `WORKSPACE.md` beside this file's canonical target.
-- Pi normally loads that profile through a workspace-root `AGENTS.md` symlink. When working in a workspace where it was not loaded automatically, read it before resolving workspace paths or doing repository work.
-
-## Execution Directives
+## Prime Directives
 
 - Think through the WHY, WHAT, HOW, for each user prompt.
 - WHY - Analyze the intention behind the prompt.
