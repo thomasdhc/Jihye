@@ -67,8 +67,8 @@ test("personas include the global and workspace guidance chain", () => {
 	for (const path of ["REPO.md", "USERNAME.md", "DEVELOPMENT.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
-	assert.match(workspace, /workspace_directory=.*dirname/);
-	assert.match(workspace, /personas_directory=.*readlink -f/);
+	assert.match(workspace, /jihye-setup.*resolves `workspace_directory` and `personas_directory`/);
+	assert.doesNotMatch(workspace, /readlink|dirname/, "path resolution belongs to the jihye-setup extension");
 	assert.match(workspace, /workspace_directory.*machine- and workspace-specific configuration/is);
 	assert.match(workspace, /personas_directory.*reusable workflow guidance/is);
 	assert.match(workspace, /REPO\.md.*source of truth for environment-specific values/i);
