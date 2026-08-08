@@ -9,9 +9,8 @@ Reusable global instructions, workspace policy, local-configuration templates, a
 | `JIHYE.md` | Default global Pi instruction profile. |
 | `JIHYE_strict.md` | Strict profile requiring approval before edits or writes. |
 | `WORKSPACE.md` | Workspace entry point, installed as workspace-root `AGENTS.md`. |
-| `DEVELOPMENT.md` | Repository orientation, validation, and review-worktree workflow. |
-| `ENVIRONMENT.md` | Command-environment and filesystem conventions. |
-| `GIT.md` | Branch, commit, push, and pull-request policy. |
+| `DEVELOPMENT.md` | Repository orientation and validation workflow. |
+| `GIT.md` | Branch, worktree, commit, push, and pull-request policy. |
 | `templates/` | Templates for workspace-local `REPO.md` and `USERNAME.md`. |
 | `subagents/` | Portable default subagent definitions loaded by Jihye's bundled subagent extension. |
 
@@ -45,7 +44,7 @@ Initialize them from `templates/` when needed. Do not link machine-specific conf
 The global profile points to the workspace profile installed beside it. The workspace profile distinguishes two locations:
 
 - **workspace root** — local `REPO.md` and `USERNAME.md` configuration;
-- **policy directory** — sibling `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md` files distributed by Jihye.
+- **policy directory** — the workspace profile plus sibling `DEVELOPMENT.md` and `GIT.md` files distributed by Jihye.
 
 Resolve the context-file symlink to locate the policy directory. Markdown links alone are not automatic Pi context imports; the profiles explicitly instruct the agent when to read each file.
 

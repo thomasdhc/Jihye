@@ -23,7 +23,6 @@ const POLICY_FILES = [
 	"JIHYE_strict.md",
 	"WORKSPACE.md",
 	"DEVELOPMENT.md",
-	"ENVIRONMENT.md",
 	"GIT.md",
 	"README.md",
 	"templates/REPO.md",
@@ -51,7 +50,7 @@ test("the two-link installation resolves the complete policy topology", () => {
 		assert.equal(realpathSync(workspaceContext), join(PERSONAS_ROOT, "WORKSPACE.md"));
 
 		const policyRoot = dirname(realpathSync(workspaceContext));
-		for (const path of ["DEVELOPMENT.md", "ENVIRONMENT.md", "GIT.md"]) {
+		for (const path of ["DEVELOPMENT.md", "GIT.md"]) {
 			assert.ok(existsSync(join(policyRoot, path)), path);
 		}
 	} finally {
@@ -66,15 +65,15 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.match(readPersona("JIHYE_strict.md"), /ASK FOR EXPLICIT APPROVAL BEFORE EDIT OR WRITE/);
 
 	const workspace = readPersona("WORKSPACE.md");
-	for (const path of ["REPO.md", "USERNAME.md", "ENVIRONMENT.md", "DEVELOPMENT.md", "GIT.md"]) {
+	for (const path of ["REPO.md", "USERNAME.md", "DEVELOPMENT.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
 	assert.match(workspace, /workspace_directory=.*dirname/);
 	assert.match(workspace, /personas_directory=.*readlink -f/);
-	assert.match(workspace, /location-resolution commands may run before reading the environment guidance/i);
 	assert.match(workspace, /workspace_directory.*machine- and workspace-specific configuration/is);
 	assert.match(workspace, /personas_directory.*reusable workflow guidance/is);
-	assert.match(workspace, /do not derive either directory from.*repository root/i);
+	assert.match(workspace, /REPO\.md.*source of truth for environment-specific values/i);
+	assert.match(workspace, /Begin each independent shell invocation with the configured environment activation command/i);
 });
 
 test("merge requests and pull requests use strict title and description defaults", () => {

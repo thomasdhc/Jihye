@@ -37,7 +37,7 @@ ln -s "$JIHYE/personas/JIHYE.md" ~/.pi/agent/AGENTS.md
 ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
 ```
 
-The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The workspace profile resolves its canonical Jihye location to read sibling `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md` policy without additional symlinks.
+The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The workspace profile resolves its canonical Jihye location to read sibling `DEVELOPMENT.md` and `GIT.md` policy without additional symlinks.
 
 ## Requirements
 

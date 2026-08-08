@@ -7,7 +7,10 @@
 - Unless the user directs a different base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`, using the branch namespace from workspace-root `USERNAME.md`.
 - Never assume local `main` is current, and do not develop directly on `main`.
 - If the latest remote `main` cannot be fetched, ask before using another base.
-- For parallel or isolated work, use a separate worktree as described in `personas-directory/DEVELOPMENT.md` and keep the canonical checkout untouched.
+- Use a separate Git worktree when concurrent work or isolation would prevent interference with the canonical checkout.
+- Keep the canonical checkout untouched and use the isolated-worktree location configured in workspace-root `REPO.md`.
+- Inspect repository and worktree state before creating, integrating, moving, or removing work. Never stash, reset, overwrite, or discard existing changes, and never remove a worktree containing uncommitted or untracked work.
+- When the user asks to commit or prepare isolated work for pushing, commit it on its branch in the worktree, then remove the clean worktree and switch the clean canonical checkout to that branch; the repository is shared, so never copy files between them.
 
 ## Staging, Commits, and Pushing
 
