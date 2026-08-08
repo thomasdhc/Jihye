@@ -16,6 +16,8 @@ These location-resolution commands may run before reading the environment guidan
 
 Use each directory for its intended purpose:
 
+In all subsequent commands and file accesses, use the resolved `workspace_directory` and `personas_directory` paths directly; do not reconstruct, shorten, or hardcode them.
+
 - `workspace_directory` contains machine- and workspace-specific configuration.
   - Read `workspace_directory/REPO.md` before resolving or using repository, todo, environment, or temporary paths.
   - Read `workspace_directory/USERNAME.md` before naming a branch or selecting an agent-specific commit command.
