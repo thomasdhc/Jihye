@@ -96,7 +96,7 @@ const SUBAGENT_PET_LAYOUTS: Record<string, PiPetLayout> = {
 		},
 		bottom: " /___\\ ",
 	},
-	worker: {
+	engineer: {
 		top: " /===\\ ",
 		middle: CAT_FACES,
 		bottom: " /|_|\\ ",

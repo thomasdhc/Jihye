@@ -96,7 +96,7 @@ test("persona policy remains portable", () => {
 test("persona agents are the single current bundled definition set", () => {
 	const agentRoot = join(PERSONAS_ROOT, "subagents");
 	const files = readdirSync(agentRoot).filter((entry) => entry.endsWith(".md")).sort();
-	assert.deepEqual(files, ["coordinator.md", "researcher.md", "reviewer.md", "scout.md", "worker.md"]);
+	assert.deepEqual(files, ["coordinator.md", "engineer.md", "researcher.md", "reviewer.md", "scout.md"]);
 	assert.equal(lstatSync(agentRoot).isSymbolicLink(), false);
 	assert.equal(existsSync(join(REPO_ROOT, "agents")), false);
 	assert.equal(existsSync(join(PERSONAS_ROOT, "agents")), false);
@@ -108,5 +108,5 @@ test("persona agents are the single current bundled definition set", () => {
 		assert.match(content, /^model_tier: (standard|deep)$/m);
 		assert.doesNotMatch(content, /^model: /m);
 	}
-	assert.match(readFileSync(join(agentRoot, "worker.md"), "utf8"), /thinking: high/);
+	assert.match(readFileSync(join(agentRoot, "engineer.md"), "utf8"), /thinking: high/);
 });

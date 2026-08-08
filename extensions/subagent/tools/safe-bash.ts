@@ -1,5 +1,5 @@
 /**
- * Safe bash extension for worker subagent.
+ * Safe bash extension for the engineer subagent.
  * Wraps the built-in bash tool with dangerous command blocking.
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";

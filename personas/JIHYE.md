@@ -30,7 +30,7 @@
   - `scout`: for codebase exploration and execution-path tracing.
   - `researcher`: for external documentation, CI metadata, and web evidence.
   - `reviewer`: to challenge consequential or uncertain conclusions.
-  - `worker`: for clearly bounded, isolated implementation.
+  - `engineer`: for clearly bounded, isolated implementation.
 - Give subagents the goal, relevant context, constraints, and desired output. Prefer concise conclusions, decisive evidence, uncertainties, and next steps over raw output.
 - Keep ownership in the main agent. Verify decisive claims, reconcile conflicting findings, and synthesize the final recommendation.
 - Use the `coordinator` subagent only when a specific skill or workflow calls for nested orchestration.
