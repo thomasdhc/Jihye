@@ -2,28 +2,29 @@
 
 This is a multi-project development workspace.
 
-## Guidance Locations
+## Workspace Guidance
 
-Before resolving workspace paths or doing repository work, locate the workspace `AGENTS.md` loaded from the active workspace and resolve that exact file to its canonical target.
+Locate the workspace `AGENTS.md` loaded by Pi, then run:
 
-Use these fixed path anchors throughout this guidance:
+```bash
+workspace_agents="<absolute-path-to-the-loaded-workspace-AGENTS.md>"
+workspace_directory="$(dirname -- "$workspace_agents")"
+personas_directory="$(dirname -- "$(readlink -f -- "$workspace_agents")")"
+```
 
-- `workspace-root`: the parent of the loaded workspace `AGENTS.md` path, before resolving the symlink.
-- `personas-directory`: the parent of that `AGENTS.md` file's canonical target.
+These location-resolution commands may run before reading the environment guidance. Do not derive either directory from the current directory or a repository root.
 
-Resolve every `workspace-root/...` and `personas-directory/...` reference from these anchors. Never resolve a personas-directory file relative to the current directory or a repository root.
+Use each directory for its intended purpose:
 
-## Workspace Context
+- `workspace_directory` contains machine- and workspace-specific configuration.
+  - Read `workspace_directory/REPO.md` before resolving or using repository, todo, environment, or temporary paths.
+  - Read `workspace_directory/USERNAME.md` before naming a branch or selecting an agent-specific commit command.
+- `personas_directory` contains reusable workflow guidance for agents in the workspace.
+  - Read `personas_directory/ENVIRONMENT.md` before running any other local command.
+  - Read `personas_directory/DEVELOPMENT.md` before exploring, changing, testing, or planning repository code.
+  - Read `personas_directory/GIT.md` before changing tracked files or Git state, or handling commits, pushes, pull requests, or merge requests.
 
-Read guidance when it becomes relevant rather than loading every file by default:
-
-- Before resolving or using workspace-specific paths, repositories, todo files, environments, or temporary locations, read `workspace-root/REPO.md`.
-- Before running local commands or using the workspace's development environment, read `personas-directory/ENVIRONMENT.md`.
-- Before exploring, changing, or testing repository code, or planning repository implementation work, read `personas-directory/DEVELOPMENT.md`.
-- Before naming a branch or selecting an agent-specific commit command, read `workspace-root/USERNAME.md`.
-- Before changing tracked repository files, changing Git state, staging or committing work, pushing, or handling a merge or pull request, read `personas-directory/GIT.md`.
-
-When a task spans several areas, read all guidance relevant to those areas. Do not guess values that belong in workspace-root `REPO.md` or `USERNAME.md`; if a needed value is missing, ask for it before proceeding.
+Read guidance when it becomes relevant rather than loading every file by default. If required workspace configuration is missing, ask the user instead of guessing.
 
 ## Instruction Boundaries
 
