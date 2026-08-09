@@ -6,6 +6,13 @@ export type PiPetState = (typeof PI_PET_STATES)[number];
 
 export type PiPetElement = string | readonly [string, ...string[]];
 export type PiPetElements = readonly [PiPetElement, PiPetElement, PiPetElement];
+export type PiPetStateFrameMap = Readonly<Record<PiPetState, PiPetElement>>;
+
+export interface PiPetNamedRowFrameMaps {
+	readonly top: PiPetStateFrameMap;
+	readonly face: PiPetStateFrameMap;
+	readonly bottom: PiPetStateFrameMap;
+}
 
 export interface PiPetStateAsset {
 	readonly elements: PiPetElements;
@@ -24,103 +31,122 @@ export interface PiPetAssetCatalog {
 export const PI_PET_FRAME_WIDTH = 7;
 export const PI_PET_DEFAULT_ANIMATION_INTERVAL_MS = 250;
 
-const CAT_FACES = {
+export function createPiPetModeAssets(rows: PiPetNamedRowFrameMaps): PiPetModeAssets {
+	return Object.fromEntries(
+		PI_PET_STATES.map((state) => [
+			state,
+			{ elements: [rows.top[state], rows.face[state], rows.bottom[state]] as const },
+		]),
+	) as PiPetModeAssets;
+}
+
+function repeatPiPetElement(element: PiPetElement): PiPetStateFrameMap {
+	return {
+		idle: element,
+		thinking: element,
+		working: element,
+		success: element,
+		error: element,
+	};
+}
+
+const CAT_FACES: PiPetStateFrameMap = {
 	idle: "( o˽o )",
 	thinking: "( ╸˽╺ )",
 	working: "( o˽o )",
 	success: "( ^‿^ )",
 	error: "( x⁔x )",
-} satisfies Record<PiPetState, string>;
+};
 
 const DEFAULT_TOP = " /\\_/\\ ";
 
-export const DEFAULT_PI_PET_ASSETS = {
-	idle: { elements: [DEFAULT_TOP, CAT_FACES.idle, " > ▵ < "] },
-	thinking: {
-		elements: [
-			DEFAULT_TOP,
-			CAT_FACES.thinking,
-			[" > 🬃 < ", " > 🬖 < ", " > 🬞 < ", " > 🬢 < "],
-		],
+export const DEFAULT_PI_PET_ASSETS = createPiPetModeAssets({
+	top: repeatPiPetElement(DEFAULT_TOP),
+	face: CAT_FACES,
+	bottom: {
+		idle: " > ▵ < ",
+		thinking: [" > 🬃 < ", " > 🬖 < ", " > 🬞 < ", " > 🬢 < "],
+		working: [" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "],
+		success: " > ★ < ",
+		error: " > ! < ",
 	},
-	working: {
-		elements: [
-			DEFAULT_TOP,
-			CAT_FACES.working,
-			[" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "],
-		],
-	},
-	success: { elements: [DEFAULT_TOP, CAT_FACES.success, " > ★ < "] },
-	error: { elements: [DEFAULT_TOP, CAT_FACES.error, " > ! < "] },
-} as const satisfies PiPetModeAssets;
+});
 
 export const SUBAGENT_PI_PET_ASSETS = {
-	scout: {
-		idle: { elements: [" /\\ /\\ ", " (o|o) ", " / V \\ "] },
-		thinking: { elements: [" /\\ /\\ ", " (-|-) ", " / V \\ "] },
-		working: {
-			elements: [
-				" /\\ /\\ ",
-				" (o|o) ",
-				[" / V \\ ", " / v \\ "],
-			],
+	scout: createPiPetModeAssets({
+		top: repeatPiPetElement(" /\\ /\\ "),
+		face: {
+			idle: " (o|o) ",
+			thinking: " (-|-) ",
+			working: " (o|o) ",
+			success: " (^|^) ",
+			error: " (x|x) ",
 		},
-		success: { elements: [" /\\ /\\ ", " (^|^) ", " / V \\ "] },
-		error: { elements: [" /\\ /\\ ", " (x|x) ", " / V \\ "] },
-	},
-	researcher: {
-		idle: { elements: [" ,___, ", " (o,o) ", " /===\\ "] },
-		thinking: { elements: [" ,___, ", " (-,-) ", " /===\\ "] },
-		working: {
-			elements: [
-				" ,___, ",
-				" (o,o) ",
-				[" /===\\ ", " /-=-\\ "],
-			],
+		bottom: {
+			idle: " / V \\ ",
+			thinking: " / V \\ ",
+			working: [" / V \\ ", " / v \\ "],
+			success: " / V \\ ",
+			error: " / V \\ ",
 		},
-		success: { elements: [" ,___, ", " (^,^) ", " /===\\ "] },
-		error: { elements: [" ,___, ", " (x,x) ", " /===\\ "] },
-	},
-	reviewer: {
-		idle: { elements: [" .---. ", " (o)-Q ", " /___\\ "] },
-		thinking: { elements: [" .---. ", " (?)-Q ", " /___\\ "] },
-		working: {
-			elements: [
-				" .---. ",
-				" (o)-Q ",
-				[" /___\\ ", " /_-_\\ "],
-			],
+	}),
+	researcher: createPiPetModeAssets({
+		top: repeatPiPetElement(" ,___, "),
+		face: {
+			idle: " (o,o) ",
+			thinking: " (-,-) ",
+			working: " (o,o) ",
+			success: " (^,^) ",
+			error: " (x,x) ",
 		},
-		success: { elements: [" .---. ", " (+)-Q ", " /___\\ "] },
-		error: { elements: [" .---. ", " (x)-Q ", " /___\\ "] },
-	},
-	engineer: {
-		idle: { elements: [" /===\\ ", CAT_FACES.idle, " /|_|\\ "] },
-		thinking: { elements: [" /===\\ ", CAT_FACES.thinking, " /|_|\\ "] },
-		working: {
-			elements: [
-				" /===\\ ",
-				CAT_FACES.working,
-				[" /|_|\\ ", " /|#|\\ "],
-			],
+		bottom: {
+			idle: " /===\\ ",
+			thinking: " /===\\ ",
+			working: [" /===\\ ", " /-=-\\ "],
+			success: " /===\\ ",
+			error: " /===\\ ",
 		},
-		success: { elements: [" /===\\ ", CAT_FACES.success, " /|_|\\ "] },
-		error: { elements: [" /===\\ ", CAT_FACES.error, " /|_|\\ "] },
-	},
-	coordinator: {
-		idle: { elements: [" \\ | / ", CAT_FACES.idle, " /_^_\\ "] },
-		thinking: { elements: [" \\ | / ", CAT_FACES.thinking, " /_^_\\ "] },
-		working: {
-			elements: [
-				[" \\ | / ", " / | \\ "],
-				CAT_FACES.working,
-				" /_^_\\ ",
-			],
+	}),
+	reviewer: createPiPetModeAssets({
+		top: repeatPiPetElement(" .---. "),
+		face: {
+			idle: " (o)-Q ",
+			thinking: " (?)-Q ",
+			working: " (o)-Q ",
+			success: " (+)-Q ",
+			error: " (x)-Q ",
 		},
-		success: { elements: [" \\ | / ", CAT_FACES.success, " /_^_\\ "] },
-		error: { elements: [" \\ | / ", CAT_FACES.error, " /_^_\\ "] },
-	},
-} as const satisfies Record<string, PiPetModeAssets>;
+		bottom: {
+			idle: " /___\\ ",
+			thinking: " /___\\ ",
+			working: [" /___\\ ", " /_-_\\ "],
+			success: " /___\\ ",
+			error: " /___\\ ",
+		},
+	}),
+	engineer: createPiPetModeAssets({
+		top: repeatPiPetElement(" /===\\ "),
+		face: CAT_FACES,
+		bottom: {
+			idle: " /|_|\\ ",
+			thinking: " /|_|\\ ",
+			working: [" /|_|\\ ", " /|#|\\ "],
+			success: " /|_|\\ ",
+			error: " /|_|\\ ",
+		},
+	}),
+	coordinator: createPiPetModeAssets({
+		top: {
+			idle: " \\ | / ",
+			thinking: " \\ | / ",
+			working: [" \\ | / ", " / | \\ "],
+			success: " \\ | / ",
+			error: " \\ | / ",
+		},
+		face: CAT_FACES,
+		bottom: repeatPiPetElement(" /_^_\\ "),
+	}),
+} satisfies Readonly<Record<string, PiPetModeAssets>>;
 
 export const PI_PET_ASSETS: PiPetAssetCatalog = {
 	frameWidth: PI_PET_FRAME_WIDTH,
