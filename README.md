@@ -245,7 +245,7 @@ The leased name appears below the context status in the companion widget using P
 | Terminal | Detection | Protocol |
 |---|---|---|
 | iTerm2 | `TERM_PROGRAM=iTerm.app` | OSC 9 |
-| Tilix | `TILIX_ID` | OSC 777 |
+| Tilix | `TILIX_ID` | OSC 777, with `notify-send` fallback |
 | Kitty | `KITTY_WINDOW_ID` or `TERM=xterm-kitty` | OSC 99 |
 | Ghostty / WezTerm | terminal-specific environment | OSC 777 |
 
@@ -253,7 +253,7 @@ Unknown terminals quietly receive no notification. Override detection when neede
 
 When `bash-guard` opens an approval prompt, it also requests an urgent native notification and rings the terminal bell. In iTerm2, enable **Profiles → Terminal → Show bell icon in tabs** so the exact Pi tab is marked while iTerm2 is in the foreground.
 
-Remove any older manually installed notification extension from `~/.pi/agent/extensions/` before reloading Pi to avoid duplicate alerts. iTerm2 notification permissions and the Linux desktop notification service must also allow notifications. Some Tilix builds lack the downstream OSC 777 notification patch; forcing `tilix` cannot add support when the terminal itself does not implement it.
+Remove any older manually installed notification extension from `~/.pi/agent/extensions/` before reloading Pi to avoid duplicate alerts. iTerm2 notification permissions and the Linux desktop notification service must also allow notifications. Some Tilix builds lack the downstream OSC 777 notification patch; Jihye detects the build status reported by `tilix --version` and falls back to `notify-send` when native notifications are disabled. The fallback requires `notify-send` and an active Linux desktop notification service.
 
 ## Development
 
