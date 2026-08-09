@@ -5,7 +5,7 @@ import {
 	removeCompanionWidgetContribution,
 	updateCompanionWidget,
 	type CompanionWidgetTone,
-} from "./api.ts";
+} from "../api.ts";
 import {
 	PI_PET_ASSETS,
 	getPiPetAnimationInterval,
@@ -14,9 +14,9 @@ import {
 	validatePiPetAssets,
 	type PiPetAssetCatalog,
 	type PiPetState,
-} from "./pi-pet-assets.ts";
+} from "./assets.ts";
 
-export type { PiPetState } from "./pi-pet-assets.ts";
+export type { PiPetState } from "./assets.ts";
 
 export interface PiPetInstance {
 	state: PiPetState;

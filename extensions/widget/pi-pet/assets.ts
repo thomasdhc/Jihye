@@ -26,7 +26,7 @@ export const PI_PET_DEFAULT_ANIMATION_INTERVAL_MS = 250;
 
 const CAT_FACES = {
 	idle: "( o˽o )",
-	thinking: "( -˽- )",
+	thinking: "( ╸˽╺ )",
 	working: "( o˽o )",
 	success: "( ^‿^ )",
 	error: "( x⁔x )",
@@ -35,10 +35,20 @@ const CAT_FACES = {
 const DEFAULT_TOP = " /\\_/\\ ";
 
 export const DEFAULT_PI_PET_ASSETS = {
-	idle: { elements: [DEFAULT_TOP, CAT_FACES.idle, " > ^ < "] },
-	thinking: { elements: [DEFAULT_TOP, CAT_FACES.thinking, " > ? < "] },
+	idle: { elements: [DEFAULT_TOP, CAT_FACES.idle, " > ▵ < "] },
+	thinking: {
+		elements: [
+			DEFAULT_TOP,
+			CAT_FACES.thinking,
+			[" > 🬃 < ", " > 🬖 < ", " > 🬞 < ", " > 🬢 < "],
+		],
+	},
 	working: {
-		elements: [DEFAULT_TOP, CAT_FACES.working, [" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "]],
+		elements: [
+			DEFAULT_TOP,
+			CAT_FACES.working,
+			[" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "],
+		],
 	},
 	success: { elements: [DEFAULT_TOP, CAT_FACES.success, " > ★ < "] },
 	error: { elements: [DEFAULT_TOP, CAT_FACES.error, " > ! < "] },
@@ -48,35 +58,65 @@ export const SUBAGENT_PI_PET_ASSETS = {
 	scout: {
 		idle: { elements: [" /\\ /\\ ", " (o|o) ", " / V \\ "] },
 		thinking: { elements: [" /\\ /\\ ", " (-|-) ", " / V \\ "] },
-		working: { elements: [" /\\ /\\ ", " (o|o) ", [" / V \\ ", " / v \\ "]] },
+		working: {
+			elements: [
+				" /\\ /\\ ",
+				" (o|o) ",
+				[" / V \\ ", " / v \\ "],
+			],
+		},
 		success: { elements: [" /\\ /\\ ", " (^|^) ", " / V \\ "] },
 		error: { elements: [" /\\ /\\ ", " (x|x) ", " / V \\ "] },
 	},
 	researcher: {
 		idle: { elements: [" ,___, ", " (o,o) ", " /===\\ "] },
 		thinking: { elements: [" ,___, ", " (-,-) ", " /===\\ "] },
-		working: { elements: [" ,___, ", " (o,o) ", [" /===\\ ", " /-=-\\ "]] },
+		working: {
+			elements: [
+				" ,___, ",
+				" (o,o) ",
+				[" /===\\ ", " /-=-\\ "],
+			],
+		},
 		success: { elements: [" ,___, ", " (^,^) ", " /===\\ "] },
 		error: { elements: [" ,___, ", " (x,x) ", " /===\\ "] },
 	},
 	reviewer: {
 		idle: { elements: [" .---. ", " (o)-Q ", " /___\\ "] },
 		thinking: { elements: [" .---. ", " (?)-Q ", " /___\\ "] },
-		working: { elements: [" .---. ", " (o)-Q ", [" /___\\ ", " /_-_\\ "]] },
+		working: {
+			elements: [
+				" .---. ",
+				" (o)-Q ",
+				[" /___\\ ", " /_-_\\ "],
+			],
+		},
 		success: { elements: [" .---. ", " (+)-Q ", " /___\\ "] },
 		error: { elements: [" .---. ", " (x)-Q ", " /___\\ "] },
 	},
 	engineer: {
 		idle: { elements: [" /===\\ ", CAT_FACES.idle, " /|_|\\ "] },
 		thinking: { elements: [" /===\\ ", CAT_FACES.thinking, " /|_|\\ "] },
-		working: { elements: [" /===\\ ", CAT_FACES.working, [" /|_|\\ ", " /|#|\\ "]] },
+		working: {
+			elements: [
+				" /===\\ ",
+				CAT_FACES.working,
+				[" /|_|\\ ", " /|#|\\ "],
+			],
+		},
 		success: { elements: [" /===\\ ", CAT_FACES.success, " /|_|\\ "] },
 		error: { elements: [" /===\\ ", CAT_FACES.error, " /|_|\\ "] },
 	},
 	coordinator: {
 		idle: { elements: [" \\ | / ", CAT_FACES.idle, " /_^_\\ "] },
 		thinking: { elements: [" \\ | / ", CAT_FACES.thinking, " /_^_\\ "] },
-		working: { elements: [[" \\ | / ", " / | \\ "], CAT_FACES.working, " /_^_\\ "] },
+		working: {
+			elements: [
+				[" \\ | / ", " / | \\ "],
+				CAT_FACES.working,
+				" /_^_\\ ",
+			],
+		},
 		success: { elements: [" \\ | / ", CAT_FACES.success, " /_^_\\ "] },
 		error: { elements: [" \\ | / ", CAT_FACES.error, " /_^_\\ "] },
 	},

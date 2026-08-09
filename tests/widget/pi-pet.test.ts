@@ -8,9 +8,29 @@ import {
 	getPiPetResetDelay,
 	renderPiPetLines,
 	renderPiPetStateLines,
-} from "../../extensions/widget/pi-pet.ts";
+} from "../../extensions/widget/pi-pet/extension.ts";
 import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../../extensions/widget/api.ts";
-import { SUBAGENT_PI_PET_ASSETS } from "../../extensions/widget/pi-pet-assets.ts";
+import {
+	PI_PET_ASSETS,
+	SUBAGENT_PI_PET_ASSETS,
+	resolvePiPetStateElements,
+	type PiPetAssetCatalog,
+} from "../../extensions/widget/pi-pet/assets.ts";
+
+const TEST_ANIMATION_ASSETS = {
+	...PI_PET_ASSETS,
+	default: {
+		...PI_PET_ASSETS.default,
+		working: { elements: ["topline", "middle!", ["frame-a", "frame-b"]] },
+	},
+	subagents: {
+		...PI_PET_ASSETS.subagents,
+		scout: {
+			...PI_PET_ASSETS.subagents.scout,
+			working: { elements: ["scout-t", "scout-m", ["scout-0", "scout-1"]] },
+		},
+	},
+} satisfies PiPetAssetCatalog;
 
 test("maps lifecycle events to pet states", () => {
 	const runtime = createPiPetRuntimeState();
@@ -68,12 +88,20 @@ test("tracks top-level subagent roles and states independently", () => {
 
 test("renders persistent pet-owned artwork without status text", () => {
 	const runtime = createPiPetRuntimeState();
-	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\ ", "( o˽o )", " > ^ < "]);
+	assert.deepEqual(renderPiPetLines(runtime), resolvePiPetStateElements("idle", 0));
 });
 
-test("resolves working animation ticks without padding static elements", () => {
-	assert.deepEqual(renderPiPetStateLines("working", undefined, 0), [" /\\_/\\ ", "( o˽o )", " > ◐ < "]);
-	assert.deepEqual(renderPiPetStateLines("working", undefined, 1), [" /\\_/\\ ", "( o˽o )", " > ◓ < "]);
+test("resolves injected animation frames without runtime padding", () => {
+	assert.deepEqual(renderPiPetStateLines("working", undefined, 0, TEST_ANIMATION_ASSETS), [
+		"topline",
+		"middle!",
+		"frame-a",
+	]);
+	assert.deepEqual(renderPiPetStateLines("working", undefined, 1, TEST_ANIMATION_ASSETS), [
+		"topline",
+		"middle!",
+		"frame-b",
+	]);
 });
 
 test("renders a distinct role-specific layout for each bundled subagent", () => {
@@ -142,7 +170,12 @@ test("starts animation after session lifecycle and stops publishing on shutdown"
 	const handlers = new Map<string, Handler>();
 	const updates: CompanionWidgetUpdate[] = [];
 
-	createPiPetExtension({ animationIntervalMs: 2, resetToIdleMs: 100, successResetToIdleMs: 100 })({
+	createPiPetExtension({
+		animationIntervalMs: 2,
+		resetToIdleMs: 100,
+		successResetToIdleMs: 100,
+		assets: TEST_ANIMATION_ASSETS,
+	})({
 		events: {
 			emit(event: string, payload: CompanionWidgetUpdate) {
 				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);

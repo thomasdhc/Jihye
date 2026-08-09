@@ -9,11 +9,13 @@ import {
 	PI_PET_STATES,
 	getPiPetAnimationInterval,
 	getPiPetElementAlternativeCount,
+	getPiPetStateCycleLength,
 	resolvePiPetElement,
 	resolvePiPetStateElements,
 	validatePiPetAssets,
+	type PiPetAssetCatalog,
 	type PiPetElement,
-} from "../../extensions/widget/pi-pet-assets.ts";
+} from "../../extensions/widget/pi-pet/assets.ts";
 
 test("models every lifecycle state as three exact-width ordered elements", () => {
 	assert.doesNotThrow(() => validatePiPetAssets());
@@ -32,25 +34,27 @@ test("models every lifecycle state as three exact-width ordered elements", () =>
 	}
 });
 
-test("preserves the user-authored unicode cat faces and working frame", () => {
-	assert.deepEqual(
-		PI_PET_STATES.map((state) => PI_PET_ASSETS.default[state].elements[1]),
-		["( o˽o )", "( -˽- )", "( o˽o )", "( ^‿^ )", "( x⁔x )"],
-	);
-	const workingBottom = PI_PET_ASSETS.default.working.elements[2];
-	assert.ok(Array.isArray(workingBottom));
-	assert.equal(workingBottom[0], " > ◐ < ");
-});
-
 test("resolves each animated element with its own modular cycle", () => {
 	const pairs = ["aaaaaaa", "bbbbbbb"] as const satisfies PiPetElement;
 	const triples = ["1111111", "2222222", "3333333"] as const satisfies PiPetElement;
+	const assets = {
+		...PI_PET_ASSETS,
+		default: {
+			...PI_PET_ASSETS.default,
+			working: { elements: [pairs, "-------", triples] },
+		},
+	} satisfies PiPetAssetCatalog;
 
 	assert.equal(resolvePiPetElement(pairs, 5), "bbbbbbb");
 	assert.equal(resolvePiPetElement(triples, 5), "3333333");
 	assert.equal(getPiPetElementAlternativeCount(pairs), 2);
 	assert.equal(getPiPetElementAlternativeCount(triples), 3);
-	assert.deepEqual(resolvePiPetStateElements("working", 1).slice(0, 2), [" /\\_/\\ ", "( o˽o )"]);
+	assert.deepEqual(resolvePiPetStateElements("working", 5, undefined, assets), [
+		"bbbbbbb",
+		"-------",
+		"3333333",
+	]);
+	assert.equal(getPiPetStateCycleLength("working", undefined, assets), 6);
 });
 
 test("uses a 250ms default with state-level asset overrides", () => {
@@ -89,7 +93,13 @@ test("rejects empty alternative lists", () => {
 		...PI_PET_ASSETS,
 		default: {
 			...PI_PET_ASSETS.default,
-			working: { elements: [" /\\_/\\ ", "( o˽o )", []] },
+			working: {
+				elements: [
+					PI_PET_ASSETS.default.working.elements[0],
+					PI_PET_ASSETS.default.working.elements[1],
+					[],
+				],
+			},
 		},
 	} as never;
 

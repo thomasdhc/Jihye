@@ -9,8 +9,8 @@ import {
 	getPiPetStateCycleLength,
 	isPiPetStateAnimated,
 	validatePiPetAssets,
-} from "../extensions/widget/pi-pet-assets.ts";
-import { renderPiPetStateLines } from "../extensions/widget/pi-pet.ts";
+} from "../extensions/widget/pi-pet/assets.ts";
+import { renderPiPetStateLines } from "../extensions/widget/pi-pet/extension.ts";
 
 const CLEAR_SCREEN = "\u001b[2J\u001b[H";
 

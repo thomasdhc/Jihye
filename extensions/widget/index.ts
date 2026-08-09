@@ -10,7 +10,7 @@ import {
 	type WidgetConfig,
 } from "./config.ts";
 import contextManagerExtension from "./ctx-manager.ts";
-import piPetExtension from "./pi-pet.ts";
+import piPetExtension from "./pi-pet/extension.ts";
 import { registerWidgetSettings } from "./settings.ts";
 import { createSessionIdentityExtension } from "./session-identity/index.ts";
 import {
