@@ -4,121 +4,215 @@ export const PI_PET_STATES = ["idle", "thinking", "working", "success", "error"]
 
 export type PiPetState = (typeof PI_PET_STATES)[number];
 
-export interface PiPetLayout {
-	readonly top: string;
-	readonly middle: Readonly<Record<PiPetState, string>>;
-	readonly bottom: string | Readonly<Record<PiPetState, string>>;
+export type PiPetElement = string | readonly [string, ...string[]];
+export type PiPetElements = readonly [PiPetElement, PiPetElement, PiPetElement];
+
+export interface PiPetStateAsset {
+	readonly elements: PiPetElements;
+	readonly intervalMs?: number;
 }
+
+export type PiPetModeAssets = Readonly<Record<PiPetState, PiPetStateAsset>>;
 
 export interface PiPetAssetCatalog {
 	readonly frameWidth: number;
-	readonly default: PiPetLayout;
-	readonly subagents: Readonly<Record<string, PiPetLayout>>;
+	readonly defaultIntervalMs: number;
+	readonly default: PiPetModeAssets;
+	readonly subagents: Readonly<Record<string, PiPetModeAssets>>;
 }
 
 export const PI_PET_FRAME_WIDTH = 7;
+export const PI_PET_DEFAULT_ANIMATION_INTERVAL_MS = 250;
 
 const CAT_FACES = {
-	idle: "( o.o )",
-	thinking: "( -.- )",
-	working: "( o.o )",
-	success: "( ^.^ )",
-	error: "( x.x )",
+	idle: "( o˽o )",
+	thinking: "( -˽- )",
+	working: "( o˽o )",
+	success: "( ^‿^ )",
+	error: "( x⁔x )",
 } satisfies Record<PiPetState, string>;
 
-export const DEFAULT_PI_PET_LAYOUT = {
-	top: " /\\_/\\ ",
-	middle: CAT_FACES,
-	bottom: {
-		idle: " > ^ < ",
-		thinking: " > ? < ",
-		working: " /|_|\\ ",
-		success: " > ★ < ",
-		error: " > ! < ",
-	},
-} satisfies PiPetLayout;
+const DEFAULT_TOP = " /\\_/\\ ";
 
-export const SUBAGENT_PI_PET_LAYOUTS = {
+export const DEFAULT_PI_PET_ASSETS = {
+	idle: { elements: [DEFAULT_TOP, CAT_FACES.idle, " > ^ < "] },
+	thinking: { elements: [DEFAULT_TOP, CAT_FACES.thinking, " > ? < "] },
+	working: {
+		elements: [DEFAULT_TOP, CAT_FACES.working, [" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "]],
+	},
+	success: { elements: [DEFAULT_TOP, CAT_FACES.success, " > ★ < "] },
+	error: { elements: [DEFAULT_TOP, CAT_FACES.error, " > ! < "] },
+} as const satisfies PiPetModeAssets;
+
+export const SUBAGENT_PI_PET_ASSETS = {
 	scout: {
-		top: " /\\ /\\ ",
-		middle: {
-			idle: " (o|o) ",
-			thinking: " (-|-) ",
-			working: " (o|o) ",
-			success: " (^|^) ",
-			error: " (x|x) ",
-		},
-		bottom: " / V \\ ",
+		idle: { elements: [" /\\ /\\ ", " (o|o) ", " / V \\ "] },
+		thinking: { elements: [" /\\ /\\ ", " (-|-) ", " / V \\ "] },
+		working: { elements: [" /\\ /\\ ", " (o|o) ", [" / V \\ ", " / v \\ "]] },
+		success: { elements: [" /\\ /\\ ", " (^|^) ", " / V \\ "] },
+		error: { elements: [" /\\ /\\ ", " (x|x) ", " / V \\ "] },
 	},
 	researcher: {
-		top: " ,___, ",
-		middle: {
-			idle: " (o,o) ",
-			thinking: " (-,-) ",
-			working: " (o,o) ",
-			success: " (^,^) ",
-			error: " (x,x) ",
-		},
-		bottom: " /===\\ ",
+		idle: { elements: [" ,___, ", " (o,o) ", " /===\\ "] },
+		thinking: { elements: [" ,___, ", " (-,-) ", " /===\\ "] },
+		working: { elements: [" ,___, ", " (o,o) ", [" /===\\ ", " /-=-\\ "]] },
+		success: { elements: [" ,___, ", " (^,^) ", " /===\\ "] },
+		error: { elements: [" ,___, ", " (x,x) ", " /===\\ "] },
 	},
 	reviewer: {
-		top: " .---. ",
-		middle: {
-			idle: " (o)-Q ",
-			thinking: " (?)-Q ",
-			working: " (o)-Q ",
-			success: " (+)-Q ",
-			error: " (x)-Q ",
-		},
-		bottom: " /___\\ ",
+		idle: { elements: [" .---. ", " (o)-Q ", " /___\\ "] },
+		thinking: { elements: [" .---. ", " (?)-Q ", " /___\\ "] },
+		working: { elements: [" .---. ", " (o)-Q ", [" /___\\ ", " /_-_\\ "]] },
+		success: { elements: [" .---. ", " (+)-Q ", " /___\\ "] },
+		error: { elements: [" .---. ", " (x)-Q ", " /___\\ "] },
 	},
 	engineer: {
-		top: " /===\\ ",
-		middle: CAT_FACES,
-		bottom: " /|_|\\ ",
+		idle: { elements: [" /===\\ ", CAT_FACES.idle, " /|_|\\ "] },
+		thinking: { elements: [" /===\\ ", CAT_FACES.thinking, " /|_|\\ "] },
+		working: { elements: [" /===\\ ", CAT_FACES.working, [" /|_|\\ ", " /|#|\\ "]] },
+		success: { elements: [" /===\\ ", CAT_FACES.success, " /|_|\\ "] },
+		error: { elements: [" /===\\ ", CAT_FACES.error, " /|_|\\ "] },
 	},
 	coordinator: {
-		top: " \\ | / ",
-		middle: CAT_FACES,
-		bottom: " /_^_\\ ",
+		idle: { elements: [" \\ | / ", CAT_FACES.idle, " /_^_\\ "] },
+		thinking: { elements: [" \\ | / ", CAT_FACES.thinking, " /_^_\\ "] },
+		working: { elements: [[" \\ | / ", " / | \\ "], CAT_FACES.working, " /_^_\\ "] },
+		success: { elements: [" \\ | / ", CAT_FACES.success, " /_^_\\ "] },
+		error: { elements: [" \\ | / ", CAT_FACES.error, " /_^_\\ "] },
 	},
-} satisfies Record<string, PiPetLayout>;
+} as const satisfies Record<string, PiPetModeAssets>;
 
 export const PI_PET_ASSETS: PiPetAssetCatalog = {
 	frameWidth: PI_PET_FRAME_WIDTH,
-	default: DEFAULT_PI_PET_LAYOUT,
-	subagents: SUBAGENT_PI_PET_LAYOUTS,
+	defaultIntervalMs: PI_PET_DEFAULT_ANIMATION_INTERVAL_MS,
+	default: DEFAULT_PI_PET_ASSETS,
+	subagents: SUBAGENT_PI_PET_ASSETS,
 };
 
-function layoutLines(layout: PiPetLayout, state: PiPetState): Array<[row: string, line: string]> {
-	return [
-		["top", layout.top],
-		["middle", layout.middle[state]],
-		["bottom", typeof layout.bottom === "string" ? layout.bottom : layout.bottom[state]],
-	];
+export function getPiPetModeAssets(
+	agentName?: string,
+	assets: PiPetAssetCatalog = PI_PET_ASSETS,
+): PiPetModeAssets {
+	return agentName ? (assets.subagents[agentName] ?? assets.default) : assets.default;
+}
+
+export function getPiPetStateAsset(
+	state: PiPetState,
+	agentName?: string,
+	assets: PiPetAssetCatalog = PI_PET_ASSETS,
+): PiPetStateAsset {
+	return getPiPetModeAssets(agentName, assets)[state];
+}
+
+export function getPiPetElementAlternativeCount(element: PiPetElement): number {
+	return typeof element === "string" ? 1 : element.length;
+}
+
+export function resolvePiPetElement(element: PiPetElement, tick: number): string {
+	if (!Number.isInteger(tick) || tick < 0) {
+		throw new Error(`[pi-pet assets] animation tick must be a non-negative integer; received ${tick}`);
+	}
+	return typeof element === "string" ? element : element[tick % element.length];
+}
+
+export function resolvePiPetStateElements(
+	state: PiPetState,
+	tick: number,
+	agentName?: string,
+	assets: PiPetAssetCatalog = PI_PET_ASSETS,
+): [string, string, string] {
+	const { elements } = getPiPetStateAsset(state, agentName, assets);
+	return elements.map((element) => resolvePiPetElement(element, tick)) as [string, string, string];
+}
+
+export function isPiPetStateAnimated(
+	state: PiPetState,
+	agentName?: string,
+	assets: PiPetAssetCatalog = PI_PET_ASSETS,
+): boolean {
+	return getPiPetStateAsset(state, agentName, assets).elements.some(
+		(element) => getPiPetElementAlternativeCount(element) > 1,
+	);
+}
+
+export function getPiPetAnimationInterval(
+	state: PiPetState,
+	agentName?: string,
+	assets: PiPetAssetCatalog = PI_PET_ASSETS,
+): number {
+	return getPiPetStateAsset(state, agentName, assets).intervalMs ?? assets.defaultIntervalMs;
+}
+
+function greatestCommonDivisor(left: number, right: number): number {
+	while (right !== 0) [left, right] = [right, left % right];
+	return left;
+}
+
+export function getPiPetStateCycleLength(
+	state: PiPetState,
+	agentName?: string,
+	assets: PiPetAssetCatalog = PI_PET_ASSETS,
+): number {
+	return getPiPetStateAsset(state, agentName, assets).elements.reduce((cycle, element) => {
+		const alternatives = getPiPetElementAlternativeCount(element);
+		return (cycle * alternatives) / greatestCommonDivisor(cycle, alternatives);
+	}, 1);
+}
+
+function validateElementAlternative(
+	line: unknown,
+	label: string,
+	frameWidth: number,
+): void {
+	if (typeof line !== "string") {
+		throw new Error(`[pi-pet assets] ${label} must be a string`);
+	}
+	if (line.includes("\n") || line.includes("\r")) {
+		throw new Error(`[pi-pet assets] ${label} must be a single terminal line`);
+	}
+	const width = visibleWidth(line);
+	if (width !== frameWidth) {
+		throw new Error(
+			`[pi-pet assets] ${label} has display width ${width}; expected ${frameWidth}: ${JSON.stringify(line)}`,
+		);
+	}
 }
 
 export function validatePiPetAssets(assets: PiPetAssetCatalog = PI_PET_ASSETS): void {
 	if (!Number.isInteger(assets.frameWidth) || assets.frameWidth <= 0) {
 		throw new Error(`[pi-pet assets] frame width must be a positive integer; received ${assets.frameWidth}`);
 	}
+	if (!Number.isInteger(assets.defaultIntervalMs) || assets.defaultIntervalMs <= 0) {
+		throw new Error(
+			`[pi-pet assets] default animation interval must be a positive integer; received ${assets.defaultIntervalMs}`,
+		);
+	}
 
-	const layouts: Array<[name: string, layout: PiPetLayout]> = [
+	const modes: Array<[name: string, mode: PiPetModeAssets]> = [
 		["default", assets.default],
-		...Object.entries(assets.subagents).map(([name, layout]) => [`subagent:${name}`, layout] as const),
+		...Object.entries(assets.subagents).map(([name, mode]) => [`subagent:${name}`, mode] as const),
 	];
 
-	for (const [name, layout] of layouts) {
+	for (const [name, mode] of modes) {
 		for (const state of PI_PET_STATES) {
-			for (const [row, line] of layoutLines(layout, state)) {
-				if (line.includes("\n") || line.includes("\r")) {
-					throw new Error(`[pi-pet assets] ${name}.${state} ${row} must be a single terminal line`);
+			const stateAsset = mode[state];
+			if (!stateAsset || !Array.isArray(stateAsset.elements) || stateAsset.elements.length !== 3) {
+				throw new Error(`[pi-pet assets] ${name}.${state} must contain exactly 3 ordered elements`);
+			}
+			if (stateAsset.intervalMs !== undefined && (!Number.isInteger(stateAsset.intervalMs) || stateAsset.intervalMs <= 0)) {
+				throw new Error(`[pi-pet assets] ${name}.${state} animation interval must be a positive integer`);
+			}
+			for (const [index, element] of stateAsset.elements.entries()) {
+				const label = `${name}.${state} element ${index}`;
+				if (typeof element === "string") {
+					validateElementAlternative(element, label, assets.frameWidth);
+					continue;
 				}
-				const width = visibleWidth(line);
-				if (width !== assets.frameWidth) {
-					throw new Error(
-						`[pi-pet assets] ${name}.${state} ${row} has display width ${width}; expected ${assets.frameWidth}: ${JSON.stringify(line)}`,
-					);
+				if (!Array.isArray(element) || element.length === 0) {
+					throw new Error(`[pi-pet assets] ${label} alternatives must be a non-empty readonly list`);
+				}
+				for (const [alternative, line] of element.entries()) {
+					validateElementAlternative(line, `${label} alternative ${alternative}`, assets.frameWidth);
 				}
 			}
 		}

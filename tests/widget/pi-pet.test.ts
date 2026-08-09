@@ -10,7 +10,7 @@ import {
 	renderPiPetStateLines,
 } from "../../extensions/widget/pi-pet.ts";
 import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../../extensions/widget/api.ts";
-import { SUBAGENT_PI_PET_LAYOUTS } from "../../extensions/widget/pi-pet-assets.ts";
+import { SUBAGENT_PI_PET_ASSETS } from "../../extensions/widget/pi-pet-assets.ts";
 
 test("maps lifecycle events to pet states", () => {
 	const runtime = createPiPetRuntimeState();
@@ -52,19 +52,32 @@ test("tracks top-level subagent roles and states independently", () => {
 	assert.equal(runtime.subagentPets.get("b")?.agentName, "researcher");
 	assert.notEqual(runtime.subagentPets.get("a")?.order, runtime.subagentPets.get("b")?.order);
 
+	runtime.tick = 3;
+	runtime.subagentPets.get("a")!.tick = 5;
+	assert.equal(runtime.subagentPets.get("b")?.tick, 0);
 	applyPiPetEvent(runtime, "tool_execution_end", { toolName: "subagent", toolCallId: "a" });
+	assert.equal(runtime.subagentPets.get("a")?.tick, 0, "subagent state change resets only its tick");
+	assert.equal(runtime.tick, 3, "main tick remains independent while still working");
+
 	applyPiPetEvent(runtime, "tool_execution_end", { toolName: "subagent", toolCallId: "b", isError: true });
 	assert.equal(runtime.subagentPets.get("a")?.state, "success");
 	assert.equal(runtime.subagentPets.get("b")?.state, "error");
+	assert.equal(runtime.subagentPets.get("b")?.tick, 0);
+	assert.equal(runtime.tick, 0, "main state change resets its tick");
 });
 
 test("renders persistent pet-owned artwork without status text", () => {
 	const runtime = createPiPetRuntimeState();
-	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\ ", "( o.o )", " > ^ < "]);
+	assert.deepEqual(renderPiPetLines(runtime), [" /\\_/\\ ", "( o˽o )", " > ^ < "]);
+});
+
+test("resolves working animation ticks without padding static elements", () => {
+	assert.deepEqual(renderPiPetStateLines("working", undefined, 0), [" /\\_/\\ ", "( o˽o )", " > ◐ < "]);
+	assert.deepEqual(renderPiPetStateLines("working", undefined, 1), [" /\\_/\\ ", "( o˽o )", " > ◓ < "]);
 });
 
 test("renders a distinct role-specific layout for each bundled subagent", () => {
-	const frames = Object.keys(SUBAGENT_PI_PET_LAYOUTS).map((agentName) =>
+	const frames = Object.keys(SUBAGENT_PI_PET_ASSETS).map((agentName) =>
 		renderPiPetStateLines("working", agentName).join("\n"),
 	);
 
@@ -122,6 +135,53 @@ test("publishes one persistent pet contribution with distinct lifecycle tones", 
 	await handlers.get("agent_settled")?.({});
 	assert.equal(updates.at(-1)?.contribution?.tone, "thinkingHigh");
 	assert.ok(updates.every((update) => update.id === "pi-pet:art"));
+});
+
+test("starts animation after session lifecycle and stops publishing on shutdown", async () => {
+	type Handler = (event: unknown) => Promise<void> | void;
+	const handlers = new Map<string, Handler>();
+	const updates: CompanionWidgetUpdate[] = [];
+
+	createPiPetExtension({ animationIntervalMs: 2, resetToIdleMs: 100, successResetToIdleMs: 100 })({
+		events: {
+			emit(event: string, payload: CompanionWidgetUpdate) {
+				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
+				updates.push(payload);
+			},
+		},
+		on(event: string, handler: Handler) {
+			handlers.set(event, handler);
+		},
+	} as never);
+
+	await handlers.get("tool_execution_start")?.({
+		toolName: "subagent",
+		toolCallId: "before-session",
+		args: { agent: "scout" },
+	});
+	const beforeSessionCount = updates.length;
+	await new Promise((resolve) => setTimeout(resolve, 8));
+	assert.equal(updates.length, beforeSessionCount, "factory and pre-session events do not start timers");
+
+	await handlers.get("session_start")?.({});
+	await handlers.get("tool_execution_start")?.({
+		toolName: "subagent",
+		toolCallId: "animated",
+		args: { agent: "scout" },
+	});
+	try {
+		await new Promise((resolve) => setTimeout(resolve, 12));
+		assert.ok(updates.filter((update) => update.id === "pi-pet:art" && update.contribution).length > 2);
+		assert.ok(updates.filter((update) => update.id === "pi-pet:subagent:animated" && update.contribution).length > 1);
+	} finally {
+		await handlers.get("session_shutdown")?.({});
+	}
+
+	const afterShutdownCount = updates.length;
+	await new Promise((resolve) => setTimeout(resolve, 8));
+	assert.equal(updates.length, afterShutdownCount, "animation and removal timers are cleaned on shutdown");
+	assert.equal(updates.findLast((update) => update.id === "pi-pet:art")?.contribution, undefined);
+	assert.equal(updates.findLast((update) => update.id === "pi-pet:subagent:animated")?.contribution, undefined);
 });
 
 test("publishes role-specific top-level subagent pets through settled states", async () => {
