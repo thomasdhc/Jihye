@@ -216,7 +216,14 @@ Current state mapping:
 | Agent settles successfully | `success` for 5 seconds, then `idle` |
 | Tool error / failed turn | `error` for 1.5 seconds, then `idle` |
 
-Future asset work can replace the ASCII frame table with a small local pet manifest such as `pet.json` plus one image or frame strip per state.
+Pet artwork and frame dimensions live in `extensions/widget/pi-pet/assets.ts`. Each state has three exact-width elements, and animated elements advance through their alternatives independently. Run `npm run preview:pi-pet` to inspect every sprite and lifecycle state inside visible frame boundaries; animation cycle counts appear beside state labels. Filter either preview mode to one sprite with `--sprite default` or a bundled subagent name:
+
+```bash
+npm run preview:pi-pet -- --sprite scout
+npm run preview:pi-pet:watch -- --sprite default
+```
+
+While editing artwork, run the watch command manually in a second terminal pane. It animates continuously, and saved asset or renderer changes restart, clear, and redraw the preview in place without requiring Pi `/reload`.
 
 ### Session identities
 

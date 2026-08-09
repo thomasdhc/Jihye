@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -11,6 +12,22 @@ import {
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetContribution,
 } from "../../extensions/widget/api.ts";
+
+test("keeps pi-pet internal to the package's sole widget entrypoint", () => {
+	const packageManifest = JSON.parse(
+		readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+	) as { pi?: { extensions?: string[] } };
+	assert.deepEqual(packageManifest.pi?.extensions, ["./extensions"]);
+
+	const discoverableWidgetEntrypoints = [
+		["extensions/widget.ts", new URL("../../extensions/widget.ts", import.meta.url)],
+		["extensions/widget/index.ts", new URL("../../extensions/widget/index.ts", import.meta.url)],
+	].filter(([, path]) => existsSync(path)).map(([path]) => path);
+	assert.deepEqual(discoverableWidgetEntrypoints, ["extensions/widget/index.ts"]);
+	assert.equal(existsSync(new URL("../../extensions/widget/pi-pet/index.ts", import.meta.url)), false);
+	assert.equal(existsSync(new URL("../../extensions/widget/pi-pet/assets.ts", import.meta.url)), true);
+	assert.equal(existsSync(new URL("../../extensions/widget/pi-pet/extension.ts", import.meta.url)), true);
+});
 
 test("loads every companion component through one widget extension", () => {
 	const eventHandlers: string[] = [];
