@@ -13,6 +13,7 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 
 ## Development
 
+- Indent TypeScript and JavaScript with tabs, displayed at four columns. Do not replace indentation tabs with spaces; follow `.editorconfig` for formats that require spaces.
 - Read Pi's extension and package documentation before changing extension APIs or package metadata.
 - Use branch workflow for changes: create a branch named `<username>/<feature>`, push it, and open a pull request targeting `main`.
 - Use concise conventional-style commit messages:
