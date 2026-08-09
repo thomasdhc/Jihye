@@ -1,12 +1,19 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { visibleWidth } from "@earendil-works/pi-tui";
 
 import {
 	removeCompanionWidgetContribution,
 	updateCompanionWidget,
 	type CompanionWidgetTone,
 } from "./api.ts";
+import {
+	DEFAULT_PI_PET_LAYOUT,
+	PI_PET_FRAME_WIDTH,
+	SUBAGENT_PI_PET_LAYOUTS,
+	type PiPetState,
+} from "./pi-pet-assets.ts";
 
-export type PiPetState = "idle" | "thinking" | "working" | "success" | "error";
+export type { PiPetState } from "./pi-pet-assets.ts";
 
 export interface PiPetInstance {
 	state: PiPetState;
@@ -22,12 +29,6 @@ export interface PiPetRuntimeState {
 	nextSubagentOrder: number;
 }
 
-interface PiPetLayout {
-	top: string;
-	middle: Record<PiPetState, string>;
-	bottom: string | Record<PiPetState, string>;
-}
-
 interface PiPetEventPayload {
 	isError?: boolean;
 	toolName?: string;
@@ -39,74 +40,6 @@ const PET_ART_ID = "pi-pet:art";
 const SUBAGENT_PET_ID_PREFIX = "pi-pet:subagent:";
 const RESET_TO_IDLE_MS = 1500;
 const SUCCESS_RESET_TO_IDLE_MS = 5000;
-
-const PET_FRAME_WIDTH = 7;
-
-const CAT_FACES: Record<PiPetState, string> = {
-	idle: "( o.o )",
-	thinking: "( -.- )",
-	working: "( o.o )",
-	success: "( ^.^ )",
-	error: "( x.x )",
-};
-
-const DEFAULT_PET_LAYOUT: PiPetLayout = {
-	top: " /\\_/\\",
-	middle: CAT_FACES,
-	bottom: {
-		idle: " > ^ <",
-		thinking: " > ? <",
-		working: " /|_|\\",
-		success: " > ★ <",
-		error: " > ! <",
-	},
-};
-
-const SUBAGENT_PET_LAYOUTS: Record<string, PiPetLayout> = {
-	scout: {
-		top: " /\\ /\\ ",
-		middle: {
-			idle: " (o|o) ",
-			thinking: " (-|-) ",
-			working: " (o|o) ",
-			success: " (^|^) ",
-			error: " (x|x) ",
-		},
-		bottom: " / V \\ ",
-	},
-	researcher: {
-		top: " ,___, ",
-		middle: {
-			idle: " (o,o) ",
-			thinking: " (-,-) ",
-			working: " (o,o) ",
-			success: " (^,^) ",
-			error: " (x,x) ",
-		},
-		bottom: " /===\\ ",
-	},
-	reviewer: {
-		top: " .---. ",
-		middle: {
-			idle: " (o)-Q ",
-			thinking: " (?)-Q ",
-			working: " (o)-Q ",
-			success: " (+)-Q ",
-			error: " (x)-Q ",
-		},
-		bottom: " /___\\ ",
-	},
-	engineer: {
-		top: " /===\\ ",
-		middle: CAT_FACES,
-		bottom: " /|_|\\ ",
-	},
-	coordinator: {
-		top: " \\ | / ",
-		middle: CAT_FACES,
-		bottom: " /_^_\\ ",
-	},
-};
 
 export function createPiPetRuntimeState(): PiPetRuntimeState {
 	return {
@@ -123,9 +56,19 @@ export function setPiPetState(runtime: PiPetRuntimeState, state: PiPetState): vo
 }
 
 export function renderPiPetStateLines(state: PiPetState, agentName?: string): string[] {
-	const layout = agentName ? (SUBAGENT_PET_LAYOUTS[agentName] ?? DEFAULT_PET_LAYOUT) : DEFAULT_PET_LAYOUT;
+	const layout = agentName
+		? (SUBAGENT_PI_PET_LAYOUTS[agentName] ?? DEFAULT_PI_PET_LAYOUT)
+		: DEFAULT_PI_PET_LAYOUT;
 	const bottom = typeof layout.bottom === "string" ? layout.bottom : layout.bottom[state];
-	return [layout.top, layout.middle[state], bottom].map((line) => line.padEnd(PET_FRAME_WIDTH));
+	return [layout.top, layout.middle[state], bottom].map((line) => {
+		const width = visibleWidth(line);
+		if (width !== PI_PET_FRAME_WIDTH) {
+			throw new Error(
+				`[pi-pet] frame line has display width ${width}; expected ${PI_PET_FRAME_WIDTH}: ${JSON.stringify(line)}`,
+			);
+		}
+		return line;
+	});
 }
 
 export function renderPiPetLines(runtime: PiPetRuntimeState): string[] {
