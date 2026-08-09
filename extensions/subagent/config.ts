@@ -50,6 +50,9 @@ export function loadConfig(configPath: string = CONFIG_PATH): ExtensionConfig {
 // Tools pi registers natively; the runner allowlists these with no `--extension`.
 export const BUILTIN_TOOLS = new Set(["read", "write", "edit", "bash", "grep", "find", "ls"]);
 
+// Prompt infrastructure every child restores after `--no-extensions`.
+export const JIHYE_SETUP_EXTENSION = path.join(EXTENSIONS_DIR, "jihye-setup", "index.ts");
+
 // Tools that exist only once an extension is loaded into the child process,
 // keyed by tool name so the runner can turn an agent's tool list into
 // `--extension` paths.

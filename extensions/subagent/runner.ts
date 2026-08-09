@@ -11,7 +11,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { truncateHead, withFileMutationQueue, DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES } from "@earendil-works/pi-coding-agent";
 
-import { BASH_GUARD_EXTENSION, BUILTIN_TOOLS, CUSTOM_TOOL_EXTENSIONS, resolvePiBinary } from "./config.ts";
+import { BASH_GUARD_EXTENSION, BUILTIN_TOOLS, CUSTOM_TOOL_EXTENSIONS, JIHYE_SETUP_EXTENSION, resolvePiBinary } from "./config.ts";
 import type { AgentProgress, AgentResult, ResolvedAgentConfig } from "./types.ts";
 
 export async function buildPiArgs(
@@ -30,7 +30,7 @@ export async function buildPiArgs(
 	const args = [...piBin.baseArgs, "--mode", "json", "-p", "--no-session", "--no-skills"];
 
 	const allowlist: string[] = [];
-	const extensionPaths = new Set<string>();
+	const extensionPaths = new Set<string>([JIHYE_SETUP_EXTENSION]);
 
 	for (const tool of agent.tools) {
 		if (BUILTIN_TOOLS.has(tool)) {
@@ -42,8 +42,8 @@ export async function buildPiArgs(
 		}
 	}
 
-	// Start the child from zero extensions and add back only what its declared
-	// tools require, so a tool the agent did not ask for cannot appear.
+	// Start the child from zero extensions, restore the bundled setup extension
+	// as prompt infrastructure, then add only extensions its declared tools need.
 	args.push("--no-extensions");
 
 	if (allowlist.length > 0) {

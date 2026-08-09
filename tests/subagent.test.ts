@@ -294,9 +294,13 @@ test("builds portable child arguments with the requested model and safety guard"
 		assert.notEqual(modelIndex, -1);
 		assert.equal(built.args[modelIndex + 1], agent.model);
 		assert.equal(built.args.includes("--models"), false);
+		const toolsIndex = built.args.indexOf("--tools");
+		assert.notEqual(toolsIndex, -1);
+		assert.equal(built.args[toolsIndex + 1], agent.tools.join(","));
 
 		const paths = extensionArgs(built.args);
 		const expected = [
+			join(REPO_ROOT, "extensions/jihye-setup/index.ts"),
 			join(REPO_ROOT, "extensions/bash-guard/index.ts"),
 			join(REPO_ROOT, "extensions/web-search/index.ts"),
 			join(REPO_ROOT, "extensions/web-fetch/index.ts"),
@@ -314,5 +318,32 @@ test("builds portable child arguments with the requested model and safety guard"
 		else process.env.PI_SUBAGENT_DEPTH = previousDepth;
 		if (previousAllowlist === undefined) delete process.env.PI_SUBAGENT_ALLOWED;
 		else process.env.PI_SUBAGENT_ALLOWED = previousAllowlist;
+	}
+});
+
+test("always loads setup infrastructure without granting tools or tool extensions", async () => {
+	const agent: AgentConfig = {
+		name: "no-tools",
+		description: "Fixture agent without tools",
+		tools: [],
+		model: "openai-codex/gpt-5.6-sol",
+		thinking: "medium",
+		systemPrompt: "Test system prompt",
+		filePath: "<fixture>",
+	};
+
+	let tempDir: string | undefined;
+	try {
+		const built = await buildPiArgs(agent, "Inspect without tools", REPO_ROOT);
+		tempDir = built.tempDir;
+
+		assert.equal(built.args.includes("--no-extensions"), true);
+		assert.equal(built.args.includes("--no-tools"), true);
+		assert.equal(built.args.includes("--tools"), false);
+		assert.deepEqual(extensionArgs(built.args), [
+			join(REPO_ROOT, "extensions/jihye-setup/index.ts"),
+		]);
+	} finally {
+		if (tempDir) rmSync(tempDir, { recursive: true, force: true });
 	}
 });
