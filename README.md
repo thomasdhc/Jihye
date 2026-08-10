@@ -116,7 +116,9 @@ Portable default definitions are tracked in `personas/subagents/`. They declare 
 | `researcher` | standard | medium |
 | `reviewer` | standard | medium |
 | `engineer` | deep | high |
-| `coordinator` | deep | high |
+| `coordinator` | standard | medium |
+
+The planning-only `coordinator` evaluates multi-task complexity, dependencies, parallel groups, isolation, and integration, then returns an execution skeleton for the parent agent to conduct. It does not spawn agents or implement the plan itself.
 
 Tier maps live in `extensions/subagent/model-profiles.json`:
 

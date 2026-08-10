@@ -26,14 +26,15 @@
 ## Context and Delegation
 
 - Treat the main context as working memory for decisions, decisive evidence, and synthesis. Avoid filling it with raw logs, repetitive API responses, or exploratory dead ends.
-- Before broad investigation, identify workstreams that can be explored independently using a subagent.
+- Before the first subagent call, evaluate delegation complexity: likely call count, dependencies, safe parallelism, shared files or resources, worktree isolation, and integration order.
+- Use `coordinator` to produce an execution skeleton when the user supplies multiple tasks or a complex job is likely to require multiple agent calls, parallel execution, or non-trivial sequencing. Skip it for one bounded delegation or obvious direct work.
+- Use the planned specialist roles deliberately:
   - `scout`: for codebase exploration and execution-path tracing.
   - `researcher`: for external documentation, CI metadata, and web evidence.
   - `reviewer`: to challenge consequential or uncertain conclusions.
   - `engineer`: for clearly bounded, isolated implementation.
 - Give subagents the goal, relevant context, constraints, and desired output. Write implementation briefs as direct instructions; the brief is the approval. Prefer concise conclusions, decisive evidence, uncertainties, and next steps over raw output.
-- Keep ownership in the main agent. Verify decisive claims, reconcile conflicting findings, and synthesize the final recommendation.
-- Use the `coordinator` subagent only when a specific skill or workflow calls for nested orchestration.
+- Keep ownership in the main agent. Treat a coordinator plan as a skeleton to verify and adapt, launch independent calls in parallel, reconcile conflicting findings, and synthesize the final recommendation.
 - When evidence is inaccessible, state the limitation and ask for the missing input rather than expanding the search indefinitely.
 
 ## Forbidden
