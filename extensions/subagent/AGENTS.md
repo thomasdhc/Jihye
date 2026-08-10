@@ -44,7 +44,7 @@ Dependency direction is strict and acyclic: `types.ts` → `{config.ts, progress
 2. Prefer `model_tier` (`standard` or `deep`) over a pinned `model`, so the agent follows the parent session's provider. A pinned model always wins.
 3. Every tool must be in `BUILTIN_TOOLS` or `CUSTOM_TOOL_EXTENSIONS`; an unknown name throws at load rather than leaving the agent quietly without that capability.
 4. If the agent gets the `subagent` tool, set `subagent_agents` to the agents it may spawn. Omitting it grants the whole registry.
-5. Extend `tests/personas.test.ts`, which pins the exact bundled definition set and requires `model_tier` with no pinned `model`, and add prompt-boundary coverage in `tests/subagent.test.ts` alongside the existing coordinator and reviewer assertions.
+5. Extend `tests/personas.test.ts`, which pins the exact bundled definition set and requires `model_tier` with no pinned `model`, and add prompt-boundary coverage in `tests/subagent.test.ts` alongside the existing reviewer assertions.
 
 ## Changing the Runner
 

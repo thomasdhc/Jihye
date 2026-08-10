@@ -135,17 +135,6 @@ export const SUBAGENT_PI_PET_ASSETS = {
 			error: " /|_|\\ ",
 		},
 	}),
-	coordinator: createPiPetModeAssets({
-		top: {
-			idle: " \\ | / ",
-			thinking: " \\ | / ",
-			working: [" \\ | / ", " / | \\ "],
-			success: " \\ | / ",
-			error: " \\ | / ",
-		},
-		face: CAT_FACES,
-		bottom: repeatPiPetElement(" /_^_\\ "),
-	}),
 } satisfies Readonly<Record<string, PiPetModeAssets>>;
 
 export const PI_PET_ASSETS: PiPetAssetCatalog = {

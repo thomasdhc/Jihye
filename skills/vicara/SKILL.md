@@ -91,7 +91,7 @@ The calling agent should:
 2. Build a low-resolution repo map before delegating.
 3. Identify the current **Destination**: what this pass should make possible.
 4. Identify the **Frontier**: promising investigation streams or candidate opportunities.
-5. Delegate bounded, independent workstreams.
+5. When the frontier is multi-stream or dependency-heavy, load and follow the `coordinate` skill before the first subagent call; otherwise delegate bounded, independent workstreams directly.
 6. Reconcile subagent outputs into a coherent opportunity list.
 7. Verify each top opportunity through direct inspection, local reproduction, or a focused reviewer pass.
 8. Draft a ranking of atomic, independently actionable opportunities.
@@ -103,12 +103,6 @@ Subagents gather evidence. They do not own the final ranking unless a later call
 ## Subagent Roles
 
 Use subagents when workstreams are independent, the repo is large, or a bounded challenge pass would improve confidence.
-
-### `coordinator`
-
-Use before delegation when the frontier contains several workstreams or has non-trivial dependencies, parallelism, isolation, or review sequencing. The coordinator returns an execution skeleton and ready-to-use briefs; the calling agent launches the planned specialists and owns synthesis.
-
-Good coordinator tasks include planning exploration of large subsystems, mixed local/external investigations, or several opportunity signals that need efficient ordering.
 
 ### `scout`
 
@@ -166,12 +160,11 @@ Choose workstreams that can be investigated independently.
 
 Good delegation targets:
 
-- `coordinator`: a set of frontier branches that needs a dependency-aware execution plan
 - `scout`: one repo-local area, capability, execution path, or repeated pattern
 - `researcher`: one external question suggested by repo evidence
 - `reviewer`: one specific opportunity claim that needs challenge
 
-Prefer several small, independent tasks over one broad task. Use a coordinator only when planning complexity justifies the extra call; then launch independent specialist calls in parallel yourself.
+Prefer several small, independent tasks over one broad task. When dependencies, parallel groups, shared resources, isolation, or integration make the split non-trivial, use the `coordinate` skill to build the execution skeleton in the calling agent's context, then immediately launch its first actionable group. For an obvious direct fan-out, launch the independent specialist calls in parallel without formal coordination.
 
 ### 3. Give bounded tasks
 
@@ -193,8 +186,6 @@ Return:
 4. Confidence and uncertainty
 5. Suggested report updates or next verification
 ```
-
-For `coordinator`, phrase the task as: "Plan investigation of <frontier branches>. Identify dependencies, parallel groups, specialist assignments, ready-to-use briefs, integration order, and validation gates. Do not delegate or investigate the branches yourself."
 
 Avoid handing off an unbounded "review everything" task.
 
@@ -279,8 +270,8 @@ Let the repo determine which categories matter.
 
 3. **Delegate and investigate**
    - Choose the frontier.
-   - Ask a coordinator for an execution skeleton when the frontier has multiple or dependent streams.
-   - Launch the planned scouts or researchers, grouping independent calls in parallel.
+   - Load and follow the `coordinate` skill when the frontier has multiple or dependent streams.
+   - Launch the first actionable scout or researcher group immediately, grouping independent calls in parallel.
    - Search and sample directly where the calling agent needs context.
 
 4. **Reconcile and review**

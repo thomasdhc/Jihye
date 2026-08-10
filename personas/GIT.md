@@ -7,6 +7,7 @@
 - Unless the user directs a different base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`, using the branch namespace from workspace-root `USERNAME.md`.
 - Never assume local `main` is current, and do not develop directly on `main`.
 - If the latest remote `main` cannot be fetched, ask before using another base.
+- Keep distinct features or independently deliverable outcomes on separate branches and pull requests; do not combine them merely because one change is small. Keep an outcome's implementation, tests, and supporting documentation together.
 - Use a separate Git worktree when concurrent work or isolation would prevent interference with the canonical checkout.
 - Keep the canonical checkout untouched and use the isolated-worktree location configured in workspace-root `REPO.md`.
 - Inspect repository and worktree state before creating, integrating, moving, or removing work. Never stash, reset, overwrite, or discard existing changes, and never remove a worktree containing uncommitted or untracked work.

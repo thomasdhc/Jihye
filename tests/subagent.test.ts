@@ -22,35 +22,18 @@ test("loads portable bundled agent model specifications", () => {
 	const bundledAgents = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
 	const byName = new Map(bundledAgents.map((agent) => [agent.name, agent]));
 
-	assert.deepEqual([...byName.keys()].sort(), ["coordinator", "engineer", "researcher", "reviewer", "scout"]);
+	assert.deepEqual([...byName.keys()].sort(), ["engineer", "researcher", "reviewer", "scout"]);
 	for (const agent of bundledAgents) {
 		assert.equal(agent.model, undefined, `${agent.name} must not pin a provider-specific model`);
 	}
 	assert.equal(byName.get("scout")?.modelTier, "standard");
 	assert.equal(byName.get("researcher")?.modelTier, "standard");
 	assert.equal(byName.get("reviewer")?.modelTier, "standard");
-	assert.equal(byName.get("coordinator")?.modelTier, "standard");
 	assert.equal(byName.get("engineer")?.modelTier, "deep");
 	assert.equal(byName.get("scout")?.thinking, "medium");
 	assert.equal(byName.get("researcher")?.thinking, "medium");
 	assert.equal(byName.get("reviewer")?.thinking, "medium");
-	assert.equal(byName.get("coordinator")?.thinking, "medium");
 	assert.equal(byName.get("engineer")?.thinking, "high");
-});
-
-test("keeps the bundled coordinator planning-only", () => {
-	const coordinator = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR])
-		.find((agent) => agent.name === "coordinator");
-
-	assert.ok(coordinator);
-	assert.deepEqual(coordinator.tools, ["read", "grep", "find", "ls", "safe_bash"]);
-	assert.equal(coordinator.subagentAgents, undefined);
-	assert.ok(!coordinator.tools.includes("subagent"));
-	assert.match(coordinator.systemPrompt, /planning-only coordinator/);
-	assert.match(coordinator.systemPrompt, /Evaluate execution complexity/);
-	assert.match(coordinator.systemPrompt, /group calls that can run in the same turn/);
-	assert.match(coordinator.systemPrompt, /Return ready-to-use briefs/);
-	assert.match(coordinator.systemPrompt, /Do not call subagents/);
 });
 
 test("keeps the bundled reviewer bounded", () => {
@@ -116,9 +99,9 @@ Specialist prompt.
 		const scout = byName.get("scout");
 		const specialist = byName.get("specialist");
 
-		assert.equal(withoutUserOverrides.length, 5);
+		assert.equal(withoutUserOverrides.length, 4);
 		assert.equal(withoutUserOverrides.find((agent) => agent.name === "scout")?.description, "Package-local scout");
-		assert.equal(agents.length, 6);
+		assert.equal(agents.length, 5);
 		assert.equal(scout?.description, "Package-local scout");
 		assert.deepEqual(scout?.tools, ["read"]);
 		assert.equal(scout?.model, "openai-codex/gpt-5.5");
