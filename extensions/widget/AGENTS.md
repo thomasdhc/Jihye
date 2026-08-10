@@ -14,7 +14,7 @@ Keep the host generic. Components should own their state and behavior without kn
 - Each component owns its contribution namespace and publishes or removes only those contributions through the shared event API. Components must not call `setWidget` or depend on another component's state.
 - `config.ts` owns validation and persistence. Configuration is global to Pi's agent directory, strict about unknown values, and defaults omitted components to enabled.
 - `settings.ts` owns the `/widget` command and interactive settings UI. Persist changes before reloading extensions, and treat `await ctx.reload()` as terminal.
-- `pi-pet/assets.ts` owns exact-width artwork and animation timing; `pi-pet/extension.ts` owns lifecycle state, timers, and contribution publication.
+- `pi-pet/assets.ts` owns exact-width artwork and animation timing; `pi-pet/extension.ts` owns lifecycle state, timers, contribution publication, and the subscription to the subagent progress contract. It correlates progress only to active top-level subagent `toolCallId`s; parent `tool_execution_end` events remain authoritative for success and error.
 - `session-identity/` may maintain process-wide state and leases, so disabling it must clear active state and release its lease during reload.
 
 ## Invariants
@@ -23,6 +23,7 @@ Keep the host generic. Components should own their state and behavior without kn
 - Disabling one component must not disable, clear, or couple the remaining components.
 - Component modules remain internal implementation details; do not make them separately discoverable extension entrypoints.
 - Components must remove their contributions and clean up timers, listeners, leases, or process-wide state during shutdown.
+- Pi-pet must ignore malformed, unknown, terminal, and late subagent progress IDs. Concurrent top-level calls keep independent animation state, and nested child agents remain activity of their top-level pet rather than creating new pets.
 - Pi-pet artwork must already satisfy its configured display width; do not pad frames at runtime, and keep tests glyph-agnostic so manual artwork edits remain safe.
 - Keep configuration sources separate from component logic. Inject policy callbacks when lifecycle behavior depends on persisted settings.
 - Preserve default-enabled behavior when no `widget.json` exists or a component key is omitted. Invalid configuration should be reported rather than silently normalized.

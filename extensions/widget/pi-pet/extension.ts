@@ -2,6 +2,11 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { visibleWidth } from "@earendil-works/pi-tui";
 
 import {
+	isSubagentProgressEvent,
+	SUBAGENT_PROGRESS_EVENT,
+	type SubagentProgressPhase,
+} from "../../subagent/progress-events.ts";
+import {
 	removeCompanionWidgetContribution,
 	updateCompanionWidget,
 	type CompanionWidgetTone,
@@ -39,6 +44,7 @@ interface PiPetEventPayload {
 	toolName?: string;
 	toolCallId?: string;
 	args?: unknown;
+	phase?: SubagentProgressPhase;
 }
 
 const PET_ART_ID = "pi-pet:art";
@@ -152,6 +158,16 @@ export function applyPiPetEvent(
 			}
 			break;
 		}
+		case "subagent_progress": {
+			const subagent = payload?.toolCallId
+				? runtime.subagentPets.get(payload.toolCallId)
+				: undefined;
+			if (!subagent || subagent.state === "success" || subagent.state === "error") break;
+			if (payload?.phase === "thinking" || payload?.phase === "working") {
+				setSubagentPetState(subagent, payload.phase);
+			}
+			break;
+		}
 		case "agent_settled":
 			setPiPetState(runtime, runtime.sawError ? "error" : "success");
 			runtime.activeTools = 0;
@@ -205,6 +221,14 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 		let mainAnimation: ScheduledAnimation | undefined;
 		const subagentRemovalTimers = new Map<string, ReturnType<typeof setTimeout>>();
 		const subagentAnimations = new Map<string, ScheduledAnimation>();
+		const unsubscribeSubagentProgress = pi.events.on(SUBAGENT_PROGRESS_EVENT, (payload) => {
+			if (!isSubagentProgressEvent(payload)) return;
+			const pet = runtime.subagentPets.get(payload.toolCallId);
+			if (!pet || pet.state === "success" || pet.state === "error") return;
+			applyPiPetEvent(runtime, "subagent_progress", payload);
+			publishSubagentPet(payload.toolCallId);
+			ensureSubagentAnimation(payload.toolCallId);
+		});
 
 		function animationInterval(state: PiPetState, agentName?: string): number {
 			return options.animationIntervalMs ?? getPiPetAnimationInterval(state, agentName, assets);
@@ -396,6 +420,7 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 
 		pi.on("session_shutdown", async () => {
 			sessionActive = false;
+			unsubscribeSubagentProgress();
 			clearResetTimer();
 			clearMainAnimation();
 			clearSubagentPets(true);

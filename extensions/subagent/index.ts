@@ -15,6 +15,11 @@ import { Type } from "typebox";
 import { DEFAULT_MAX_CONCURRENCY, MODEL_PROFILES_PATH, loadConfig } from "./config.ts";
 import { isAgentAllowed, loadAgents, setAgents } from "./discovery.ts";
 import { loadModelProfiles, resolveAgentModel, type ActiveModel, type ModelProfiles } from "./models.ts";
+import {
+	emitSubagentProgress,
+	getSubagentProgressPhase,
+	type SubagentProgressPhase,
+} from "./progress-events.ts";
 import { getTermWidth, renderAgentProgress } from "./render.ts";
 import { Semaphore, runSubagent } from "./runner.ts";
 import type { AgentResult, Details, ResolvedAgentConfig } from "./types.ts";
@@ -84,16 +89,24 @@ export default function (pi: ExtensionAPI) {
 				progress: { agent: params.agent, status: "running" as const, task: params.task, recentTools: [], toolCount: 0, tokens: 0, durationMs: 0, lastMessage: "" },
 			};
 
-			const result = await semaphore.run(() =>
-				runSubagent(resolvedAgent, params.task!, cwd, signal, (progress, usage) => {
+			let lastProgressPhase: SubagentProgressPhase | undefined;
+			const publishProgress = () => {
+				const phase = getSubagentProgressPhase(liveResult.progress);
+				if (phase === lastProgressPhase) return;
+				lastProgressPhase = emitSubagentProgress(pi.events, toolCallId, liveResult.progress);
+			};
+			const result = await semaphore.run(() => {
+				publishProgress();
+				return runSubagent(resolvedAgent, params.task!, cwd, signal, (progress, usage) => {
 					liveResult.progress = progress;
 					liveResult.usage = { ...usage };
+					publishProgress();
 					onUpdate?.({
 						content: [{ type: "text", text: "(running...)" }],
 						details: { results: [liveResult] },
 					});
-				}),
-			);
+				});
+			});
 
 			result.contextWindow = contextWindow;
 			const isError = result.exitCode !== 0 || !!result.progress.error;

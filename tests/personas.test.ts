@@ -92,6 +92,7 @@ test("merge requests and pull requests use strict title and description defaults
 	assert.match(git, /Use Conventional Commit format for every merge request and pull request title/);
 	assert.match(git, /Do not use a plain prose title unless the user explicitly requests it/);
 	assert.match(git, /show its headings and checklists to the user/);
+	assert.match(git, /If `gh pr edit` fails while querying deprecated Projects Classic APIs, upgrade to GitHub CLI 2\.82\.1 or newer before retrying/);
 	assert.match(git, /When no repository template exists, use only:/);
 	assert.match(git, /Do not add other headings, checklists, validation notes, or supporting sections unless the user explicitly requests them/);
 });

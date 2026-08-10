@@ -9,6 +9,7 @@ import {
 	renderPiPetLines,
 	renderPiPetStateLines,
 } from "../../extensions/widget/pi-pet/extension.ts";
+import { SUBAGENT_PROGRESS_EVENT } from "../../extensions/subagent/progress-events.ts";
 import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../../extensions/widget/api.ts";
 import {
 	PI_PET_ASSETS,
@@ -86,6 +87,34 @@ test("tracks top-level subagent roles and states independently", () => {
 	assert.equal(runtime.tick, 0, "main state change resets its tick");
 });
 
+test("applies concurrent subagent phases independently and ignores unknown or terminal IDs", () => {
+	const runtime = createPiPetRuntimeState();
+
+	for (const toolCallId of ["a", "b"]) {
+		applyPiPetEvent(runtime, "tool_execution_start", { toolName: "subagent", toolCallId });
+	}
+	runtime.subagentPets.get("a")!.tick = 4;
+	runtime.subagentPets.get("b")!.tick = 7;
+
+	applyPiPetEvent(runtime, "subagent_progress", { toolCallId: "a", phase: "thinking" });
+	assert.equal(runtime.subagentPets.get("a")?.state, "thinking");
+	assert.equal(runtime.subagentPets.get("a")?.tick, 0, "a phase transition resets its animation");
+	assert.equal(runtime.subagentPets.get("b")?.state, "working");
+	assert.equal(runtime.subagentPets.get("b")?.tick, 7, "concurrent calls retain independent animation state");
+
+	runtime.subagentPets.get("a")!.tick = 3;
+	applyPiPetEvent(runtime, "subagent_progress", { toolCallId: "a", phase: "working" });
+	assert.equal(runtime.subagentPets.get("a")?.state, "working");
+	assert.equal(runtime.subagentPets.get("a")?.tick, 0, "returning to child tool activity restarts working animation");
+
+	applyPiPetEvent(runtime, "subagent_progress", { toolCallId: "unknown", phase: "thinking" });
+	assert.equal(runtime.subagentPets.size, 2);
+
+	applyPiPetEvent(runtime, "tool_execution_end", { toolName: "subagent", toolCallId: "a" });
+	applyPiPetEvent(runtime, "subagent_progress", { toolCallId: "a", phase: "working" });
+	assert.equal(runtime.subagentPets.get("a")?.state, "success", "parent end remains terminal authority");
+});
+
 test("renders persistent pet-owned artwork without status text", () => {
 	const runtime = createPiPetRuntimeState();
 	assert.deepEqual(renderPiPetLines(runtime), resolvePiPetStateElements("idle", 0));
@@ -140,6 +169,10 @@ test("publishes one persistent pet contribution with distinct lifecycle tones", 
 				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
 				updates.push(payload);
 			},
+			on(event: string, handler: Handler) {
+				handlers.set(event, handler);
+				return () => handlers.delete(event);
+			},
 		},
 		on(event: string, handler: Handler) {
 			handlers.set(event, handler);
@@ -184,6 +217,10 @@ test("starts animation after session lifecycle and stops publishing on shutdown"
 			emit(event: string, payload: CompanionWidgetUpdate) {
 				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
 				updates.push(payload);
+			},
+			on(event: string, handler: Handler) {
+				handlers.set(event, handler);
+				return () => handlers.delete(event);
 			},
 		},
 		on(event: string, handler: Handler) {
@@ -232,6 +269,10 @@ test("publishes role-specific top-level subagent pets through settled states", a
 				assert.equal(event, COMPANION_WIDGET_UPDATE_EVENT);
 				updates.push(payload);
 			},
+			on(event: string, handler: Handler) {
+				handlers.set(event, handler);
+				return () => handlers.delete(event);
+			},
 		},
 		on(event: string, handler: Handler) {
 			handlers.set(event, handler);
@@ -260,10 +301,26 @@ test("publishes role-specific top-level subagent pets through settled states", a
 		updates.find((update) => update.id === "pi-pet:subagent:subagent-b")?.contribution?.order,
 	);
 
+	await handlers.get(SUBAGENT_PROGRESS_EVENT)?.({ toolCallId: "subagent-a", phase: "thinking" });
+	const scoutThinking = updates.findLast((update) => update.id === "pi-pet:subagent:subagent-a")?.contribution;
+	assert.equal(scoutThinking?.tone, "accent");
+	assert.deepEqual(scoutThinking?.lines, renderPiPetStateLines("thinking", "scout"));
+	assert.deepEqual(
+		updates.findLast((update) => update.id === "pi-pet:subagent:subagent-b")?.contribution?.lines,
+		renderPiPetStateLines("working", "researcher"),
+		"a progress event must not change concurrent call b",
+	);
+	const beforeUnknown = updates.length;
+	await handlers.get(SUBAGENT_PROGRESS_EVENT)?.({ toolCallId: "unknown", phase: "thinking" });
+	assert.equal(updates.length, beforeUnknown, "unknown parent IDs are ignored");
+
 	await handlers.get("tool_execution_end")?.({ toolName: "subagent", toolCallId: "subagent-a" });
 	const scoutSuccess = updates.findLast((update) => update.id === "pi-pet:subagent:subagent-a")?.contribution;
 	assert.equal(scoutSuccess?.tone, "thinkingHigh");
 	assert.deepEqual(scoutSuccess?.lines, renderPiPetStateLines("success", "scout"));
+	const beforeLate = updates.length;
+	await handlers.get(SUBAGENT_PROGRESS_EVENT)?.({ toolCallId: "subagent-a", phase: "working" });
+	assert.equal(updates.length, beforeLate, "late progress cannot override the parent terminal event");
 
 	await handlers.get("tool_execution_end")?.({ toolName: "subagent", toolCallId: "subagent-b", isError: true });
 	const researcherError = updates.findLast((update) => update.id === "pi-pet:subagent:subagent-b")?.contribution;
@@ -273,4 +330,7 @@ test("publishes role-specific top-level subagent pets through settled states", a
 	await new Promise((resolve) => setTimeout(resolve, 5));
 	assert.equal(updates.findLast((update) => update.id === "pi-pet:subagent:subagent-a")?.contribution, undefined);
 	assert.equal(updates.findLast((update) => update.id === "pi-pet:subagent:subagent-b")?.contribution, undefined);
+
+	await handlers.get("session_shutdown")?.({});
+	assert.equal(handlers.has(SUBAGENT_PROGRESS_EVENT), false, "shutdown unsubscribes the inter-extension listener");
 });
