@@ -78,17 +78,23 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
 });
 
-test("global personas require complexity-aware delegation planning", () => {
+test("global personas require the coordinate skill for complex delegation", () => {
 	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
 		const persona = readPersona(path);
-		assert.match(persona, /Before the first subagent call, evaluate delegation complexity/);
-		assert.match(persona, /multiple agent calls, parallel execution, or non-trivial sequencing/);
-		assert.match(persona, /Treat a coordinator plan as a skeleton to verify and adapt/);
+		assert.match(persona, /Skip formal coordination for one bounded task or an obvious direct fan-out/);
+		assert.match(persona, /Otherwise, before the first subagent call, load and follow the `coordinate` skill/);
+		assert.match(persona, /multiple agent calls require decisions about delivery boundaries, dependencies, safe parallelism/);
+		assert.match(persona, /launch the first actionable parallel group immediately/);
+		assert.match(persona, /own integration, validation, and final synthesis/);
+		assert.doesNotMatch(persona, /\bcoordinator\b/);
 	}
 });
 
 test("merge requests and pull requests use strict title and description defaults", () => {
 	const git = readPersona("GIT.md");
+	assert.match(git, /Keep distinct features or independently deliverable outcomes on separate branches and pull requests/);
+	assert.match(git, /do not combine them merely because one change is small/);
+	assert.match(git, /Keep an outcome's implementation, tests, and supporting documentation together/);
 	assert.match(git, /Use Conventional Commit format for every merge request and pull request title/);
 	assert.match(git, /Do not use a plain prose title unless the user explicitly requests it/);
 	assert.match(git, /show its headings and checklists to the user/);
@@ -109,7 +115,7 @@ test("persona policy remains portable", () => {
 test("persona agents are the single current bundled definition set", () => {
 	const agentRoot = join(PERSONAS_ROOT, "subagents");
 	const files = readdirSync(agentRoot).filter((entry) => entry.endsWith(".md")).sort();
-	assert.deepEqual(files, ["coordinator.md", "engineer.md", "researcher.md", "reviewer.md", "scout.md"]);
+	assert.deepEqual(files, ["engineer.md", "researcher.md", "reviewer.md", "scout.md"]);
 	assert.equal(lstatSync(agentRoot).isSymbolicLink(), false);
 	assert.equal(existsSync(join(REPO_ROOT, "agents")), false);
 	assert.equal(existsSync(join(PERSONAS_ROOT, "agents")), false);

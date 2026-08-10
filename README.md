@@ -20,6 +20,7 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 
 | Skill | Purpose |
 |---|---|
+| `coordinate` | Plan and execute efficient parent-side subagent workflows |
 | `examen` | Evidence-based GitHub pull request and GitLab merge request reviews |
 | `review-guidance` | Review the most-specific agent guidance governing a selected path |
 | `session-digest` | Extract and save important session exchanges to markdown |
@@ -116,9 +117,6 @@ Portable default definitions are tracked in `personas/subagents/`. They declare 
 | `researcher` | standard | medium |
 | `reviewer` | standard | medium |
 | `engineer` | deep | high |
-| `coordinator` | standard | medium |
-
-The planning-only `coordinator` evaluates multi-task complexity, dependencies, parallel groups, isolation, and integration, then returns an execution skeleton for the parent agent to conduct. It does not spawn agents or implement the plan itself.
 
 Tier maps live in `extensions/subagent/model-profiles.json`:
 
@@ -204,7 +202,6 @@ All components are enabled when no widget configuration exists.
 | `researcher` | Owl behind a book |
 | `reviewer` | Inspector with a magnifier |
 | `engineer` | Builder in a hard hat |
-| `coordinator` | Conductor joining several paths |
 
 The pet artwork sits on the left, while context and session identity details are right-aligned. At runtime, each producer owns and publishes only its own state, so removing one contribution does not disable or couple the remaining components. Pi's built-in footer remains unchanged.
 
