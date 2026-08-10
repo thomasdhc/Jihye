@@ -46,6 +46,13 @@ Before drafting or updating a merge request or pull request description, look fo
 
 When the user asks to add or update a description, update the open MR or PR for the current branch directly with the repository's CLI or API and verify the result. If no open MR or PR exists, or access is unavailable, provide the drafted description and state the limitation. Do not create an MR or PR unless the user asks.
 
+`gh pr edit` itself is not deprecated, but GitHub CLI versions before 2.82.1 may fail while querying deprecated Projects Classic APIs. Upgrade to `gh` 2.82.1 or newer. If upgrading is not immediately possible, update an existing PR body without that query and verify it with a separate GET:
+
+```bash
+gh api --method PATCH "repos/{owner}/{repo}/pulls/{number}" --field body=@- < "$body_file"
+gh api --method GET "repos/{owner}/{repo}/pulls/{number}" --jq .body
+```
+
 When no repository template exists, use only:
 
 ```markdown
