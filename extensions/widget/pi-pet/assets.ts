@@ -51,10 +51,10 @@ function repeatPiPetElement(element: PiPetElement): PiPetStateFrameMap {
 }
 
 const CAT_FACES: PiPetStateFrameMap = {
-	idle: ["( o˽o )", "( o˽o )", "( ◌˽◌ )", "( ◌˽◌ )"],
+	idle: ["( o˽o )", "( o˽o )", "( ȏ˽ȏ )", "( ȏ˽ȏ )"],
 	thinking: ["( ╸˽╺ )", "( ╸˽╺ )", "( ╴˽╶ )", "( ╴˽╶ )"],
-	working: ["( o˽o )", "( o˽o )", "( ◌˽◌ )", "( ◌˽◌ )"],
-	success: ["( ^‿^ )", "( ^‿^ )", "( ◌‿◌ )", "( ◌‿◌ )"],
+	working: ["( o˽o )", "( o˽o )", "( ȏ˽ȏ )", "( ȏ˽ȏ )"],
+	success: ["( ^‿^ )", "( ^‿^ )", "( ȏ‿ȏ )", "( ȏ‿ȏ )"],
 	error: ["( x⁔x )", "( x⁔x )", "( ╸⁔╺ )", "( ╸⁔╺ )"],
 };
 
