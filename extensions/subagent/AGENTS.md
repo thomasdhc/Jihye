@@ -8,10 +8,11 @@ One tool call runs one agent. Fan-out is the model emitting several `subagent` c
 
 ## Architecture
 
-Dependency direction is strict and acyclic: `types.ts` → `config.ts` → `{discovery.ts, runner.ts}`, `types.ts` → `render.ts`, with `index.ts` on top. `models.ts` is a leaf consumed by `discovery.ts` and `index.ts`.
+Dependency direction is strict and acyclic: `types.ts` → `{config.ts, progress-events.ts, render.ts}`, `config.ts` → `{discovery.ts, runner.ts}`, with `index.ts` on top. `models.ts` is a leaf consumed by `discovery.ts` and `index.ts`.
 
 - `index.ts` is the sole Pi extension entrypoint; every other module is internal. It loads configuration and model profiles, scans the agent directories once at startup, builds the concurrency semaphore, and registers the `subagent` tool with its `execute`, `renderCall`, and `renderResult` handlers. It also re-exports the registration, directory, and argv helpers that form this extension's public surface.
 - `types.ts` is shapes only: `AgentConfig`, `AgentProgress`, `ToolEvent`, `AgentResult`, `Details`, `ExtensionConfig`.
+- `progress-events.ts` owns the privacy-safe inter-extension progress contract. It derives `thinking`/`working` from `AgentProgress` and emits only the top-level parent `toolCallId` plus phase; `index.ts` deduplicates phase emissions per call.
 - `config.ts` is data and path resolution: the agent directories, the bundled setup infrastructure extension, the built-in tool set, the custom-tool→extension map, `config.json` loading, and pi binary resolution. No control flow beyond that. A missing `config.json` means "no overrides"; malformed content throws with its path rather than being silently ignored, matching how `models.ts` treats a bad `modelProfiles` override in the same file.
 - `discovery.ts` parses agent markdown frontmatter into `AgentConfig`, validates it, merges directories, and owns the registry plus the `globalThis.__pi_subagents` bridge. Frontmatter validation lives here, not in the runner; `isKnownTool` in `config.ts` is the single definition of a usable tool name.
 - `runner.ts` owns the child process end to end: argv construction, environment, spawn, event-stream parsing, abort, and output truncation.
@@ -35,6 +36,7 @@ Dependency direction is strict and acyclic: `types.ts` → `config.ts` → `{dis
   - Output over `DEFAULT_MAX_BYTES` is truncated with `truncateHead` and marked `[Output truncated]`. Tool argument previews are capped at 4000 characters.
 - The child's environment marks it as a subagent: `PI_SUBAGENT_DEPTH` is incremented on every spawn, and `PI_SUBAGENT_ALLOWED` is deleted before being re-set so an inherited allowlist cannot leak into a grandchild. `bash-guard` branches its entire behaviour on the depth value — interactive prompting at 0, headless hard-block of catastrophic operations at ≥ 1 — so changing how it is set changes guard behaviour, not just bookkeeping.
 - `render.ts` is presentation only. It derives everything from the `AgentResult` handed to it and must not become a source of truth for progress or usage state.
+- The progress event payload is exactly `{ toolCallId, phase }`. `working` means at least one direct child `recentTools` entry is running; otherwise the phase is `thinking`. A running nested `subagent` tool remains activity of its top-level parent call rather than creating a separately correlated event.
 
 ## Adding an Agent
 
@@ -50,7 +52,3 @@ Dependency direction is strict and acyclic: `types.ts` → `config.ts` → `{dis
 2. Any new tool wiring belongs in `config.ts` as a table entry, not as a branch in the runner.
 3. Preserve the append-only shape of `progress.recentTools` and the `toolCallId` keying: a turn's tool calls are dispatched in parallel, so a single current-tool slot would lose events.
 4. Verify depth and allowlist propagation for both a scoped and an unscoped agent, since these are what confine a nested subagent tree.
-
-## Known Gap
-
-The widget's pi-pet only observes the parent's coarse `tool_execution_start`/`tool_execution_end` events for the `subagent` tool call, so it shows one pet per call. The richer per-agent state the runner tracks — tool names, token usage, nested children — is streamed to the tool's own renderer but is not surfaced to the widget.

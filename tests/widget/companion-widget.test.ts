@@ -7,6 +7,7 @@ import {
 	registerCompanionWidgetHost,
 	renderCompanionWidgetLines,
 } from "../../extensions/widget/index.ts";
+import { SUBAGENT_PROGRESS_EVENT } from "../../extensions/subagent/progress-events.ts";
 import { createDefaultWidgetConfig } from "../../extensions/widget/config.ts";
 import {
 	COMPANION_WIDGET_UPDATE_EVENT,
@@ -41,6 +42,7 @@ test("loads every companion component through one widget extension", () => {
 		events: {
 			on(event: string) {
 				sharedEventSubscriptions.push(event);
+				return () => {};
 			},
 			emit() {},
 		},
@@ -52,7 +54,7 @@ test("loads every companion component through one widget extension", () => {
 		},
 	} as never);
 
-	assert.deepEqual(sharedEventSubscriptions, [COMPANION_WIDGET_UPDATE_EVENT]);
+	assert.deepEqual(sharedEventSubscriptions, [COMPANION_WIDGET_UPDATE_EVENT, SUBAGENT_PROGRESS_EVENT]);
 	assert.deepEqual(commands.sort(), ["ctx", "widget"]);
 	assert.equal(eventHandlers.filter((event) => event === "session_start").length, 4);
 	assert.equal(eventHandlers.filter((event) => event === "session_shutdown").length, 3);
@@ -65,7 +67,7 @@ test("loads only widget components enabled by the widget interface", () => {
 	const commands: string[] = [];
 
 	createWidgetExtension({ config, configPath: "/tmp/widget-test.json" })({
-		events: { on() {}, emit() {} },
+		events: { on() { return () => {}; }, emit() {} },
 		on(event: string) {
 			eventHandlers.push(event);
 		},
