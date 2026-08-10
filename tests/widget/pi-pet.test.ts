@@ -147,22 +147,26 @@ test("publishes one persistent pet contribution with distinct lifecycle tones", 
 	} as never);
 
 	await handlers.get("session_start")?.({});
-	assert.equal(updates.at(-1)?.id, "pi-pet:art");
-	assert.equal(updates.at(-1)?.contribution?.tone, "text");
+	try {
+		assert.equal(updates.at(-1)?.id, "pi-pet:art");
+		assert.equal(updates.at(-1)?.contribution?.tone, "text");
 
-	await handlers.get("before_agent_start")?.({});
-	assert.equal(updates.at(-1)?.contribution?.tone, "accent");
+		await handlers.get("before_agent_start")?.({});
+		assert.equal(updates.at(-1)?.contribution?.tone, "accent");
 
-	await handlers.get("tool_execution_start")?.({});
-	assert.equal(updates.at(-1)?.contribution?.tone, "mdLink");
+		await handlers.get("tool_execution_start")?.({});
+		assert.equal(updates.at(-1)?.contribution?.tone, "mdLink");
 
-	await handlers.get("tool_execution_end")?.({ isError: true });
-	assert.equal(updates.at(-1)?.contribution?.tone, "mdHeading");
+		await handlers.get("tool_execution_end")?.({ isError: true });
+		assert.equal(updates.at(-1)?.contribution?.tone, "mdHeading");
 
-	await handlers.get("session_start")?.({});
-	await handlers.get("agent_settled")?.({});
-	assert.equal(updates.at(-1)?.contribution?.tone, "thinkingHigh");
-	assert.ok(updates.every((update) => update.id === "pi-pet:art"));
+		await handlers.get("session_start")?.({});
+		await handlers.get("agent_settled")?.({});
+		assert.equal(updates.at(-1)?.contribution?.tone, "thinkingHigh");
+		assert.ok(updates.every((update) => update.id === "pi-pet:art"));
+	} finally {
+		await handlers.get("session_shutdown")?.({});
+	}
 });
 
 test("starts animation after session lifecycle and stops publishing on shutdown", async () => {
