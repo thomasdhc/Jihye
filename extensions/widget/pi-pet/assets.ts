@@ -29,7 +29,7 @@ export interface PiPetAssetCatalog {
 }
 
 export const PI_PET_FRAME_WIDTH = 7;
-export const PI_PET_DEFAULT_ANIMATION_INTERVAL_MS = 500;
+export const PI_PET_DEFAULT_ANIMATION_INTERVAL_MS = 800;
 
 export function createPiPetModeAssets(rows: PiPetNamedRowFrameMaps): PiPetModeAssets {
 	return Object.fromEntries(
