@@ -102,9 +102,9 @@ test("advances top, face, and bottom arrays from the shared state tick", () => {
 	assert.equal(getPiPetStateCycleLength("working", undefined, assets), 12);
 });
 
-test("uses a 250ms default with state-level asset overrides", () => {
+test("uses a 500ms default with state-level asset overrides", () => {
 	assert.equal(PI_PET_ASSETS.defaultIntervalMs, PI_PET_DEFAULT_ANIMATION_INTERVAL_MS);
-	assert.equal(getPiPetAnimationInterval("working"), 250);
+	assert.equal(getPiPetAnimationInterval("working"), 500);
 
 	const overridden = {
 		...PI_PET_ASSETS,

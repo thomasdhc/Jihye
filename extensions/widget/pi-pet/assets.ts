@@ -29,7 +29,7 @@ export interface PiPetAssetCatalog {
 }
 
 export const PI_PET_FRAME_WIDTH = 7;
-export const PI_PET_DEFAULT_ANIMATION_INTERVAL_MS = 250;
+export const PI_PET_DEFAULT_ANIMATION_INTERVAL_MS = 500;
 
 export function createPiPetModeAssets(rows: PiPetNamedRowFrameMaps): PiPetModeAssets {
 	return Object.fromEntries(
@@ -51,11 +51,11 @@ function repeatPiPetElement(element: PiPetElement): PiPetStateFrameMap {
 }
 
 const CAT_FACES: PiPetStateFrameMap = {
-	idle: "( o˽o )",
-	thinking: "( ╸˽╺ )",
-	working: "( o˽o )",
-	success: "( ^‿^ )",
-	error: "( x⁔x )",
+	idle: ["( o˽o )", "( o˽o )", "( ȏ˽ȏ )", "( ȏ˽ȏ )"],
+	thinking: ["( ╸˽╺ )", "( ╸˽╺ )", "( ╴˽╶ )", "( ╴˽╶ )"],
+	working: ["( o˽o )", "( o˽o )", "( ȏ˽ȏ )", "( ȏ˽ȏ )"],
+	success: ["( ^‿^ )", "( ^‿^ )", "( ȏ‿ȏ )", "( ȏ‿ȏ )"],
+	error: ["( x⁔x )", "( x⁔x )", "( ╸⁔╺ )", "( ╸⁔╺ )"],
 };
 
 const DEFAULT_TOP = " /\\_/\\ ";
@@ -64,11 +64,11 @@ export const DEFAULT_PI_PET_ASSETS = createPiPetModeAssets({
 	top: repeatPiPetElement(DEFAULT_TOP),
 	face: CAT_FACES,
 	bottom: {
-		idle: " > ▵ < ",
+		idle: [" > ▵ < ", " > ▵ < ", " ▹ ▵ ◃ ", " ▹ ▵ ◃ "],
 		thinking: [" > 🬃 < ", " > 🬖 < ", " > 🬞 < ", " > 🬢 < "],
 		working: [" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "],
-		success: " > ★ < ",
-		error: " > ! < ",
+		success: [" > ★ < ", " > ★ < ", " ▹ ★ ◃ ", " ▹ ★ ◃ "],
+		error: [" > ! < ", " > ! < ", " ▹ ! ◃ ", " ▹ ! ◃ "],
 	},
 });
 
