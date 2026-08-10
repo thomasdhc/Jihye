@@ -82,9 +82,10 @@ test("global personas require the coordinate skill for complex delegation", () =
 	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
 		const persona = readPersona(path);
 		assert.match(persona, /Skip formal coordination for one bounded task or an obvious direct fan-out/);
-		assert.match(persona, /Otherwise, before the first subagent call, load and follow the `coordinate` skill/);
-		assert.match(persona, /multiple agent calls require decisions about delivery boundaries, dependencies, safe parallelism/);
-		assert.match(persona, /launch the first actionable parallel group immediately/);
+		assert.match(persona, /Otherwise, load and follow the `coordinate` skill before the first subagent call/);
+		assert.match(persona, /do not call a subagent before loading it/);
+		assert.match(persona, /Consider delivery boundaries, dependencies, safe parallelism/);
+		assert.match(persona, /Launch the first actionable parallel group immediately/);
 		assert.match(persona, /own integration, validation, and final synthesis/);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
 	}
