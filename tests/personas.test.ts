@@ -78,6 +78,15 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
 });
 
+test("global personas require complexity-aware delegation planning", () => {
+	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
+		const persona = readPersona(path);
+		assert.match(persona, /Before the first subagent call, evaluate delegation complexity/);
+		assert.match(persona, /multiple agent calls, parallel execution, or non-trivial sequencing/);
+		assert.match(persona, /Treat a coordinator plan as a skeleton to verify and adapt/);
+	}
+});
+
 test("merge requests and pull requests use strict title and description defaults", () => {
 	const git = readPersona("GIT.md");
 	assert.match(git, /Use Conventional Commit format for every merge request and pull request title/);

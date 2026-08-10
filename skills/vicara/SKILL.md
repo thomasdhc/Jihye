@@ -106,9 +106,9 @@ Use subagents when workstreams are independent, the repo is large, or a bounded 
 
 ### `coordinator`
 
-Use when a frontier branch is too broad for one scout but still bounded enough to hand off. A coordinator may delegate to `scout`, `researcher`, and `reviewer`, then return a synthesized branch-level finding.
+Use before delegation when the frontier contains several workstreams or has non-trivial dependencies, parallelism, isolation, or review sequencing. The coordinator returns an execution skeleton and ready-to-use briefs; the calling agent launches the planned specialists and owns synthesis.
 
-Good coordinator tasks include large subsystems, mixed local/external investigations, or comparing several opportunity signals in one broad area.
+Good coordinator tasks include planning exploration of large subsystems, mixed local/external investigations, or several opportunity signals that need efficient ordering.
 
 ### `scout`
 
@@ -166,12 +166,12 @@ Choose workstreams that can be investigated independently.
 
 Good delegation targets:
 
-- `coordinator`: a broad but bounded frontier branch that may need multiple sub-checks
+- `coordinator`: a set of frontier branches that needs a dependency-aware execution plan
 - `scout`: one repo-local area, capability, execution path, or repeated pattern
 - `researcher`: one external question suggested by repo evidence
 - `reviewer`: one specific opportunity claim that needs challenge
 
-Prefer several small, independent tasks over one broad task. Use a coordinator only when the branch genuinely needs nested orchestration.
+Prefer several small, independent tasks over one broad task. Use a coordinator only when planning complexity justifies the extra call; then launch independent specialist calls in parallel yourself.
 
 ### 3. Give bounded tasks
 
@@ -194,7 +194,7 @@ Return:
 5. Suggested report updates or next verification
 ```
 
-For `coordinator`, phrase the task as: "Coordinate investigation of <bounded frontier branch>. You may delegate to scouts/researchers/reviewers. Return synthesized opportunities, uncertainties, and recommended report updates."
+For `coordinator`, phrase the task as: "Plan investigation of <frontier branches>. Identify dependencies, parallel groups, specialist assignments, ready-to-use briefs, integration order, and validation gates. Do not delegate or investigate the branches yourself."
 
 Avoid handing off an unbounded "review everything" task.
 
@@ -279,7 +279,8 @@ Let the repo determine which categories matter.
 
 3. **Delegate and investigate**
    - Choose the frontier.
-   - Launch bounded coordinators, scouts, or researchers where useful.
+   - Ask a coordinator for an execution skeleton when the frontier has multiple or dependent streams.
+   - Launch the planned scouts or researchers, grouping independent calls in parallel.
    - Search and sample directly where the calling agent needs context.
 
 4. **Reconcile and review**

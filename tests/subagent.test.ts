@@ -29,28 +29,28 @@ test("loads portable bundled agent model specifications", () => {
 	assert.equal(byName.get("scout")?.modelTier, "standard");
 	assert.equal(byName.get("researcher")?.modelTier, "standard");
 	assert.equal(byName.get("reviewer")?.modelTier, "standard");
-	assert.equal(byName.get("coordinator")?.modelTier, "deep");
+	assert.equal(byName.get("coordinator")?.modelTier, "standard");
 	assert.equal(byName.get("engineer")?.modelTier, "deep");
 	assert.equal(byName.get("scout")?.thinking, "medium");
 	assert.equal(byName.get("researcher")?.thinking, "medium");
 	assert.equal(byName.get("reviewer")?.thinking, "medium");
-	assert.equal(byName.get("coordinator")?.thinking, "high");
+	assert.equal(byName.get("coordinator")?.thinking, "medium");
 	assert.equal(byName.get("engineer")?.thinking, "high");
 });
 
-test("keeps the bundled coordinator recursive but bounded", () => {
+test("keeps the bundled coordinator planning-only", () => {
 	const coordinator = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR])
 		.find((agent) => agent.name === "coordinator");
-	const reviewer = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR])
-		.find((agent) => agent.name === "reviewer");
 
 	assert.ok(coordinator);
-	assert.deepEqual(coordinator.tools, ["read", "grep", "find", "ls", "safe_bash", "subagent"]);
-	assert.deepEqual(coordinator.subagentAgents, ["scout", "researcher", "reviewer"]);
-	assert.ok(!coordinator.subagentAgents?.includes("coordinator"));
-	assert.ok(!coordinator.subagentAgents?.includes("engineer"));
-	assert.ok(reviewer);
-	assert.ok(!reviewer.tools.includes("subagent"));
+	assert.deepEqual(coordinator.tools, ["read", "grep", "find", "ls", "safe_bash"]);
+	assert.equal(coordinator.subagentAgents, undefined);
+	assert.ok(!coordinator.tools.includes("subagent"));
+	assert.match(coordinator.systemPrompt, /planning-only coordinator/);
+	assert.match(coordinator.systemPrompt, /Evaluate execution complexity/);
+	assert.match(coordinator.systemPrompt, /group calls that can run in the same turn/);
+	assert.match(coordinator.systemPrompt, /Return ready-to-use briefs/);
+	assert.match(coordinator.systemPrompt, /Do not call subagents/);
 });
 
 test("keeps the bundled reviewer bounded", () => {
