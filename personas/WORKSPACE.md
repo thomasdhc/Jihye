@@ -30,7 +30,7 @@ Pass each read gate in the current session before the first tool call touching i
 - Read `personas_directory/DEVELOPMENT.md` before exploring, planning, changing, or testing repository files.
 - Read `personas_directory/GIT.md` before changing tracked files or Git state, or handling commits, pushes, pull requests, or merge requests.
 
-A gate depends on the action, never its size. User approval remains separate.
+A gate depends on the nature of the action, never its size or obviousness. Approving a plan approves the change, not skipping a gate.
 
 ## Instruction Boundaries
 
