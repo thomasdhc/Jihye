@@ -197,6 +197,14 @@ function getSubagentPetContributionId(toolCallId: string): string {
 	return `${SUBAGENT_PET_ID_PREFIX}${toolCallId}`;
 }
 
+function shouldAnimatePiPetState(
+	state: PiPetState,
+	agentName: string | undefined,
+	assets: PiPetAssetCatalog,
+): boolean {
+	return state !== "idle" && isPiPetStateAnimated(state, agentName, assets);
+}
+
 export interface PiPetExtensionOptions {
 	resetToIdleMs?: number;
 	successResetToIdleMs?: number;
@@ -295,7 +303,7 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 		}
 
 		function ensureMainAnimation(): void {
-			if (!sessionActive || !isPiPetStateAnimated(runtime.state, undefined, assets)) {
+			if (!sessionActive || !shouldAnimatePiPetState(runtime.state, undefined, assets)) {
 				clearMainAnimation();
 				return;
 			}
@@ -307,7 +315,7 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 				key,
 				timer: setTimeout(() => {
 					mainAnimation = undefined;
-					if (!sessionActive || !isPiPetStateAnimated(runtime.state, undefined, assets)) return;
+					if (!sessionActive || !shouldAnimatePiPetState(runtime.state, undefined, assets)) return;
 					runtime.tick += 1;
 					publishMainPet();
 					ensureMainAnimation();
@@ -317,7 +325,7 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 
 		function ensureSubagentAnimation(toolCallId: string): void {
 			const pet = runtime.subagentPets.get(toolCallId);
-			if (!sessionActive || !pet || !isPiPetStateAnimated(pet.state, pet.agentName, assets)) {
+			if (!sessionActive || !pet || !shouldAnimatePiPetState(pet.state, pet.agentName, assets)) {
 				clearSubagentAnimation(toolCallId);
 				return;
 			}
@@ -330,7 +338,7 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 				timer: setTimeout(() => {
 					subagentAnimations.delete(toolCallId);
 					const current = runtime.subagentPets.get(toolCallId);
-					if (!sessionActive || !current || !isPiPetStateAnimated(current.state, current.agentName, assets)) return;
+					if (!sessionActive || !current || !shouldAnimatePiPetState(current.state, current.agentName, assets)) return;
 					current.tick += 1;
 					publishSubagentPet(toolCallId);
 					ensureSubagentAnimation(toolCallId);

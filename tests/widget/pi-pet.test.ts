@@ -202,7 +202,7 @@ test("publishes one persistent pet contribution with distinct lifecycle tones", 
 	}
 });
 
-test("starts animation after session lifecycle and stops publishing on shutdown", async () => {
+test("keeps idle static, animates active work, and stops publishing on shutdown", async () => {
 	type Handler = (event: unknown) => Promise<void> | void;
 	const handlers = new Map<string, Handler>();
 	const updates: CompanionWidgetUpdate[] = [];
@@ -238,6 +238,10 @@ test("starts animation after session lifecycle and stops publishing on shutdown"
 	assert.equal(updates.length, beforeSessionCount, "factory and pre-session events do not start timers");
 
 	await handlers.get("session_start")?.({});
+	const idleUpdateCount = updates.length;
+	await new Promise((resolve) => setTimeout(resolve, 8));
+	assert.equal(updates.length, idleUpdateCount, "idle pets must not produce recurring terminal output");
+
 	await handlers.get("tool_execution_start")?.({
 		toolName: "subagent",
 		toolCallId: "animated",

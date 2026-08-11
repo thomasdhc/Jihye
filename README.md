@@ -215,6 +215,8 @@ Current state mapping:
 | Agent settles successfully | `success` for 5 seconds, then `idle` |
 | Tool error / failed turn | `error` for 1.5 seconds, then `idle` |
 
+Idle pets render a fixed frame rather than scheduling animation updates. This lets background terminal activity indicators settle when Pi is waiting for input while preserving animation for active and reaction states.
+
 Pet artwork and frame dimensions live in `extensions/widget/pi-pet/assets.ts`. Each state has exact-width `top`, `face`, and `bottom` rows; animated rows share the state's tick and advance through their own modular cycles. Run `npm run preview:pi-pet` to inspect every sprite and lifecycle state inside visible frame boundaries; animation cycle counts appear beside state labels. Filter either preview mode to one sprite with `--sprite default` or a bundled subagent name:
 
 ```bash
