@@ -188,5 +188,13 @@ test("persona agents are the single current bundled definition set", () => {
 		assert.match(content, /^model_tier: (standard|deep)$/m);
 		assert.doesNotMatch(content, /^model: /m);
 	}
+	const reviewer = readFileSync(join(agentRoot, "reviewer.md"), "utf8");
+	assert.match(reviewer, /^alternate_model_tier: deep$/m);
+	assert.match(reviewer, /^provider_strategy: alternate$/m);
+	for (const file of ["engineer.md", "researcher.md", "scout.md"]) {
+		const content = readFileSync(join(agentRoot, file), "utf8");
+		assert.doesNotMatch(content, /^alternate_model_tier:/m);
+		assert.doesNotMatch(content, /^provider_strategy:/m);
+	}
 	assert.match(readFileSync(join(agentRoot, "engineer.md"), "utf8"), /thinking: high/);
 });

@@ -15,7 +15,12 @@ import {
 	PACKAGE_LOCAL_AGENTS_DIR,
 	USER_AGENTS_DIR,
 } from "./config.ts";
-import { isModelTier, type ModelTier } from "./models.ts";
+import {
+	isModelProviderStrategy,
+	isModelTier,
+	type ModelProviderStrategy,
+	type ModelTier,
+} from "./models.ts";
 import type { AgentConfig } from "./types.ts";
 
 let agents: AgentConfig[] = [];
@@ -105,12 +110,22 @@ function loadAgentDirectory(directory: string): AgentConfig[] {
 		if (rawModelTier && !isModelTier(rawModelTier)) {
 			throw new Error(`Invalid model_tier "${rawModelTier}" for agent "${frontmatter.name}" in ${filePath}`);
 		}
+		const rawAlternateModelTier = (frontmatter as Record<string, string>).alternate_model_tier;
+		if (rawAlternateModelTier && !isModelTier(rawAlternateModelTier)) {
+			throw new Error(`Invalid alternate_model_tier "${rawAlternateModelTier}" for agent "${frontmatter.name}" in ${filePath}`);
+		}
+		const rawProviderStrategy = (frontmatter as Record<string, string>).provider_strategy;
+		if (rawProviderStrategy && !isModelProviderStrategy(rawProviderStrategy)) {
+			throw new Error(`Invalid provider_strategy "${rawProviderStrategy}" for agent "${frontmatter.name}" in ${filePath}`);
+		}
 		loadedAgents.push({
 			name: frontmatter.name,
 			description,
 			tools,
 			model: frontmatter.model || undefined,
 			modelTier: rawModelTier as ModelTier | undefined,
+			alternateModelTier: rawAlternateModelTier as ModelTier | undefined,
+			providerStrategy: rawProviderStrategy as ModelProviderStrategy | undefined,
 			thinking: frontmatter.thinking || DEFAULT_AGENT_THINKING,
 			systemPrompt: body,
 			filePath,

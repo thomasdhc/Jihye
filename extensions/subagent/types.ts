@@ -4,7 +4,7 @@
  * Leaf module: describes the agent definitions, live progress, and results
  * exchanged between discovery, the runner, the renderer, and the tool wiring.
  */
-import type { ModelTier } from "./models.ts";
+import type { ModelProviderStrategy, ModelTier } from "./models.ts";
 
 export interface AgentConfig {
 	name: string;
@@ -15,8 +15,12 @@ export interface AgentConfig {
 	 * definitions so the tier decides per provider at spawn time.
 	 */
 	model?: string;
-	/** Capability tier used to select a model for the active provider. */
+	/** Baseline capability tier used with the parent provider. */
 	modelTier?: ModelTier;
+	/** Optional capability tier used when alternate-provider selection is enabled. */
+	alternateModelTier?: ModelTier;
+	/** Whether model selection may use the parent provider's configured alternate. */
+	providerStrategy?: ModelProviderStrategy;
 	thinking: string;
 	systemPrompt: string;
 	filePath: string;
@@ -89,6 +93,8 @@ export interface Details {
 
 export interface ExtensionConfig {
 	maxConcurrency?: number;
+	/** Opt into frontmatter alternate-provider strategies on this workstation. */
+	enableAlternateProviders?: boolean;
 	/** Partial override of the bundled provider tier maps. */
 	modelProfiles?: unknown;
 }

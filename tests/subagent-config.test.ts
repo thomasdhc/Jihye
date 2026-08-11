@@ -24,9 +24,18 @@ test("treats a missing config file as no configuration", () => {
 test("loads settings from a valid config file", () => {
 	withTempDir((dir) => {
 		const configPath = join(dir, "config.json");
-		writeFileSync(configPath, JSON.stringify({ maxConcurrency: 7 }));
+		writeFileSync(configPath, JSON.stringify({ maxConcurrency: 7, enableAlternateProviders: true }));
 
-		assert.deepEqual(loadConfig(configPath), { maxConcurrency: 7 });
+		assert.deepEqual(loadConfig(configPath), { maxConcurrency: 7, enableAlternateProviders: true });
+	});
+});
+
+test("rejects a non-boolean alternate-provider setting", () => {
+	withTempDir((dir) => {
+		const configPath = join(dir, "config.json");
+		writeFileSync(configPath, JSON.stringify({ enableAlternateProviders: "yes" }));
+
+		assert.throws(() => loadConfig(configPath), /enableAlternateProviders must be a boolean/);
 	});
 });
 

@@ -109,37 +109,54 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 
 ### `subagent` agent definitions
 
-Portable default definitions are tracked in `personas/subagents/`. They declare a capability tier instead of a fixed model, so the same definitions follow whichever provider backs the parent session:
+Portable default definitions are tracked in `personas/subagents/`. They declare baseline and optional alternate capability tiers instead of fixed models:
 
-| Agent | Tier | Thinking |
-|---|---|---|
-| `scout` | standard | medium |
-| `researcher` | standard | medium |
-| `reviewer` | standard | medium |
-| `engineer` | deep | high |
+| Agent | Baseline tier | Opt-in alternate tier | Thinking |
+|---|---|---|---|
+| `scout` | standard | — | medium |
+| `researcher` | standard | — | medium |
+| `reviewer` | standard | deep | medium |
+| `engineer` | deep | — | high |
 
-Tier maps live in `extensions/subagent/model-profiles.json`:
+Alternate-provider selection is disabled by default. Without a local override, the reviewer stays on the parent provider's standard tier: OpenAI Codex uses `gpt-5.6-sol`, while Anthropic uses `claude-sonnet-5`.
 
-| Provider | standard | deep |
-|---|---|---|
-| `openai-codex` | `gpt-5.6-sol` | `gpt-5.6-sol` |
-| `anthropic` | `claude-sonnet-5` | `claude-opus-5` |
+Enable alternate-provider selection on one workstation by creating the gitignored `extensions/subagent/config.json`:
+
+```json
+{
+  "enableAlternateProviders": true
+}
+```
+
+No Pi startup flag is required. After changing the file, run `/reload` in existing sessions; newly started sessions load it automatically. When enabled, the reviewer uses its deep alternate tier: an OpenAI or OpenAI Codex parent routes to `anthropic/claude-opus-5`, while an Anthropic parent routes to `openai-codex/gpt-5.6-sol`. Other bundled agents continue to use the parent provider.
+
+Tier and alternate-provider maps live in `extensions/subagent/model-profiles.json`:
+
+| Provider | standard | deep | Alternate when parent |
+|---|---|---|---|
+| `openai-codex` | `gpt-5.6-sol` | `gpt-5.6-sol` | `anthropic` |
+| `anthropic` | `claude-sonnet-5` | `claude-opus-5` | `openai-codex` |
 
 A model is resolved per spawn in this order:
 
 1. an explicit `model` in agent frontmatter, so an override can pin one model exactly;
-2. the tier entry for the parent session's provider;
-3. the parent session's own active model, when its provider has no tier map;
-4. the default provider's tier entry, when no active model is known.
+2. when `enableAlternateProviders` is `true`, `provider_strategy` is `alternate`, and the parent provider has a route, the `alternate_model_tier` entry for the routed provider;
+3. the baseline `model_tier` entry for the parent session's provider;
+4. the parent session's own active model, when its provider has no tier or enabled alternate map;
+5. the baseline tier entry of the default provider, when no active model is known.
 
-Override the maps per workstation in the untracked `extensions/subagent/config.json`. Existing providers may override a single tier; a new provider must supply both:
+The same workstation config may override model maps. Existing providers may override a single tier; a new provider must supply both. Alternate routes must target a configured provider:
 
 ```json
 {
+  "enableAlternateProviders": true,
   "modelProfiles": {
     "providers": {
       "anthropic": { "deep": "anthropic/claude-opus-4-8" },
       "google": { "standard": "google/gemini-3-flash", "deep": "google/gemini-3-pro" }
+    },
+    "alternateProviders": {
+      "anthropic": "google"
     }
   }
 }

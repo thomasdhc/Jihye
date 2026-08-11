@@ -7,6 +7,9 @@
 # Real API keys
 **/auth.json
 
+# Workstation-specific extension settings
+extensions/subagent/config.json
+
 # misc
 .DS_Store
 coverage/
