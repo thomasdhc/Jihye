@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -15,6 +15,15 @@ function skillFiles(directory = SKILLS_ROOT): string[] {
 		else if (entry === "SKILL.md") files.push(path);
 	}
 	return files;
+}
+
+function headings(content: string): string[] {
+	const prose = content.replace(/```[\s\S]*?```/g, "");
+	return [...prose.matchAll(/^##+\s+(.+)$/gm)].map((match) => match[1]!);
+}
+
+function assertTerms(content: string, terms: RegExp[], subject: string): void {
+	for (const term of terms) assert.match(content, term, `${subject}: ${term}`);
 }
 
 test("skills have valid identifying frontmatter", () => {
@@ -37,42 +46,83 @@ test("skills have valid identifying frontmatter", () => {
 	]);
 });
 
-test("coordinate conducts complex delegation without a planning-only handoff", () => {
+test("coordinate preserves its execution-skeleton algorithm", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "coordinate", "SKILL.md"), "utf8");
-	const description = content.match(/^description: (.+)$/m)?.[1] ?? "";
-
-	assert.match(description, /multi-stream or dependency-heavy work/);
-	assert.match(description, /multiple subagent calls require decisions about dependencies, delivery boundaries, safe parallelism/);
-	assert.match(description, /Skip one bounded task and obvious independent direct fan-out/);
-	assert.match(content, /Outcomes and delivery boundaries/);
-	assert.match(content, /Keep separate outcomes on separate branch, worktree, and pull-request boundaries/);
-	assert.match(content, /keep one outcome's implementation, tests, and supporting documentation together/);
-	assert.match(content, /Likely calls/);
-	assert.match(content, /Dependencies/);
-	assert.match(content, /Safe parallel groups/);
-	assert.match(content, /Shared files and resources/);
-	assert.match(content, /Worktree isolation/);
-	assert.match(content, /Approval gates/);
-	assert.match(content, /Integration and validation/);
-	assert.match(content, /Immediately after identifying the skeleton, launch the first actionable parallel group in the same turn/);
-	assert.match(content, /The parent agent conducts the work/);
+	assert.deepEqual(headings(content), ["Build the Execution Skeleton", "Run the Skeleton"]);
+	assertTerms(content, [
+		/Context and Delegation/,
+		/main-agent context/i,
+		/acceptance invariant/i,
+		/delivery boundar/i,
+		/safe parallel/i,
+		/worktree isolation/i,
+		/approval or read gate/i,
+		/integration and validation/i,
+		/first actionable parallel group/i,
+	], "coordinate semantics");
 	assert.doesNotMatch(content, /\bcoordinator\b/i);
 });
 
-test("vicara uses parent-led coordination", () => {
+test("examen preserves introduced-defect and submission semantics", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "examen", "SKILL.md"), "utf8");
+	for (const section of ["Review the Target", "Apply the Finding Gate", "Assign Priority and Verdict", "Return the Draft", "Submit and Verify"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/\bFidelity\b/,
+		/\bEntrypoint\b/,
+		/\bSafety\b/,
+		/introduced regression/i,
+		/realistic event, input, configuration, or caller/i,
+		/\[P0\]/,
+		/\[P1\]/,
+		/\[P2\]/,
+		/\[P3\]/,
+		/current head SHA/i,
+		/references\/platforms\.md/,
+	], "examen semantics");
+	assert.match(content, /\[P2\] Findings:[^\n]*Proposal:/, "inline finding contract");
+});
+
+test("vicara preserves evidence gates and resumable reporting", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "vicara", "SKILL.md"), "utf8");
-	assert.match(content, /load and follow the `coordinate` skill before the first subagent call/);
-	assert.match(content, /build the execution skeleton in the calling agent's context/);
-	assert.match(content, /immediately launch its first actionable group/);
+	for (const section of ["Resume the Investigation", "Map and Investigate", "Apply the Finding Gate", "Rank and Update the Report", "Return"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/\bSolution Architecture\b/,
+		/follow the `coordinate` skill/i,
+		/finding gate/i,
+		/decisive support/i,
+		/reviewer challenge/i,
+		/Frontier/,
+		/Needs More Investigation/,
+		/references\/report\.md/,
+	], "vicara semantics");
 	assert.doesNotMatch(content, /\bcoordinator\b/i);
+
+	const reportPath = join(SKILLS_ROOT, "vicara", "references", "report.md");
+	assert.ok(existsSync(reportPath));
+	const report = readFileSync(reportPath, "utf8");
+	for (const section of ["Destination", "Repo Snapshot", "Frontier", "Opportunities", "Needs More Investigation", "Out of Scope", "Session Notes"]) {
+		assert.match(report, new RegExp(`^## ${section}$`, "m"), `report: ${section}`);
+	}
 });
 
-test("review-guidance requires a narrow subject scope", () => {
+test("review-guidance preserves a narrow subject and evidence threshold", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "review-guidance", "SKILL.md"), "utf8");
-	assert.match(content, /scope is required/i);
-	assert.match(content, /most-specific guidance/i);
-	assert.match(content, /parent guidance files are references/i);
-	assert.match(content, /Do not review unrelated Markdown files/i);
+	for (const section of ["Resolve the Subject and Instruction Boundary", "Inspect the Subject", "Apply the Finding Gate", "Return the Verdict"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/most-specific governing guidance/i,
+		/parent guidance files as references/i,
+		/instruction boundary/i,
+		/finding gate/i,
+		/verdict/i,
+		/remains read-only/i,
+	], "review-guidance semantics");
+	assert.match(content, /do not[^\n]*unrelated Markdown/i, "review scope excludes unrelated documentation");
 });
 
 test("skills remain portable and never instruct autonomous commits", () => {

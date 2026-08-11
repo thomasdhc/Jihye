@@ -2,54 +2,39 @@
 
 ## Safety and Branching
 
-- Check the current branch and status before changing a repository.
-- Ask before moving pre-existing changes between branches. Never stash, reset, discard, or overwrite them without approval.
-- Unless the user directs a different base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`, using the branch namespace from workspace-root `USERNAME.md`.
-- Never assume local `main` is current, and do not develop directly on `main`.
-- If the latest remote `main` cannot be fetched, ask before using another base.
-- Keep distinct features or independently deliverable outcomes on separate branches and pull requests; do not combine them merely because one change is small. Keep an outcome's implementation, tests, and supporting documentation together.
-- Use a separate Git worktree when concurrent work or isolation would prevent interference with the canonical checkout.
-- Keep the canonical checkout untouched and use the isolated-worktree location configured in workspace-root `REPO.md`.
-- Inspect repository and worktree state before creating, integrating, moving, or removing work. Never stash, reset, overwrite, or discard existing changes, and never remove a worktree containing uncommitted or untracked work.
-- When the user asks to commit or prepare isolated work for pushing, commit it on its branch in the worktree, then remove the clean worktree and switch the clean canonical checkout to that branch; the repository is shared, so never copy files between them.
+- Keep Git work aligned with Fidelity and the prompt boundary established at Entrypoint.
+- Inspect branch, status, and worktrees before changing tracked files or Git state.
+- Pass an approval gate before moving pre-existing changes between branches. Never stash, reset, discard, overwrite, or destroy them without explicit approval.
+- Unless the user names a base, fetch `origin` and branch from updated `origin/main` as `<username>/<feature>` using workspace-root `USERNAME.md`.
+- Never develop on `main` or assume local `main` is current. Ask before another base when `origin/main` cannot be fetched.
+- Give each independently deliverable outcome a delivery boundary, keeping its implementation, tests, and supporting documentation together.
+- Use a configured isolated worktree when concurrency or isolation requires it; keep the canonical checkout untouched.
+- Inspect state before creating, integrating, moving, or removing worktrees. Never remove one with uncommitted or untracked files.
+- To prepare isolated work for pushing, commit in its worktree, remove it only when clean, then switch the clean canonical checkout to that branch. Never copy files between them.
 
 ## Staging, Commits, and Pushing
 
-- Validate the change, stage only the task's files, review the staged diff, and commit automatically unless the user asks otherwise.
-- Prefer additional follow-up commits over amending existing commits. Amend only when the user explicitly asks.
-- Use the applicable commit command configured in workspace-root `USERNAME.md` so required signing and attribution are preserved.
-- Never push. Pushing is delegated to the user; provide a ready-to-run push command instead.
+- Validate, stage only prompt-boundary files, review the staged diff, and commit unless directed otherwise.
+- Prefer a follow-up commit; amend only with explicit approval.
+- Use the agent commit command from workspace-root `USERNAME.md`.
+- Never push. Provide a ready-to-run push command.
 
 ## Commit Messages
 
-Use Conventional Commit style:
+Use Conventional Commit format: `<type>(<optional-scope>): <message>`.
 
-```text
-<type>(<optional-scope>): <message>
-```
-
-Supported primary types include:
-
-- `feat`: new behavior or capability
-- `fix`: bug fix
-- `docs`: documentation-only change
-- `ci`: CI or build change
-
-Use another Conventional Commit type only when it describes the change more accurately.
+Use `feat` for capabilities, `fix` for bugs, `docs` for documentation, and `ci` for automation; use another type only when more accurate.
 
 ## Merge Requests and Pull Requests
 
-When the user asks to open a merge request or pull request, fetch `origin` and verify whether the current branch exists remotely before claiming that it needs to be pushed. If it exists, create the request directly; otherwise, provide the ready-to-run push command and resume creation after the user confirms the push.
+- Fetch `origin` and check whether the branch exists remotely before deciding a push is required.
+- Create a requested merge or pull request only for an existing remote branch; otherwise provide a push command and wait.
+- Use Conventional Commit request titles unless the user explicitly requests otherwise.
+- Check for a request template before drafting or updating a description. Show its headings and checklists and agree on the format first.
+- Update an existing request only when asked, using the repository CLI or API, then verify it. If none exists or access is unavailable, provide a draft and state the limitation.
+- If `gh pr edit` fails on deprecated Projects Classic APIs, upgrade GitHub CLI to 2.82.1 or newer before retrying.
 
-Use Conventional Commit format for every merge request and pull request title: `<type>(<optional-scope>): <message>`. Follow the same type rules as commit messages. Do not use a plain prose title unless the user explicitly requests it.
-
-Before drafting or updating a merge request or pull request description, look for a repository-owned template. Check that candidate template files or directories exist before reading or searching them. If one exists, show its headings and checklists to the user and agree with them how to format the description before proceeding.
-
-When the user asks to add or update a description, update the open MR or PR for the current branch directly with the repository's CLI or API and verify the result. If no open MR or PR exists, or access is unavailable, provide the drafted description and state the limitation. Do not create an MR or PR unless the user asks.
-
-If `gh pr edit` fails while querying deprecated Projects Classic APIs, upgrade to GitHub CLI 2.82.1 or newer before retrying.
-
-When no repository template exists, use only:
+Without a repository template, use only:
 
 ```markdown
 ## Summary
@@ -57,7 +42,7 @@ When no repository template exists, use only:
 - <optional second change>
 
 ## Why
-<brief motivation or problem being addressed>
+<brief motivation>
 ```
 
-Keep the summary to one or two concise bullets. Do not add other headings, checklists, validation notes, or supporting sections unless the user explicitly requests them.
+Keep the summary to one or two bullets. Add nothing else unless explicitly requested.

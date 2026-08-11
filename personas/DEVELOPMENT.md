@@ -1,19 +1,18 @@
 # Development Workflow
 
-## Repository Orientation
+## Repository Orientation Read Gate
 
-Before exploring or changing a repository:
+Before touching repository files:
 
-1. Locate its canonical checkout using workspace-root `REPO.md`.
-2. Scan the matching project todo file, when one exists, for active work and long-term direction. Use the available todo workflow or skill when maintaining it.
-3. Read the repository's own instruction files and relevant README, contributing, build, and CI documentation.
+1. Locate the checkout through workspace-root `REPO.md`.
+2. Scan its project todo when present; load the todo workflow before editing it.
+3. Read governing repository instructions and relevant project, build, and CI documentation.
 
-Discover current checkouts from the filesystem rather than relying on a manually maintained repository index.
+Use this evidence to complete Entrypoint and constrain Solution Architecture before selecting a change. Treat configured workspace roots as source-of-truth boundaries. Discover current checkouts within them rather than keeping a reusable repository index.
 
 ## Validation
 
-- Find and follow the repository's established commands and nearby implementation patterns.
-- Run repository-provided commands from the repository root unless documented otherwise. For cross-repository invocations, use an explicit working-directory or prefix option rather than relying on the harness's current directory.
-- Run the narrowest relevant checks while iterating, then the broader validation required by the repository before committing.
-- Keep generated output and ordinary scratch files in the locations configured by workspace-root `REPO.md`.
-- Report commands run, results, and any checks that could not be completed.
+- Follow repository commands and established patterns; run from its root or specify the working directory.
+- Run the narrowest relevant check while iterating, then every required broader check before handoff.
+- Keep generated and scratch output where `REPO.md` directs.
+- Report commands, results, and checks that could not run.
