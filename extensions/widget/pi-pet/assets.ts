@@ -65,7 +65,7 @@ export const DEFAULT_PI_PET_ASSETS = createPiPetModeAssets({
 	face: CAT_FACES,
 	bottom: {
 		idle: [" > ▵ < ", " > ▵ < ", " ▹ ▵ ◃ ", " ▹ ▵ ◃ "],
-		thinking: [" > / < ", " > - < ", " > \\ < ", " > | < "],
+		thinking: [" > 🬃 < ", " > 🬖 < ", " > 🬞 < ", " > 🬢 < "],
 		working: [" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "],
 		success: [" > ★ < ", " > ★ < ", " ▹ ★ ◃ ", " ▹ ★ ◃ "],
 		error: [" > ! < ", " > ! < ", " ▹ ! ◃ ", " ▹ ! ◃ "],
@@ -84,7 +84,7 @@ export const SUBAGENT_PI_PET_ASSETS = {
 		},
 		bottom: {
 			idle: " / V \\ ",
-			thinking: [" / . \\ ", " / o \\ ", " / O \\ ", " / o \\ "],
+			thinking: [" / 🬃 \\ ", " / 🬖 \\ ", " / 🬞 \\ ", " / 🬢 \\ "],
 			working: [" / ◴ \\ ", " / ◷ \\ ", " / ◶ \\ ", " / ◵ \\ "],
 			success: [" / ▾ \\ ", " / ▾ \\ ", " / ▾ \\ ", " / ▾ \\ "],
 			error: [" / ! \\ ", " / ! \\ ", " / ! \\ ", " / ! \\ "],
@@ -101,7 +101,7 @@ export const SUBAGENT_PI_PET_ASSETS = {
 		},
 		bottom: {
 			idle: " /╭=⚟\\ ",
-			thinking: [" /╭.⚟\\ ", " /╭o⚟\\ ", " /╭O⚟\\ ", " /╭o⚟\\ "],
+			thinking: [" /╭🬃⚟\\ ", " /╭🬖⚟\\ ", " /╭🬞⚟\\ ", " /╭🬢⚟\\ "],
 			working: [" /╭◴⚟\\ ", " /╭◷ \\ ", " /╭◶ \\ ", " /╭◵⚟\\ "],
 			success: [" /╭▾⚟\\ ", " /╭▾⚟\\ ", " /╭▾⚟\\ ", " /╭▾⚟\\ "],
 			error: [" /╭!⚟\\ ", " /╭!⚟\\ ", " /╭!⚟\\ ", " /╭!⚟\\ "],
@@ -118,8 +118,8 @@ export const SUBAGENT_PI_PET_ASSETS = {
 		},
 		bottom: {
 			idle: " /___\\ ",
-			thinking: [" / . \\ ", " / o \\ ", " / O \\ ", " / o \\ "],
-			working: [" / □ \\ ", " / ▫ \\ ", " / ■ \\ ", " / ▫ \\ "],
+			thinking: [" / 🬃 \\ ", " / 🬖 \\ ", " / 🬞 \\ ", " / 🬢 \\ "],
+			working: [" / 🞐 \\ ", " / 🞎 \\ ", " / 🞓 \\ ", " / 🞎 \\ "],
 			success: " /___\\ ",
 			error: " /___\\ ",
 		},
@@ -129,7 +129,7 @@ export const SUBAGENT_PI_PET_ASSETS = {
 		face: CAT_FACES,
 		bottom: {
 			idle: " ⊑   ⊒ ",
-			thinking: [" ⊑ / ⊒ ", " ⊑ - ⊒ ", " ⊑ \\ ⊒ ", " ⊑ | ⊒ "],
+			thinking: [" ⊑ 🬃 ⊒ ", " ⊑ 🬖 ⊒ ", " ⊑ 🬞 ⊒ ", " ⊑ 🬢 ⊒ "],
 			working: [" ⊑∿∼∿⊒ ", " ⊑∼∿∼⊒ "],
 			success: [" ⊑∼∻∼⊒ ", " ⊑∻∼∻⊒ "],
 			error: [" ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ "],
