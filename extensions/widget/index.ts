@@ -14,11 +14,19 @@ import piPetExtension from "./pi-pet/extension.ts";
 import { registerWidgetSettings } from "./settings.ts";
 import { createSessionIdentityExtension } from "./session-identity/index.ts";
 import {
+	COMPANION_WIDGET_TERMINAL_FOCUS_EVENT,
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetContribution,
 	type CompanionWidgetTone,
 	type CompanionWidgetUpdate,
 } from "./api.ts";
+import {
+	DISABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE,
+	ENABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE,
+	parseTerminalFocusInput,
+	shouldEnableTerminalFocusReporting,
+	type TerminalEnvironment,
+} from "./terminal-focus.ts";
 
 const WIDGET_ID = "companion-widget";
 const COLUMN_GAP = 2;
@@ -78,8 +86,20 @@ export function renderCompanionWidgetLines(
 	});
 }
 
-export function registerCompanionWidgetHost(pi: ExtensionAPI): void {
+export interface CompanionWidgetHostOptions {
+	environment?: TerminalEnvironment;
+	writeTerminal?: (sequence: string) => void;
+}
+
+export function registerCompanionWidgetHost(
+	pi: ExtensionAPI,
+	options: CompanionWidgetHostOptions = {},
+): void {
 	const contributions = new Map<string, CompanionWidgetContribution>();
+	const environment = options.environment ?? process.env;
+	const writeTerminal = options.writeTerminal ?? ((sequence: string) => {
+		process.stdout.write(sequence);
+	});
 	let requestRender: (() => void) | undefined;
 
 	pi.events.on(COMPANION_WIDGET_UPDATE_EVENT, (update: CompanionWidgetUpdate) => {
@@ -94,6 +114,21 @@ export function registerCompanionWidgetHost(pi: ExtensionAPI): void {
 			WIDGET_ID,
 			(tui, theme) => {
 				requestRender = () => tui.requestRender();
+				const focusReportingEnabled = shouldEnableTerminalFocusReporting(environment)
+					&& typeof tui.addInputListener === "function";
+				const removeFocusInputListener = focusReportingEnabled
+					? tui.addInputListener((data) => {
+						const focusInput = parseTerminalFocusInput(data);
+						if (!focusInput) return undefined;
+						pi.events.emit(COMPANION_WIDGET_TERMINAL_FOCUS_EVENT, { focused: focusInput.focused });
+						return focusInput.data ? { data: focusInput.data } : { consume: true };
+					})
+					: undefined;
+				if (focusReportingEnabled) {
+					writeTerminal(ENABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE);
+					// Interactive startup and reload commands originate in the focused terminal.
+					pi.events.emit(COMPANION_WIDGET_TERMINAL_FOCUS_EVENT, { focused: true });
+				}
 				return {
 					render(width: number) {
 						return renderCompanionWidgetLines(contributions.values(), (tone, text) => theme.fg(tone, text), width).map(
@@ -103,6 +138,11 @@ export function registerCompanionWidgetHost(pi: ExtensionAPI): void {
 					invalidate() {},
 					dispose() {
 						requestRender = undefined;
+						removeFocusInputListener?.();
+						if (focusReportingEnabled) {
+							writeTerminal(DISABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE);
+							pi.events.emit(COMPANION_WIDGET_TERMINAL_FOCUS_EVENT, { focused: false });
+						}
 					},
 				};
 			},

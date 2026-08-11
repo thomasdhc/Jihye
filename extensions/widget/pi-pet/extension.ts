@@ -7,6 +7,8 @@ import {
 	type SubagentProgressPhase,
 } from "../../subagent/progress-events.ts";
 import {
+	COMPANION_WIDGET_TERMINAL_FOCUS_EVENT,
+	isCompanionWidgetTerminalFocus,
 	removeCompanionWidgetContribution,
 	updateCompanionWidget,
 	type CompanionWidgetTone,
@@ -201,8 +203,9 @@ function shouldAnimatePiPetState(
 	state: PiPetState,
 	agentName: string | undefined,
 	assets: PiPetAssetCatalog,
+	animateIdle: boolean,
 ): boolean {
-	return state !== "idle" && isPiPetStateAnimated(state, agentName, assets);
+	return (state !== "idle" || animateIdle) && isPiPetStateAnimated(state, agentName, assets);
 }
 
 export interface PiPetExtensionOptions {
@@ -225,6 +228,7 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 		const resetToIdleMs = options.resetToIdleMs ?? RESET_TO_IDLE_MS;
 		const successResetToIdleMs = options.successResetToIdleMs ?? SUCCESS_RESET_TO_IDLE_MS;
 		let sessionActive = false;
+		let animateIdle = false;
 		let resetTimer: ReturnType<typeof setTimeout> | undefined;
 		let mainAnimation: ScheduledAnimation | undefined;
 		const subagentRemovalTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -236,6 +240,11 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 			applyPiPetEvent(runtime, "subagent_progress", payload);
 			publishSubagentPet(payload.toolCallId);
 			ensureSubagentAnimation(payload.toolCallId);
+		});
+		const unsubscribeTerminalFocus = pi.events.on(COMPANION_WIDGET_TERMINAL_FOCUS_EVENT, (payload) => {
+			if (!isCompanionWidgetTerminalFocus(payload)) return;
+			animateIdle = payload.focused;
+			syncAnimationTimers();
 		});
 
 		function animationInterval(state: PiPetState, agentName?: string): number {
@@ -303,7 +312,10 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 		}
 
 		function ensureMainAnimation(): void {
-			if (!sessionActive || !shouldAnimatePiPetState(runtime.state, undefined, assets)) {
+			if (
+				!sessionActive
+				|| !shouldAnimatePiPetState(runtime.state, undefined, assets, animateIdle)
+			) {
 				clearMainAnimation();
 				return;
 			}
@@ -315,7 +327,10 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 				key,
 				timer: setTimeout(() => {
 					mainAnimation = undefined;
-					if (!sessionActive || !shouldAnimatePiPetState(runtime.state, undefined, assets)) return;
+					if (
+						!sessionActive
+						|| !shouldAnimatePiPetState(runtime.state, undefined, assets, animateIdle)
+					) return;
 					runtime.tick += 1;
 					publishMainPet();
 					ensureMainAnimation();
@@ -325,7 +340,11 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 
 		function ensureSubagentAnimation(toolCallId: string): void {
 			const pet = runtime.subagentPets.get(toolCallId);
-			if (!sessionActive || !pet || !shouldAnimatePiPetState(pet.state, pet.agentName, assets)) {
+			if (
+				!sessionActive
+				|| !pet
+				|| !shouldAnimatePiPetState(pet.state, pet.agentName, assets, animateIdle)
+			) {
 				clearSubagentAnimation(toolCallId);
 				return;
 			}
@@ -338,7 +357,11 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 				timer: setTimeout(() => {
 					subagentAnimations.delete(toolCallId);
 					const current = runtime.subagentPets.get(toolCallId);
-					if (!sessionActive || !current || !shouldAnimatePiPetState(current.state, current.agentName, assets)) return;
+					if (
+						!sessionActive
+						|| !current
+						|| !shouldAnimatePiPetState(current.state, current.agentName, assets, animateIdle)
+					) return;
 					current.tick += 1;
 					publishSubagentPet(toolCallId);
 					ensureSubagentAnimation(toolCallId);
@@ -428,7 +451,9 @@ export function createPiPetExtension(options: PiPetExtensionOptions = {}) {
 
 		pi.on("session_shutdown", async () => {
 			sessionActive = false;
+			animateIdle = false;
 			unsubscribeSubagentProgress();
+			unsubscribeTerminalFocus();
 			clearResetTimer();
 			clearMainAnimation();
 			clearSubagentPets(true);

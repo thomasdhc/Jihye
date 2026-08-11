@@ -10,7 +10,11 @@ import {
 	renderPiPetStateLines,
 } from "../../extensions/widget/pi-pet/extension.ts";
 import { SUBAGENT_PROGRESS_EVENT } from "../../extensions/subagent/progress-events.ts";
-import { COMPANION_WIDGET_UPDATE_EVENT, type CompanionWidgetUpdate } from "../../extensions/widget/api.ts";
+import {
+	COMPANION_WIDGET_TERMINAL_FOCUS_EVENT,
+	COMPANION_WIDGET_UPDATE_EVENT,
+	type CompanionWidgetUpdate,
+} from "../../extensions/widget/api.ts";
 import {
 	PI_PET_ASSETS,
 	SUBAGENT_PI_PET_ASSETS,
@@ -22,6 +26,7 @@ const TEST_ANIMATION_ASSETS = {
 	...PI_PET_ASSETS,
 	default: {
 		...PI_PET_ASSETS.default,
+		idle: { elements: ["topline", "middle!", ["idle-00", "idle-01"]] },
 		working: { elements: ["topline", "middle!", ["frame-a", "frame-b"]] },
 	},
 	subagents: {
@@ -202,7 +207,7 @@ test("publishes one persistent pet contribution with distinct lifecycle tones", 
 	}
 });
 
-test("keeps idle static, animates active work, and stops publishing on shutdown", async () => {
+test("animates idle only while focused and keeps active work animated in the background", async () => {
 	type Handler = (event: unknown) => Promise<void> | void;
 	const handlers = new Map<string, Handler>();
 	const updates: CompanionWidgetUpdate[] = [];
@@ -238,19 +243,43 @@ test("keeps idle static, animates active work, and stops publishing on shutdown"
 	assert.equal(updates.length, beforeSessionCount, "factory and pre-session events do not start timers");
 
 	await handlers.get("session_start")?.({});
-	const idleUpdateCount = updates.length;
+	const unfocusedIdleCount = updates.length;
 	await new Promise((resolve) => setTimeout(resolve, 8));
-	assert.equal(updates.length, idleUpdateCount, "idle pets must not produce recurring terminal output");
+	assert.equal(updates.length, unfocusedIdleCount, "unfocused idle pets must not produce recurring terminal output");
+
+	await handlers.get(COMPANION_WIDGET_TERMINAL_FOCUS_EVENT)?.({ focused: true });
+	const focusedIdleCount = updates.length;
+	await new Promise((resolve) => setTimeout(resolve, 8));
+	assert.ok(updates.length > focusedIdleCount, "focused idle pets continue animating");
+
+	await handlers.get(COMPANION_WIDGET_TERMINAL_FOCUS_EVENT)?.({ focused: false });
+	const pausedIdleCount = updates.length;
+	await new Promise((resolve) => setTimeout(resolve, 8));
+	assert.equal(updates.length, pausedIdleCount, "losing focus pauses idle animation");
 
 	await handlers.get("tool_execution_start")?.({
 		toolName: "subagent",
 		toolCallId: "animated",
 		args: { agent: "scout" },
 	});
+	const mainActiveCount = updates.filter(
+		(update) => update.id === "pi-pet:art" && update.contribution,
+	).length;
+	const subagentActiveCount = updates.filter(
+		(update) => update.id === "pi-pet:subagent:animated" && update.contribution,
+	).length;
 	try {
 		await new Promise((resolve) => setTimeout(resolve, 12));
-		assert.ok(updates.filter((update) => update.id === "pi-pet:art" && update.contribution).length > 2);
-		assert.ok(updates.filter((update) => update.id === "pi-pet:subagent:animated" && update.contribution).length > 1);
+		assert.ok(
+			updates.filter((update) => update.id === "pi-pet:art" && update.contribution).length > mainActiveCount,
+			"main pet keeps animating active work while unfocused",
+		);
+		assert.ok(
+			updates.filter(
+				(update) => update.id === "pi-pet:subagent:animated" && update.contribution,
+			).length > subagentActiveCount,
+			"subagent pet keeps animating active work while unfocused",
+		);
 	} finally {
 		await handlers.get("session_shutdown")?.({});
 	}
@@ -260,6 +289,7 @@ test("keeps idle static, animates active work, and stops publishing on shutdown"
 	assert.equal(updates.length, afterShutdownCount, "animation and removal timers are cleaned on shutdown");
 	assert.equal(updates.findLast((update) => update.id === "pi-pet:art")?.contribution, undefined);
 	assert.equal(updates.findLast((update) => update.id === "pi-pet:subagent:animated")?.contribution, undefined);
+	assert.equal(handlers.has(COMPANION_WIDGET_TERMINAL_FOCUS_EVENT), false, "shutdown unsubscribes focus events");
 });
 
 test("publishes role-specific top-level subagent pets through settled states", async () => {

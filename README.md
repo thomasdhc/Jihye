@@ -215,7 +215,7 @@ Current state mapping:
 | Agent settles successfully | `success` for 5 seconds, then `idle` |
 | Tool error / failed turn | `error` for 1.5 seconds, then `idle` |
 
-Idle pets render a fixed frame rather than scheduling animation updates. This lets background terminal activity indicators settle when Pi is waiting for input while preserving animation for active and reaction states.
+In direct iTerm2 sessions that allow applications to enable focus reporting, idle pets animate only while their terminal has keyboard focus. Switching to another tab, pane, window, or application pauses idle redraws so background activity indicators can settle; returning resumes the animation. Active and reaction states keep animating regardless of focus. Other environments, including terminal multiplexers, use a static idle frame.
 
 Pet artwork and frame dimensions live in `extensions/widget/pi-pet/assets.ts`. Each state has exact-width `top`, `face`, and `bottom` rows; animated rows share the state's tick and advance through their own modular cycles. Run `npm run preview:pi-pet` to inspect every sprite and lifecycle state inside visible frame boundaries; animation cycle counts appear beside state labels. Filter either preview mode to one sprite with `--sprite default` or a bundled subagent name:
 
