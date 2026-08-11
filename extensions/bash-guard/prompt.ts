@@ -27,8 +27,11 @@ export async function promptRunOrAbort(ctx: any, command: string, risk: Risk): P
 			.split("\n")
 			.map((line) => theme.fg("muted", line))
 			.join("\n");
+		const workingDirectory = typeof ctx.cwd === "string" ? ctx.cwd : "(unknown)";
 		const body = [
 			theme.fg("warning", `Command flagged as ${risk.severity.toUpperCase()} risk`),
+			"",
+			`${theme.bold("Working directory:")}\n${theme.fg("muted", workingDirectory)}`,
 			"",
 			`${theme.bold(`${flaggedLabel}:`)}\n${flaggedText}`,
 			"",
@@ -39,7 +42,7 @@ export async function promptRunOrAbort(ctx: any, command: string, risk: Risk): P
 
 		const container = new Container();
 		container.addChild(new DynamicBorder((s: string) => theme.fg("warning", s)));
-		container.addChild(new Text(theme.fg("warning", theme.bold("Potentially destructive bash command")), 1, 0));
+		container.addChild(new Text(theme.fg("warning", theme.bold("Guarded bash command")), 1, 0));
 		container.addChild(new Text(body, 1, 0));
 
 		const list = new SelectList(items, items.length, {

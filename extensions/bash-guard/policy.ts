@@ -8,12 +8,14 @@
 
 export type Severity = "high" | "medium";
 
-/** Option filters for the minority of rules that only apply to specific flags. */
+/** Option filters and approval requirements for a hosted-CLI rule. */
 export type CliRuleOptions = {
 	/** Rule applies only when at least one of these options is present. */
 	readonly anyOptions?: readonly string[];
 	/** Rule does not apply when one of these boolean options is enabled. */
 	readonly excludedOptions?: readonly string[];
+	/** Rule cannot be bypassed by non-interactive auto-allow. */
+	readonly requiresInteractiveApproval?: boolean;
 };
 
 /** A guarded subcommand: severity, user-facing reason, and optional flag filters. */
@@ -26,7 +28,8 @@ export type CliRulePolicy = CliRule | readonly CliRule[];
 export type CliRuleTable = Readonly<Record<string, CliRulePolicy>>;
 
 // Keep this policy narrow: ordinary GitHub writes such as creating issues, editing
-// descriptions, and posting comments are intentionally not guarded.
+// descriptions, and posting comments are intentionally not guarded. Opening a pull
+// request is the delivery boundary and therefore requires one-shot human approval.
 export const DANGEROUS_GITHUB_CLI_COMMANDS = {
 	// Repositories
 	"repo delete": ["high", "gh repo delete (repository deletion)"],
@@ -39,6 +42,7 @@ export const DANGEROUS_GITHUB_CLI_COMMANDS = {
 	"repo autolink delete": ["high", "gh repo autolink delete (autolink deletion)"],
 
 	// Pull requests
+	"pr create": ["medium", "gh pr create (pull request publication)", { requiresInteractiveApproval: true }],
 	"pr merge": ["high", "gh pr merge (pull request merge)", { excludedOptions: ["--disable-auto"] }],
 	"pr close": ["medium", "gh pr close (pull request closure)"],
 	"pr revert": ["high", "gh pr revert (remote history change)"],
@@ -87,7 +91,8 @@ export const DANGEROUS_GITHUB_CLI_COMMANDS = {
 
 // Mirror the GitHub policy for GitLab while covering GitLab-specific CI schedules,
 // access credentials, and destructive project operations. Ordinary writes such as
-// creating issues, posting notes, and approving merge requests remain unguarded.
+// creating issues, posting notes, and approving merge requests remain unguarded;
+// opening a merge request requires one-shot human approval.
 export const DANGEROUS_GITLAB_CLI_COMMANDS = {
 	// Projects
 	"repo delete": ["high", "glab repo delete (project deletion)"],
@@ -102,6 +107,7 @@ export const DANGEROUS_GITLAB_CLI_COMMANDS = {
 	"repo publish catalog": ["high", "glab repo publish catalog (catalog publication)"],
 
 	// Merge requests
+	"mr create": ["medium", "glab mr create (merge request publication)", { requiresInteractiveApproval: true }],
 	"mr merge": ["high", "glab mr merge (merge request merge)"],
 	"mr accept": ["high", "glab mr accept (merge request merge)"],
 	"mr close": ["medium", "glab mr close (merge request closure)"],
@@ -222,6 +228,8 @@ export type LocalCommandRule = {
 	readonly when?: ArgCondition;
 	readonly severity: Severity;
 	readonly reason: string;
+	/** Rule cannot be bypassed by non-interactive auto-allow. */
+	readonly requiresInteractiveApproval?: boolean;
 };
 
 /**
@@ -242,12 +250,13 @@ export const RISKY_LOCAL_COMMANDS: readonly LocalCommandRule[] = [
 	{ command: ["sudo"], severity: "high", reason: "sudo (elevated privileges)" },
 	{ command: ["find"], when: { hasArg: "-delete" }, severity: "high", reason: "find -delete (bulk deletion)" },
 
-	// git — only explicitly destructive subcommands are guarded.
+	// git — destructive subcommands plus the explicit remote-publication boundary.
 	{ command: ["git", "rm"], severity: "high", reason: "git rm (deletes files from working tree and stages deletions)" },
 	{ command: ["git", "clean"], when: { anyOf: [{ argContains: "-f" }, { hasArg: "-d" }, { hasArg: "-x" }] }, severity: "high", reason: "git clean (can delete untracked files)" },
 	{ command: ["git", "reset"], when: { hasArg: "--hard" }, severity: "high", reason: "git reset --hard (discard changes)" },
 	{ command: ["git", ["checkout", "restore"]], when: { anyOf: [{ hasArg: "." }, { hasArg: "--" }, { hasArg: "--source" }] }, severity: "medium", reason: "git checkout/restore (can overwrite working tree)" },
-	{ command: ["git", "push"], when: { anyOf: [{ hasArg: "--force" }, { hasArg: "--force-with-lease" }, { hasArg: "-f" }] }, severity: "high", reason: "git push --force (rewrite remote history)" },
+	{ command: ["git", "push"], severity: "medium", reason: "git push (remote branch publication)", requiresInteractiveApproval: true },
+	{ command: ["git", "push"], when: { anyOf: [{ hasArg: "--force" }, { hasArg: "--force-with-lease" }, { hasArg: "-f" }] }, severity: "high", reason: "git push --force (rewrite remote history)", requiresInteractiveApproval: true },
 	{ command: ["git", "reflog"], when: { hasArg: "expire" }, severity: "high", reason: "git reflog expire (can remove recovery history)" },
 	{ command: ["git", "gc"], when: { argStartsWith: "--prune" }, severity: "high", reason: "git gc --prune (can permanently delete objects)" },
 

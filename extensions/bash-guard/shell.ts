@@ -133,6 +133,107 @@ export function unwrapShellCommand(args: string[]): string[] {
 	return args.slice(index);
 }
 
+const COMMAND_SHELLS = new Set(["bash", "dash", "fish", "ksh", "sh", "zsh"]);
+
+/** Return the static or dynamic command passed to a nested shell's `-c` option. */
+export function nestedShellCommand(args: string[]): string | null {
+	const unwrapped = unwrapShellCommand(args);
+	const executable = unwrapped[0]?.split("/").at(-1);
+	if (!executable || !COMMAND_SHELLS.has(executable)) return null;
+
+	for (let index = 1; index < unwrapped.length; index++) {
+		const arg = unwrapped[index];
+		if (["-O", "+O", "-o", "+o", "--init-file", "--rcfile"].includes(arg)) {
+			index++;
+			continue;
+		}
+		if ((arg.startsWith("-O") || arg.startsWith("-o")) && arg.length > 2) continue;
+		if (arg === "-c" || (/^-[^-]+$/.test(arg) && arg.includes("c"))) {
+			return unwrapped[index + 1] ?? null;
+		}
+		if (arg === "--") return null;
+		if (arg.startsWith("-") || arg.startsWith("+")) continue;
+		return null;
+	}
+	return null;
+}
+
+const GIT_GLOBAL_OPTIONS_WITH_VALUE = new Set([
+	"-C",
+	"-c",
+	"--config-env",
+	"--git-dir",
+	"--namespace",
+	"--super-prefix",
+	"--work-tree",
+]);
+const GIT_GLOBAL_BOOLEAN_OPTIONS = new Set([
+	"--bare",
+	"--glob-pathspecs",
+	"--icase-pathspecs",
+	"--literal-pathspecs",
+	"--no-lazy-fetch",
+	"--no-optional-locks",
+	"--no-advice",
+	"--no-pager",
+	"--no-replace-objects",
+	"--noglob-pathspecs",
+	"--paginate",
+	"-p",
+	"-P",
+]);
+
+/**
+ * Expose plausible git subcommands after executable paths and global context options.
+ *
+ * Unknown global options are ambiguous: they may be boolean flags or consume the
+ * following token. Preserve both interpretations so a new git option cannot hide
+ * a guarded subcommand and make analysis fail open.
+ */
+export function gitCommandCandidates(args: string[]): string[][] {
+	const executable = args[0];
+	if (executable !== "git" && !executable?.endsWith("/git")) return [args];
+
+	const pending = [1];
+	const visited = new Set<number>();
+	const candidates: string[][] = [];
+	while (pending.length > 0) {
+		const index = pending.shift()!;
+		if (visited.has(index) || index >= args.length) continue;
+		visited.add(index);
+
+		const arg = args[index];
+		if (GIT_GLOBAL_OPTIONS_WITH_VALUE.has(arg)) {
+			pending.push(index + 2);
+			continue;
+		}
+		if (
+			(arg.startsWith("-C") || arg.startsWith("-c")) &&
+			arg !== "-C" &&
+			arg !== "-c"
+		) {
+			pending.push(index + 1);
+			continue;
+		}
+		if (arg.startsWith("--") && arg.includes("=")) {
+			pending.push(index + 1);
+			continue;
+		}
+		if (GIT_GLOBAL_BOOLEAN_OPTIONS.has(arg)) {
+			pending.push(index + 1);
+			continue;
+		}
+		if (arg.startsWith("-")) {
+			pending.push(index + 1);
+			pending.push(index + 2);
+			continue;
+		}
+		candidates.push(["git", ...args.slice(index)]);
+	}
+
+	return candidates;
+}
+
 export function withoutHostedCliContextOptions(args: string[]): string[] {
 	const out: string[] = [];
 	for (let i = 0; i < args.length; i++) {

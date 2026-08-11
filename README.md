@@ -6,7 +6,7 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 
 | Extension | Purpose |
 |---|---|
-| `bash-guard` | Interactive prompt for destructive bash and GitHub/GitLab CLI commands; headless hard-block in subagents |
+| `bash-guard` | Interactive prompt for destructive commands and Git publication boundaries; headless hard-block in subagents |
 | `custom-header` | Custom Pi startup header |
 | `jihye-setup` | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts |
 | `project-info` | Footer status showing current git project + branch |
@@ -276,7 +276,7 @@ The leased name appears below the context status in the companion widget using P
 
 Unknown terminals quietly receive no notification. Override detection when needed with `PI_TERMINAL_NOTIFY=iterm`, `kitty`, `tilix`, or `osc777`; disable alerts with `PI_TERMINAL_NOTIFY=off`.
 
-When `bash-guard` opens an approval prompt, it also requests an urgent native notification and rings the terminal bell. In iTerm2, enable **Profiles → Terminal → Show bell icon in tabs** so the exact Pi tab is marked while iTerm2 is in the foreground.
+When `bash-guard` opens an approval prompt, it also requests an urgent native notification and rings the terminal bell. Pushes and PR/MR creation require a fresh interactive decision for every attempt, even when non-interactive auto-allow is enabled. In iTerm2, enable **Profiles → Terminal → Show bell icon in tabs** so the exact Pi tab is marked while iTerm2 is in the foreground.
 
 Remove any older manually installed notification extension from `~/.pi/agent/extensions/` before reloading Pi to avoid duplicate alerts. iTerm2 notification permissions and the Linux desktop notification service must also allow notifications. Some Tilix builds lack the downstream OSC 777 notification patch; Jihye detects the build status reported by `tilix --version` and falls back to `notify-send` when native notifications are disabled. The fallback requires `notify-send` and an active Linux desktop notification service.
 

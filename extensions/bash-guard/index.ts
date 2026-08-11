@@ -35,6 +35,16 @@ export default function (pi: ExtensionAPI) {
 						"Ask the parent agent to perform the operation with user approval.",
 				};
 			}
+			const publicationRisk = analyzeBashCommand(command);
+			if (publicationRisk?.requiresInteractiveApproval) {
+				return {
+					block: true,
+					reason:
+						`Blocked by bash-guard: ${publicationRisk.reasons.join("; ")}. ` +
+						"This is a non-interactive subagent session — publication operations require parent-session user approval. " +
+						"Ask the parent agent to perform the operation.",
+				};
+			}
 			for (const { pattern, reason } of HEADLESS_BLOCKED) {
 				if (pattern.test(command)) {
 					return {
@@ -52,7 +62,7 @@ export default function (pi: ExtensionAPI) {
 
 	// Main session mode: interactive prompting.
 	pi.registerFlag("bash-guard-auto-allow", {
-		description: "If set, bash-guard will not block when no UI is available (non-interactive modes).",
+		description: "Allow standard guard risks without a UI; pushes and PR/MR creation still require interactive approval.",
 		type: "boolean",
 		default: false,
 	});
@@ -78,8 +88,13 @@ export default function (pi: ExtensionAPI) {
 			};
 		}
 
-		if (!ctx.hasUI && pi.getFlag("--bash-guard-auto-allow")) {
-			// Non-interactive mode: allow when explicitly requested.
+		if (
+			!ctx.hasUI &&
+			pi.getFlag("--bash-guard-auto-allow") &&
+			!risk.requiresInteractiveApproval
+		) {
+			// Non-interactive mode: allow standard risks when explicitly requested.
+			// Publication boundaries always require a fresh interactive decision.
 			return;
 		}
 
@@ -99,7 +114,7 @@ export default function (pi: ExtensionAPI) {
 		return {
 			block: true,
 			reason:
-				"Blocked by user via bash-guard (potentially destructive command). Ask the user for confirmation or propose a non-destructive alternative.",
+				"Blocked by user via bash-guard (guarded command). Ask the user for confirmation or propose a safe alternative.",
 		};
 	});
 }

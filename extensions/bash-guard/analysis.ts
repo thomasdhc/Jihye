@@ -22,9 +22,11 @@ import {
 	anyArgStartsWith,
 	enabledBooleanOption,
 	formatSegment,
+	gitCommandCandidates,
 	hasOption,
 	isDynamicShellToken,
 	isOpToken,
+	nestedShellCommand,
 	optionValues,
 	parseShellCommand,
 	splitOnOps,
@@ -37,10 +39,12 @@ import {
 type RiskDetails = {
 	severity: Severity;
 	reasons: string[];
+	requiresInteractiveApproval?: boolean;
 };
 
 export type Risk = RiskDetails & {
 	flaggedCommands: string[];
+	requiresInteractiveApproval: boolean;
 };
 
 type HostedCliRule = RiskDetails & {
@@ -127,19 +131,26 @@ function analyzeDynamicHostedCliCommand(
 	rules: readonly HostedCliRule[],
 	cli: "gh" | "glab",
 ): RiskDetails | null {
+	let matched = false;
+	let severity: Severity = "medium";
+	let requiresInteractiveApproval = false;
 	for (const rule of rules) {
 		for (let index = 0; index < rule.command.length; index++) {
 			if (args[index] === rule.command[index]) continue;
 			if (isDynamicShellToken(args[index])) {
-				return {
-					severity: "high",
-					reasons: [`${cli} dynamic command or subcommand (may resolve to a guarded remote operation)`],
-				};
+				matched = true;
+				if (rule.severity === "high") severity = "high";
+				if (rule.requiresInteractiveApproval) requiresInteractiveApproval = true;
 			}
 			break;
 		}
 	}
-	return null;
+	if (!matched) return null;
+	return {
+		severity,
+		reasons: [`${cli} dynamic command or subcommand (may resolve to a guarded remote operation)`],
+		requiresInteractiveApproval,
+	};
 }
 
 function analyzeGitHubCliArgs(rawArgs: string[]): RiskDetails | null {
@@ -155,7 +166,11 @@ function analyzeGitHubCliArgs(rawArgs: string[]): RiskDetails | null {
 		if (!rule.command.every((part, index) => commandArgs[index] === part)) continue;
 		if (rule.anyOptions && !rule.anyOptions.some((option) => hasOption(ghArgs, option))) continue;
 		if (rule.excludedOptions && enabledBooleanOption(ghArgs, rule.excludedOptions)) continue;
-		return { severity: rule.severity, reasons: rule.reasons };
+		return {
+			severity: rule.severity,
+			reasons: rule.reasons,
+			requiresInteractiveApproval: rule.requiresInteractiveApproval,
+		};
 	}
 	return null;
 }
@@ -168,6 +183,7 @@ function analyzeGitHubCliSegment(seg: Token[]): RiskDetails | null {
 	return {
 		severity: risks.some((risk) => risk.severity === "high") ? "high" : "medium",
 		reasons: risks.flatMap((risk) => risk.reasons),
+		requiresInteractiveApproval: risks.some((risk) => risk.requiresInteractiveApproval),
 	};
 }
 
@@ -185,7 +201,11 @@ function analyzeGitLabCliArgs(rawArgs: string[]): RiskDetails | null {
 		if (!rule.command.every((part, index) => commandArgs[index] === part)) continue;
 		if (rule.anyOptions && !rule.anyOptions.some((option) => hasOption(glabArgs, option))) continue;
 		if (rule.excludedOptions && enabledBooleanOption(glabArgs, rule.excludedOptions)) continue;
-		return { severity: rule.severity, reasons: rule.reasons };
+		return {
+			severity: rule.severity,
+			reasons: rule.reasons,
+			requiresInteractiveApproval: rule.requiresInteractiveApproval,
+		};
 	}
 	return null;
 }
@@ -198,6 +218,7 @@ function analyzeGitLabCliSegment(seg: Token[]): RiskDetails | null {
 	return {
 		severity: risks.some((risk) => risk.severity === "high") ? "high" : "medium",
 		reasons: risks.flatMap((risk) => risk.reasons),
+		requiresInteractiveApproval: risks.some((risk) => risk.requiresInteractiveApproval),
 	};
 }
 
@@ -221,12 +242,49 @@ function matchesArgCondition(args: string[], condition: ArgCondition): boolean {
 
 // Conditions apply to the arguments that follow the matched command pattern.
 function analyzeLocalCommandRule(args: string[], rule: LocalCommandRule): RiskDetails | null {
-	if (!rule.command.every((token, index) => matchesCommandToken(args[index], token))) return null;
+	if (!matchesCommandToken(args[0], rule.command[0])) return null;
+	for (let index = 1; index < rule.command.length; index++) {
+		if (matchesCommandToken(args[index], rule.command[index])) continue;
+		if (!isDynamicShellToken(args[index])) return null;
+		return {
+			severity: rule.severity,
+			reasons: [`${args[0]} dynamic subcommand (may resolve to a guarded local operation)`],
+			requiresInteractiveApproval: rule.requiresInteractiveApproval,
+		};
+	}
 	if (rule.when && !matchesArgCondition(args.slice(rule.command.length), rule.when)) return null;
-	return { severity: rule.severity, reasons: [rule.reason.replace("{command}", args[0])] };
+	return {
+		severity: rule.severity,
+		reasons: [rule.reason.replace("{command}", args[0])],
+		requiresInteractiveApproval: rule.requiresInteractiveApproval,
+	};
 }
 
 const PIPE_TARGET_SHELLS = ["sh", "bash", "zsh", "fish"];
+
+function analyzeNestedShellCommands(seg: Token[]): RiskDetails | null {
+	const risks: RiskDetails[] = [];
+	for (const commandTokens of splitOnOps(seg, ["|", "|&", "&", "(", ")"])) {
+		const nested = nestedShellCommand(tokensToStrings(commandTokens));
+		if (!nested) continue;
+		if (isDynamicShellToken(nested)) {
+			risks.push({
+				severity: "high",
+				reasons: ["dynamic nested shell command (may resolve to a guarded publication operation)"],
+				requiresInteractiveApproval: true,
+			});
+			continue;
+		}
+		const risk = analyzeBashCommand(nested);
+		if (risk) risks.push(risk);
+	}
+	if (risks.length === 0) return null;
+	return {
+		severity: risks.some((risk) => risk.severity === "high") ? "high" : "medium",
+		reasons: risks.flatMap((risk) => risk.reasons),
+		requiresInteractiveApproval: risks.some((risk) => risk.requiresInteractiveApproval),
+	};
+}
 
 // Pipe to a shell: needs a pipe operator and a shell name anywhere in the segment.
 function analyzePipeToShell(args: string[], ops: string[]): RiskDetails | null {
@@ -269,6 +327,7 @@ function analyzeSystemPathRedirect(seg: Token[]): RiskDetails | null {
 function analyzeSegment(seg: Token[]): RiskDetails | null {
 	const reasons: string[] = [];
 	let severity: Severity = "medium";
+	let requiresInteractiveApproval = false;
 
 	const ops = seg.filter(isOpToken).map((o) => o.op);
 	const args = tokensToStrings(seg);
@@ -282,6 +341,7 @@ function analyzeSegment(seg: Token[]): RiskDetails | null {
 		if (!risk) return;
 		reasons.push(...risk.reasons);
 		if (risk.severity === "high") severity = "high";
+		if (risk.requiresInteractiveApproval) requiresInteractiveApproval = true;
 	};
 
 	// This sequence is the reason order users see, so it is explicit and ordered.
@@ -292,13 +352,19 @@ function analyzeSegment(seg: Token[]): RiskDetails | null {
 	apply(analyzeGitLabCliSegment(seg));
 	apply(analyzeSystemPathRedirect(seg));
 	apply(analyzePipeToShell(args, ops));
-	for (const rule of RISKY_LOCAL_COMMANDS) apply(analyzeLocalCommandRule(args, rule));
+	apply(analyzeNestedShellCommands(seg));
+	const localCommands = splitOnOps(seg, ["|", "|&", "&", "(", ")"])
+		.flatMap((tokens) => gitCommandCandidates(unwrapShellCommand(tokensToStrings(tokens))))
+		.filter((commandArgs) => commandArgs.length > 0);
+	for (const rule of RISKY_LOCAL_COMMANDS) {
+		for (const commandArgs of localCommands) apply(analyzeLocalCommandRule(commandArgs, rule));
+	}
 	apply(analyzeFileDeletion(cmd, rest, ops));
 	apply(analyzeDiskutil(cmd, rest));
 	apply(analyzeDownloadPipe(cmd, ops));
 
 	if (reasons.length === 0) return null;
-	return { severity, reasons };
+	return { severity, reasons, requiresInteractiveApproval };
 }
 
 function redirectsToSystemPath(tokens: Token[]): string | null {
@@ -318,6 +384,7 @@ function analyzeParsedCommand(tokens: Token[], segmentAnalyzer: (segment: Token[
 	const reasons: string[] = [];
 	const flaggedCommands: string[] = [];
 	let severity: Severity = "medium";
+	let requiresInteractiveApproval = false;
 
 	// Segment analysis (split on &&, ||, ;)
 	const segments = splitOnOps(tokens, ["&&", "||", ";"]);
@@ -325,6 +392,7 @@ function analyzeParsedCommand(tokens: Token[], segmentAnalyzer: (segment: Token[
 		const segRisk = segmentAnalyzer(seg);
 		if (!segRisk) continue;
 		if (segRisk.severity === "high") severity = "high";
+		if (segRisk.requiresInteractiveApproval) requiresInteractiveApproval = true;
 		for (const r of segRisk.reasons) reasons.push(r);
 		flaggedCommands.push(formatSegment(seg));
 	}
@@ -332,7 +400,12 @@ function analyzeParsedCommand(tokens: Token[], segmentAnalyzer: (segment: Token[
 	// De-duplicate reasons and flagged command segments.
 	const uniq = [...new Set(reasons)];
 	if (uniq.length === 0) return null;
-	return { severity, reasons: uniq, flaggedCommands: [...new Set(flaggedCommands)] };
+	return {
+		severity,
+		reasons: uniq,
+		flaggedCommands: [...new Set(flaggedCommands)],
+		requiresInteractiveApproval,
+	};
 }
 
 export function analyzeBashCommand(command: string): Risk | null {
@@ -345,6 +418,7 @@ export function analyzeBashCommand(command: string): Risk | null {
 			severity: "medium",
 			reasons: ["unparsed shell command (unable to analyze safely)"],
 			flaggedCommands: [command],
+			requiresInteractiveApproval: false,
 		};
 	}
 	return analyzeParsedCommand(tokens, analyzeSegment);
