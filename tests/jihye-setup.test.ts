@@ -251,6 +251,41 @@ test("formats facts as declarative system prompt lines", () => {
 	}
 });
 
+test("classifies a persona reached through a symlinked package ancestor", () => {
+	// A real install can sit behind a symlinked ancestor: macOS resolves tmpdir()
+	// through /private/var, and linked homes or checkouts do the same elsewhere.
+	// The link below reproduces that on every platform.
+	const fixture = createFixture();
+	try {
+		const aliasRoot = join(fixture.root, "alias");
+		symlinkSync(fixture.packageRoot, aliasRoot);
+		const aliasPersonas = join(aliasRoot, "personas");
+
+		assert.equal(
+			resolveProfile(fixture.agentDirectory, aliasPersonas),
+			"strict",
+			"a symlinked personas path still resolves the managed persona",
+		);
+
+		const facts = resolveJihyeSetupFacts({
+			extensionDirectory: join(aliasRoot, "extensions", "jihye-setup"),
+			agentDirectory: fixture.agentDirectory,
+			cwd: fixture.repositoryDirectory,
+			loadedContextFiles: [],
+		});
+
+		assert.equal(facts.profile, "strict");
+		assert.equal(facts.guidance[0]?.managed, true);
+		assert.equal(
+			facts.guidance[0]?.target,
+			join(aliasPersonas, "JIHYE_strict.md"),
+			"the target is reported under the personas path the caller supplied",
+		);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
 test("notes an unresolved workspace root instead of guessing one", () => {
 	const fixture = createFixture();
 	try {
