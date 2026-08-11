@@ -74,20 +74,20 @@ export const DEFAULT_PI_PET_ASSETS = createPiPetModeAssets({
 
 export const SUBAGENT_PI_PET_ASSETS = {
 	scout: createPiPetModeAssets({
-		top: repeatPiPetElement(" /\\ /\\ "),
+		top: repeatPiPetElement(["/\\ /\\  ", "/\\ /\\  ", "  /\\ /\ ", "  /\\ /\\"]),
 		face: {
-			idle: " (o|o) ",
-			thinking: " (-|-) ",
-			working: " (o|o) ",
-			success: " (^|^) ",
-			error: " (x|x) ",
+			idle: ["(o˯o ) ", "(o˯o ) ", " ( ȏ˯ȏ)", " ( ȏ˯ȏ)"],
+			thinking: ["(╸˯╸ ) ", "(╸˯╸ ) ", " ( ╴˯╴)", " ( ╴˯╴)"],
+			working: ["(o˯o ) ", "(o˯o ) ", " ( ȏ˯ȏ ", " ( ȏ˯ȏ)"],
+			success: ["(^˯^ ) ", "(^˯^ ) ", " ( ȏ˯ȏ)", " ( ȏ˯ȏ)"],
+			error: ["(x˯x ) ", "(x˯x ) ", " ( ╸˯╺)", " ( ╸˯╺)"],
 		},
 		bottom: {
 			idle: " / V \\ ",
-			thinking: " / V \\ ",
-			working: [" / V \\ ", " / v \\ "],
-			success: " / V \\ ",
-			error: " / V \\ ",
+			thinking: [" / 🬃 \\ ", " / 🬖 \\ ", " / 🬞 \\ ", " / 🬢 \\ "],
+			working: [" / ◴ \\ ", " / ◷ \\ ", " / ◶ \\ ", " / ◵ \\ "],
+			success: [" / ▾ \\ ", " / ▾ \\ ", " / ▾ \\ ", " / ▾ \\ "],
+			error: [" / ! \\ ", " / ! \\ ", " / ! \\ ", " / ! \\ "],
 		},
 	}),
 	researcher: createPiPetModeAssets({
