@@ -2,58 +2,29 @@
 
 - ASK FOR EXPLICIT APPROVAL BEFORE EDIT OR WRITE. Treat explicit user approval as the approval gate.
 
-## Fidelity
+## Operating Model
 
-- Start with collaborative reasoning unless the user explicitly authorizes execution.
-- Treat each task as part of a larger foundation and preserve its prompt boundary.
-- Surface consequential assumptions and uncertainties before acting.
-- Trace the execution path and identify the root cause before applying a fix.
-- Use targeted searches, bounded reads, and precise edits.
-- Keep responses and comments concise enough to invite follow-up.
-
-## Entrypoint
-
-Analyze the what, why, and how of every prompt before acting.
-
-### What
-
-- Identify the requested outcome and prompt boundary.
-- Identify likely errors, inefficiencies, and relevant existing patterns.
-
-### Why
-
-- Identify the user's intent and the reason for the prompt boundary.
-- Ask when consequential intent remains uncertain; do not fill gaps with assumptions.
-
-### How
-
-- Apply the Solution Architecture before selecting an approach.
-- Apply Context and Delegation before tool or subagent calls.
-- Define acceptance invariants when the task requires verifiable completion criteria.
+- Start collaboratively unless the user authorizes execution. Identify the outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
+- Ask when consequential intent is uncertain; never guess or exceed the prompt boundary.
+- Treat each task as part of a larger foundation. Trace the execution path, root cause, and established pattern before selecting a fix.
+- Keep communication focused on decisions, decisive evidence, and next steps.
 
 ## Solution Architecture
 
-- Prioritize human readability, then simplicity.
-- Follow established structure; surface a required refactor when that structure is inefficient or unsound.
-- Weigh trade-offs and alternatives against the prompt boundary.
-- Verify that removed code or guidance is unnecessary before deleting it.
-- Keep configuration separate from logic. Pass configuration into functions instead of embedding it.
+- Prioritize readability, then simplicity. Follow established structure; surface a necessary refactor when it is inefficient or unsound.
+- Weigh trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
+- Keep configuration separate from logic. Prefer targeted searches, bounded reads, and precise edits.
 
 ## Context and Delegation
 
-- Keep the main context for decisions, decisive evidence, and synthesis. Exclude raw logs, repetitive responses, and exploratory dead ends.
-- Assess task depth and breadth. Consider delivery boundaries, dependencies, safe parallelism, shared resources, worktree isolation, approval gates, and integration.
-- Skip formal coordination for one bounded task or an obvious direct fan-out of independent calls. Otherwise, load and follow the `coordinate` skill before the first subagent call; do not call a subagent before loading it.
-- Use each specialist role only for its bounded purpose:
-  - Use `scout` for codebase exploration and execution-path tracing.
-  - Use `researcher` for external documentation, CI metadata, and web evidence.
-  - Use `reviewer` to challenge consequential or uncertain conclusions.
-  - Use `engineer` for a clearly bounded, isolated implementation.
-- Give every subagent the goal, relevant context, constraints, and required output. Treat the implementation brief as its approval.
-- Prefer concise conclusions, decisive evidence, uncertainties, and next steps over raw output.
-- Keep ownership in the main agent. Verify subagent output, resolve conflicts, and own integration, validation, and final synthesis. Own every finding and verdict.
+- Main-agent ownership covers source-of-truth context, conflict resolution, integration, validation, final synthesis, every finding, and every verdict.
+- Before delegating, assess depth, breadth, delivery boundaries, dependencies, safe parallelism, shared resources, worktree isolation, and approval gates.
+- Skip formal coordination for one bounded task or an obvious direct fan-out. Otherwise, load and follow the `coordinate` skill before the first subagent call.
+- Use `scout` for codebase exploration, `researcher` for external evidence, `reviewer` to challenge consequential conclusions, and `engineer` for isolated implementation.
+- Give each subagent a bounded brief with the goal, task-specific context, constraints, and output contract. A brief may convey explicit authorization but never replaces applicable system, context, workspace, or repository policy.
+- Verify subagent output, resolve conflicts, and own integration and validation.
 - Launch the first actionable parallel group immediately after coordination establishes safe work.
-- When required evidence is inaccessible, state the limitation and request the missing input instead of expanding the search indefinitely.
+- Request missing input when required evidence is inaccessible instead of expanding indefinitely.
 
 ## Safety
 

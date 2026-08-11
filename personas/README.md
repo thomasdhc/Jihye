@@ -6,13 +6,13 @@ The `personas/` tree distributes reusable global guidance, workspace policy, loc
 
 | Path | Purpose |
 |---|---|
-| `JIHYE.md` | Define the default global Pi persona. |
-| `JIHYE_strict.md` | Add an edit-and-write approval gate to the default persona. |
-| `WORKSPACE.md` | Provide the workspace-root `AGENTS.md` policy entry point. |
-| `DEVELOPMENT.md` | Define repository orientation and validation policy. |
-| `GIT.md` | Define branch, worktree, commit, push, and request policy. |
-| `templates/` | Provide templates for workspace-local `REPO.md` and `USERNAME.md`. |
-| `subagents/` | Define the portable default subagent roles loaded by Jihye. |
+| `JIHYE.md` | Own universal runtime behavior and delegation policy. |
+| `JIHYE_strict.md` | Add an edit-and-write approval gate without changing the base persona body. |
+| `WORKSPACE.md` | Add workspace resolution, local-environment, and read-gate policy. |
+| `DEVELOPMENT.md` | Add repository orientation and validation workflow. |
+| `GIT.md` | Add branch, worktree, commit, push, and request workflow. |
+| `templates/` | Provide factual templates for local `REPO.md` and `USERNAME.md`. |
+| `subagents/` | Define portable, bounded roles that inherit loaded policy. |
 
 Treat `personas/subagents/` as the single canonical source for bundled subagent definitions. The extension reads this directory directly; do not install a duplicate definition set.
 
@@ -38,10 +38,11 @@ Initialize them from `templates/` when needed. Never link machine-specific confi
 
 ## Guidance Resolution
 
-Pi loads global and workspace context independently; neither persona imports the other.
+Pi loads global and workspace context independently; neither persona imports the other. `JIHYE.md` is the canonical owner of universal runtime behavior. The workspace and workflow files add only their environment- or task-specific deltas.
 
 - Treat the **workspace root** as the location of local `REPO.md` and `USERNAME.md` configuration.
 - Treat the **policy directory** as the location of the workspace profile and its sibling `DEVELOPMENT.md` and `GIT.md` files.
+- Treat subagent task briefs as task-specific context and authorization, never as replacement policy; bundled roles rely on applicable system and loaded context guidance.
 
 The `jihye-setup` extension supplies these locations as `workspace_directory` and `personas_directory`. Profiles use those facts directly rather than resolving symlink paths. Markdown links do not import Pi context; each profile opens its own read gates explicitly.
 

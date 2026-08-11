@@ -1,44 +1,39 @@
 # Workspace
 
-Use this profile as the standing policy for a multi-project development workspace.
+Apply these environment rules in a multi-project workspace.
 
 ## Resolved Workspace
 
-The `jihye-setup` extension resolves `workspace_directory` and `personas_directory` and states them under `## Jihye Setup` in the system prompt.
+`jihye-setup` supplies `workspace_directory` and `personas_directory` under `## Jihye Setup` in the system prompt.
 
-- Use those paths directly; do not re-derive, reconstruct, shorten, or hardcode them.
-- Run `/jihye-setup` or ask for the missing value when either path is absent or `workspace_directory` is unresolved.
-- Treat `workspace_directory` as the boundary for machine- and workspace-specific configuration.
-- Treat `personas_directory` as the boundary for reusable workflow guidance.
+- Use those paths directly; never derive or hardcode them. Run `/jihye-setup` or ask when either is missing or `workspace_directory` is unresolved.
+- Bound local configuration by `workspace_directory` and reusable workflow guidance by `personas_directory`.
 
 ## Local Environment
 
-- Treat `workspace_directory/REPO.md` and `workspace_directory/USERNAME.md` as the source of truth for environment-specific values.
-- Resolve repository and workspace resource paths from `workspace_directory/REPO.md`; do not infer them from the current directory or a repository root.
-- Begin each independent shell invocation with the configured environment activation command. Shell state does not persist between tool calls.
-- Use the configured locations for temporary files and isolated worktrees.
-- Read `workspace_directory/USERNAME.md` before naming a branch or selecting an agent-specific commit command.
-- Keep paths, usernames, command aliases, and local repository relationships out of reusable guidance.
+- Treat `workspace_directory/REPO.md` and `workspace_directory/USERNAME.md` as the source of truth for environment values.
+- Resolve repositories and resources from `REPO.md`, not the current directory or an inferred root.
+- Start every independent shell invocation with the configured environment activation command; shell state does not persist.
+- Use configured temporary-file and isolated-worktree locations.
+- Read `USERNAME.md` before naming a branch or choosing an agent commit command.
+- Keep machine-specific paths, usernames, commands, and repository relationships in workspace-owned files.
 
-### Shell Conventions
+## Shell Conventions
 
-- Use `git -C <repo-path> ...` instead of changing directories only to run a cross-repository Git command.
-- Quote paths and shell values safely.
-- Prefer repository-provided tools and the configured shared environment over ad hoc global installations.
-- Never write secrets, credentials, `.env` files, or workstation authentication material into repositories.
+- Use `git -C <repo-path> ...` across repositories and quote paths and values safely.
+- Prefer repository tools and the configured environment over ad hoc global installations.
 
 ## Task Guidance
 
-The reads below are mandatory gates, not references. Pass each read gate in the current session before the first tool call that touches the target.
+Pass each read gate in the current session before the first tool call touching its target:
 
 - Read `personas_directory/DEVELOPMENT.md` before exploring, planning, changing, or testing repository files.
 - Read `personas_directory/GIT.md` before changing tracked files or Git state, or handling commits, pushes, pull requests, or merge requests.
 
-Open a read gate based on the nature of the action, never its size or obviousness. Treat user approval as separate from every read gate.
+A gate depends on the action, never its size. User approval remains separate.
 
 ## Instruction Boundaries
 
-- Read the repository's tracked `AGENTS.md` and/or `CLAUDE.md` plus any more-specific guidance that governs the target.
-- Follow repository-owned guidance for project-specific architecture, style, commands, testing, and generated files.
-- Preserve workspace and user safeguards for collaboration, secrets, and consequential uncertainty when repository guidance conflicts with them; report the conflict and ask for resolution.
-- Keep local workspace notes in workspace-owned files. Do not modify tracked repository guidance only to store local preferences.
+- Read and follow repository guidance governing the target, including architecture, style, commands, tests, and generated files.
+- Preserve workspace and user safeguards when instructions conflict; report the conflict and ask for resolution.
+- Keep local workspace notes out of tracked repository guidance.
