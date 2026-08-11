@@ -36,6 +36,8 @@ test("detects dangerous GitHub CLI operations", () => {
 		"gh repo deploy-key add key.pub",
 		"gh repo deploy-key delete 123",
 		"gh repo autolink delete 123",
+		"gh pr create --title example --body details",
+		"gh pr -R owner/repo create --title example --body details",
 		"gh pr merge 42 --squash",
 		"gh pr merge 42 --disable-auto=false",
 		"gh pr merge 42 --disable-auto=true --disable-auto=false",
@@ -104,6 +106,8 @@ test("detects dangerous GitLab CLI operations", () => {
 		"glab repo members add --username user --access-level developer",
 		"glab repo members remove --username user",
 		"glab repo publish catalog v1.0.0",
+		"glab mr create --title example --description details",
+		"glab mr -R example/project create --title example --description details",
 		"glab mr merge 42 --squash",
 		"glab mr -R example/project accept 42",
 		"glab mr close 42",
@@ -202,7 +206,13 @@ test("detects dangerous GitLab CLI operations", () => {
 test("expands policy table entries into exact guard reasons", () => {
 	const cases = [
 		["gh repo delete owner/repo --yes", ["gh repo delete (repository deletion)"]],
+		["gh pr create --title example", ["gh pr create (pull request publication)"]],
 		["gh pr merge 42 --squash", ["gh pr merge (pull request merge)"]],
+		["glab mr create --title example", ["glab mr create (merge request publication)"]],
+		[
+			"git push --force-with-lease origin feature",
+			["git push (remote branch publication)", "git push --force (rewrite remote history)"],
+		],
 		["glab cluster agent token revoke 123 456", ["glab cluster agent token revoke (agent token revocation)"]],
 		["glab repo update example/project --archive=true", ["glab repo update --archive (project archival state change)"]],
 		["glab repo update example/project --defaultBranch trunk", ["glab repo update --defaultBranch (default branch change)"]],
@@ -215,6 +225,68 @@ test("expands policy table entries into exact guard reasons", () => {
 	}
 });
 
+test("requires interactive approval for git publication boundaries", () => {
+	const cases = [
+		["git push", "medium", "git push (remote branch publication)"],
+		["git push origin feature", "medium", "git push (remote branch publication)"],
+		["git -C /tmp/repo push origin feature", "medium", "git push (remote branch publication)"],
+		["/usr/bin/git -C/tmp/repo push --dry-run origin feature", "medium", "git push (remote branch publication)"],
+		["git -p push origin feature", "medium", "git push (remote branch publication)"],
+		["git --no-advice push origin feature", "medium", "git push (remote branch publication)"],
+		["git --exec-path=/usr/libexec/git-core push origin feature", "medium", "git push (remote branch publication)"],
+		["git --attr-source=HEAD push origin feature", "medium", "git push (remote branch publication)"],
+		["git --future-flag push origin feature", "medium", "git push (remote branch publication)"],
+		["git --future-option value push origin feature", "medium", "git push (remote branch publication)"],
+		['git "$(printf push)" origin feature', "high", "git dynamic subcommand (may resolve to a guarded local operation)"],
+		['git "$OPTION" push origin feature', "high", "git dynamic subcommand (may resolve to a guarded local operation)"],
+		["command git push origin feature", "medium", "git push (remote branch publication)"],
+		["bash -lc 'git push origin feature'", "medium", "git push (remote branch publication)"],
+		["env bash -c 'gh pr create --title example'", "medium", "gh pr create (pull request publication)"],
+		["zsh -c 'glab mr create --title example'", "medium", "glab mr create (merge request publication)"],
+		['bash -lc "$COMMAND"', "high", "dynamic nested shell command (may resolve to a guarded publication operation)"],
+		["env GIT_SSH_COMMAND=ssh git push origin feature", "medium", "git push (remote branch publication)"],
+		["git push --force-with-lease origin feature", "high", "git push --force (rewrite remote history)"],
+		["gh pr create --title example --body details", "medium", "gh pr create (pull request publication)"],
+		["glab mr create --title example --description details", "medium", "glab mr create (merge request publication)"],
+	] as const;
+
+	for (const [command, severity, expectedReason] of cases) {
+		const risk = analyzeBashCommand(command);
+		assert.ok(risk, command);
+		assert.equal(risk.severity, severity, command);
+		assert.equal(risk.requiresInteractiveApproval, true, command);
+		assert.ok(risk.reasons.includes(expectedReason), command);
+	}
+});
+
+test("dynamic hosted-CLI commands preserve publication approval", () => {
+	for (const command of [
+		'gh "$(printf pr)" create --title example',
+		'gh pr "$ACTION" --title example',
+		'glab "$(printf mr)" create --title example',
+		'glab mr "$ACTION" --title example',
+	]) {
+		const risk = analyzeBashCommand(command);
+		assert.ok(risk, command);
+		assert.equal(risk.requiresInteractiveApproval, true, command);
+		assert.match(risk.reasons.join("; "), /dynamic command or subcommand/, command);
+	}
+});
+
+test("leaves neighboring git and review-management commands unguarded", () => {
+	for (const command of [
+		"git fetch origin main",
+		"git status --short",
+		"gh pr edit 42 --title updated",
+		"gh pr comment 42 --body looks-good",
+		"glab mr update 42 --title updated",
+		"glab mr note 42 --message looks-good",
+		"bash -lc 'gh pr edit 42 --title updated'",
+	]) {
+		assert.equal(analyzeBashCommand(command), null, command);
+	}
+});
+
 test("allows non-dangerous GitHub CLI operations", () => {
 	const commands = [
 		"gh auth status",
@@ -224,6 +296,7 @@ test("allows non-dangerous GitHub CLI operations", () => {
 		"gh pr merge 42 --disable-auto",
 		"gh pr merge 42 --disable-auto=1",
 		"gh pr merge 42 --disable-auto=t",
+		"gh pr edit 42 --title updated",
 		"gh pr comment 42 --body looks-good",
 		"gh issue create --title example --body details",
 		"gh release download v1.0.0",
@@ -250,6 +323,7 @@ test("allows non-dangerous GitLab CLI operations", () => {
 		"glab repo archive main",
 		"glab repo update example/project --description example",
 		"glab mr view 42",
+		"glab mr update 42 --title updated",
 		"glab mr approve 42",
 		"glab mr note 42 --message looks-good",
 		"glab issue create --title example --description details",
@@ -348,7 +422,93 @@ test("blocks guarded commands when manual approval is unavailable", async () => 
 	assert.match(result?.reason ?? "", /Blocked by user via bash-guard/);
 });
 
-test("hard-blocks dangerous GitLab commands in headless subagents", () => {
+test("non-interactive auto-allow cannot bypass publication approval", async () => {
+	type ToolCallHandler = (
+		event: { type: "tool_call"; toolCallId: string; toolName: "bash"; input: { command: string } },
+		ctx: { hasUI: boolean },
+	) => Promise<{ block?: boolean; reason?: string } | undefined>;
+
+	let handler: ToolCallHandler | undefined;
+	bashGuard({
+		registerFlag() {},
+		getFlag() {
+			return true;
+		},
+		on(event: string, callback: ToolCallHandler) {
+			if (event === "tool_call") handler = callback;
+		},
+	} as never);
+
+	assert.ok(handler);
+	assert.equal(
+		await handler(
+			{ type: "tool_call", toolCallId: "ordinary-risk", toolName: "bash", input: { command: "rm file.txt" } },
+			{ hasUI: false },
+		),
+		undefined,
+	);
+	for (const command of [
+		"git push origin feature",
+		'git "$SUBCOMMAND" origin feature',
+		"bash -lc 'git push origin feature'",
+		'bash -lc "$COMMAND"',
+		"gh pr create --title example",
+		'gh pr "$ACTION" --title example',
+		"glab mr create --title example",
+		'glab mr "$ACTION" --title example',
+	]) {
+		const result = await handler(
+			{ type: "tool_call", toolCallId: command, toolName: "bash", input: { command } },
+			{ hasUI: false },
+		);
+		assert.equal(result?.block, true, command);
+		assert.match(result?.reason ?? "", /Blocked by user via bash-guard/, command);
+	}
+});
+
+test("publication approval is one-shot and prompts again for every attempt", async () => {
+	type ToolCallHandler = (
+		event: { type: "tool_call"; toolCallId: string; toolName: "bash"; input: { command: string } },
+		ctx: never,
+	) => Promise<{ block?: boolean; reason?: string } | undefined>;
+
+	let handler: ToolCallHandler | undefined;
+	bashGuard({
+		registerFlag() {},
+		getFlag() {
+			return false;
+		},
+		on(event: string, callback: ToolCallHandler) {
+			if (event === "tool_call") handler = callback;
+		},
+	} as never);
+
+	assert.ok(handler);
+	let prompts = 0;
+	const ctx = {
+		hasUI: true,
+		mode: "rpc",
+		ui: {
+			async custom() {
+				prompts++;
+				return "run" as const;
+			},
+		},
+	} as never;
+	const command = "git -C /tmp/repo push origin feature";
+
+	assert.equal(
+		await handler({ type: "tool_call", toolCallId: "first-attempt", toolName: "bash", input: { command } }, ctx),
+		undefined,
+	);
+	assert.equal(
+		await handler({ type: "tool_call", toolCallId: "retry-after-error", toolName: "bash", input: { command } }, ctx),
+		undefined,
+	);
+	assert.equal(prompts, 2);
+});
+
+test("hard-blocks publication commands in headless subagents", () => {
 	const extensionUrl = new URL("../extensions/bash-guard/index.ts", import.meta.url).href;
 	const script = `
 		import bashGuard from ${JSON.stringify(extensionUrl)};
@@ -365,11 +525,17 @@ test("hard-blocks dangerous GitLab commands in headless subagents", () => {
 		process.stdout.write(JSON.stringify(result));
 	`;
 
-	for (const command of [
-		"glab mr merge 42",
-		'glab mr "$(printf merge)" 42',
-		"glab -R example/project api -X DELETE projects/123",
-	]) {
+	for (const [command, expectedReason] of [
+		["gh pr create --title example", /dangerous GitHub operations are not permitted/],
+		["glab mr create --title example", /dangerous GitLab operations are not permitted/],
+		["glab mr merge 42", /dangerous GitLab operations are not permitted/],
+		['glab mr "$(printf merge)" 42', /dangerous GitLab operations are not permitted/],
+		["glab -R example/project api -X DELETE projects/123", /dangerous GitLab operations are not permitted/],
+		["git -C /tmp/repo push origin feature", /publication operations require parent-session user approval/],
+		["git -p push origin feature", /publication operations require parent-session user approval/],
+		['git "$SUBCOMMAND" origin feature', /publication operations require parent-session user approval/],
+		["bash -lc 'git push origin feature'", /publication operations require parent-session user approval/],
+	] as const) {
 		const result = spawnSync(
 			process.execPath,
 			["--import", "tsx", "--input-type=module", "-e", script, command],
@@ -381,7 +547,7 @@ test("hard-blocks dangerous GitLab commands in headless subagents", () => {
 		assert.equal(result.status, 0, result.stderr);
 		const block = JSON.parse(result.stdout) as { block?: boolean; reason?: string };
 		assert.equal(block.block, true, command);
-		assert.match(block.reason ?? "", /dangerous GitLab operations are not permitted/, command);
+		assert.match(block.reason ?? "", expectedReason, command);
 	}
 });
 
@@ -459,6 +625,7 @@ test("highlights the destructive segment in the approval prompt", async () => {
 		{ type: "tool_call", toolCallId: "test-call", toolName: "bash", input: { command } },
 		{
 			hasUI: true,
+			cwd: "/workspace/example",
 			ui: {
 				async custom(factory: PromptFactory) {
 					const component = factory(
@@ -480,6 +647,8 @@ test("highlights the destructive segment in the approval prompt", async () => {
 	assert.equal(result?.block, true);
 	assert.match(rendered, /<error><bold>⚠ rm -rf tmp<\/bold><\/error>/);
 	assert.doesNotMatch(rendered, /<error><bold>⚠ printf safe/);
+	assert.match(rendered, /Working directory:/);
+	assert.match(rendered, /\/workspace\/example/);
 	assert.match(rendered, /Full command:/);
 	assert.match(rendered, /printf safe && rm -rf tmp && git status --short/);
 });

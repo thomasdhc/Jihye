@@ -2,7 +2,7 @@
 
 ## Intent
 
-`bash-guard` intercepts `bash` tool calls and decides whether a command needs human approval. It exists to stop irreversible operations, not to classify commands broadly. Prefer a narrow, explicit rule over a clever heuristic: a false positive trains the user to approve without reading, which is worse than a missing rule.
+`bash-guard` intercepts `bash` tool calls and decides whether a command needs human approval. It exists to stop irreversible operations and enforce explicit delivery boundaries, not to classify commands broadly. Prefer a narrow, explicit rule over a clever heuristic: a false positive trains the user to approve without reading, which is worse than a missing rule.
 
 Which commands are guarded is policy. How a command is parsed, matched, and prompted is logic. Keep them in separate modules.
 
@@ -12,16 +12,16 @@ Dependency direction is strict and acyclic: `shell.ts` → `policy.ts` → `anal
 
 - `index.ts` is the sole Pi extension entrypoint. It owns the two operating modes, the recently-aborted memory, the `--bash-guard-auto-allow` flag, the terminal-notify emission, and the re-exports that form the module's public surface.
 - `policy.ts` is data only. It declares which commands are guarded, at what severity, and with which user-facing reason. It contains no matching, parsing, or control flow.
-- `analysis.ts` turns a command string into a `Risk` (`severity`, `reasons`, `flaggedCommands`). It interprets the policy tables and owns the token-stream detectors.
-- `shell.ts` is syntax only: tokenizing via `shell-quote`, splitting on operators, unwrapping `env`/`command`/assignment prefixes, and option/flag inspection. It knows nothing about risk.
+- `analysis.ts` turns a command string into a `Risk` (`severity`, `reasons`, `flaggedCommands`, `requiresInteractiveApproval`). It interprets the policy tables and owns the token-stream detectors.
+- `shell.ts` is syntax only: tokenizing via `shell-quote`, splitting on operators, unwrapping `env`/`command`/assignment prefixes, extracting nested shell `-c` commands, and option/flag inspection. It knows nothing about risk.
 - `prompt.ts` renders the approval dialog and depends only on the `Risk` type, so analysis stays testable without a UI.
 
 ### Operating modes
 
 `PI_SUBAGENT_DEPTH` is read once at module load. It is `0` or unset in the main session and `>= 1` in a spawned subagent, and the two modes behave deliberately differently:
 
-- **Main session** — full `analyzeBashCommand`, then an interactive prompt. Aborting remembers the exact command for 60s and auto-blocks a retry, so the model cannot loop on a refused command. With no UI, the command is blocked unless `--bash-guard-auto-allow` is set.
-- **Subagent** — no prompting is possible (no stdin, no UI), so only catastrophic operations are hard-blocked: hosted-CLI risks plus the `HEADLESS_BLOCKED` regex patterns. Everything else is allowed through. Block reasons must tell the subagent to escalate to the parent agent rather than retry.
+- **Main session** — full `analyzeBashCommand`, then an interactive prompt showing the exact command and working directory. Aborting remembers the exact command for 60s and auto-blocks a retry, so the model cannot loop on a refused command. With no UI, the command is blocked unless `--bash-guard-auto-allow` is set. Rules marked `requiresInteractiveApproval` cannot use that bypass: every attempt requires a fresh decision, including retries after command or system errors.
+- **Subagent** — no prompting is possible (no stdin, no UI), so hosted-CLI risks, publication rules marked `requiresInteractiveApproval`, and the catastrophic `HEADLESS_BLOCKED` regex patterns are hard-blocked. Everything else is allowed through. Block reasons must tell the subagent to escalate to the parent agent rather than retry.
 
 This asymmetry is intentional. A subagent is more restricted in what it can destroy and less restricted in what it may run unprompted.
 
@@ -45,7 +45,7 @@ If a new rule needs a condition the vocabulary cannot express, prefer a named de
 - Exact flag matching (`hasArg`) and substring matching (`argContains`) are distinct on purpose. `argContains: "-f"` catches bundled forms like `-fd`; `hasArg: "--force"` must not match `--force-with-lease`.
 - The matcher must not stop at the first match. Multiple rules may contribute reasons to one segment.
 - `index.ts` must remain the only entrypoint Pi discovers, and must keep re-exporting `analyzeBashCommand`, `analyzeGitHubCliCommand`, and `analyzeGitLabCliCommand`.
-- Guard operations whose effects escape the session: irreversible locally, disruptive to shared systems, or broad enough that review is cheaper than recovery. Additive, self-authored, trivially-undone writes — creating an issue, editing your own description, posting a comment — are intentionally not guarded, and reads never are.
+- Guard operations whose effects escape the session: irreversible locally, disruptive to shared systems, externally publishing a delivery boundary, or broad enough that review is cheaper than recovery. Additive, self-authored, trivially-undone writes — creating an issue, editing your own description, posting a comment — are intentionally not guarded, and reads never are. `git push`, `gh pr create`, and `glab mr create` are explicit delivery-boundary exceptions and always require interactive approval.
 - `high` means unrecoverable. `medium` means recoverable but externally visible or wide-reaching. If a proposed rule fits neither, it probably should not exist.
 
 ## Adding a Rule
