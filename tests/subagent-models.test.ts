@@ -55,35 +55,51 @@ test("selects the tier model of the parent session provider", () => {
 	);
 });
 
-test("selects the alternate provider's tier model when requested", () => {
+test("keeps alternate-provider selection disabled by default", () => {
 	const profiles = bundledProfiles();
 
 	assert.equal(
 		resolveAgentModel({
-			tier: "deep",
+			tier: "standard",
+			alternateTier: "deep",
 			providerStrategy: "alternate",
 			profiles,
+			activeModel: { provider: "anthropic", id: "claude-opus-5" },
+		}),
+		"anthropic/claude-sonnet-5",
+	);
+});
+
+test("selects the alternate provider's alternate tier when locally enabled", () => {
+	const profiles = bundledProfiles();
+	const selection = {
+		tier: "standard" as const,
+		alternateTier: "deep" as const,
+		providerStrategy: "alternate" as const,
+		enableAlternateProviders: true,
+		profiles,
+	};
+
+	assert.equal(
+		resolveAgentModel({
+			...selection,
 			activeModel: { provider: "openai-codex", id: "gpt-5.6-sol" },
 		}),
 		"anthropic/claude-opus-5",
 	);
 	assert.equal(
 		resolveAgentModel({
-			tier: "deep",
-			providerStrategy: "alternate",
-			profiles,
+			...selection,
 			activeModel: { provider: "anthropic", id: "claude-opus-5" },
 		}),
 		"openai-codex/gpt-5.6-sol",
 	);
 	assert.equal(
 		resolveAgentModel({
-			tier: "standard",
-			providerStrategy: "alternate",
-			profiles,
+			...selection,
 			activeModel: { provider: "openai", id: "gpt-5.6-sol" },
 		}),
-		"anthropic/claude-sonnet-5",
+		"anthropic/claude-opus-5",
 	);
 });
 
@@ -93,8 +109,10 @@ test("prefers a pinned frontmatter model over any tier or provider strategy", ()
 	assert.equal(
 		resolveAgentModel({
 			pinnedModel: "openai-codex/gpt-5.4-mini",
-			tier: "deep",
+			tier: "standard",
+			alternateTier: "deep",
 			providerStrategy: "alternate",
+			enableAlternateProviders: true,
 			profiles,
 			activeModel: { provider: "anthropic", id: "claude-opus-5" },
 		}),
@@ -111,8 +129,10 @@ test("falls back to the parent active model for unprofiled and unmapped provider
 	);
 	assert.equal(
 		resolveAgentModel({
-			tier: "deep",
+			tier: "standard",
+			alternateTier: "deep",
 			providerStrategy: "alternate",
+			enableAlternateProviders: true,
 			profiles,
 			activeModel: { provider: "google", id: "gemini-3-pro" },
 		}),
@@ -121,8 +141,10 @@ test("falls back to the parent active model for unprofiled and unmapped provider
 	for (const provider of ["toString", "constructor"]) {
 		assert.equal(
 			resolveAgentModel({
-				tier: "deep",
+				tier: "standard",
+				alternateTier: "deep",
 				providerStrategy: "alternate",
+				enableAlternateProviders: true,
 				profiles,
 				activeModel: { provider, id: "custom-model" },
 			}),
@@ -161,11 +183,13 @@ test("merges a workstation override over the bundled tier maps", () => {
 	assert.equal(
 		resolveAgentModel({
 			tier: "standard",
+			alternateTier: "deep",
 			providerStrategy: "alternate",
+			enableAlternateProviders: true,
 			profiles: merged,
 			activeModel: { provider: "anthropic", id: "claude-opus-5" },
 		}),
-		"google/gemini-3-flash",
+		"google/gemini-3-pro",
 	);
 });
 

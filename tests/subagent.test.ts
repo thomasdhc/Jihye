@@ -35,10 +35,12 @@ test("loads portable bundled agent model specifications", () => {
 	}
 	assert.equal(byName.get("scout")?.modelTier, "standard");
 	assert.equal(byName.get("researcher")?.modelTier, "standard");
-	assert.equal(byName.get("reviewer")?.modelTier, "deep");
+	assert.equal(byName.get("reviewer")?.modelTier, "standard");
 	assert.equal(byName.get("engineer")?.modelTier, "deep");
+	assert.equal(byName.get("reviewer")?.alternateModelTier, "deep");
 	assert.equal(byName.get("reviewer")?.providerStrategy, "alternate");
 	for (const name of ["scout", "researcher", "engineer"]) {
+		assert.equal(byName.get(name)?.alternateModelTier, undefined);
 		assert.equal(byName.get(name)?.providerStrategy, undefined);
 	}
 	assert.equal(byName.get("scout")?.thinking, "medium");
@@ -142,6 +144,7 @@ Specialist prompt.
 		assert.equal(scout?.filePath, join(packageLocalDir, "scout.md"));
 		assert.equal(specialist?.model, undefined);
 		assert.equal(specialist?.modelTier, undefined);
+		assert.equal(specialist?.alternateModelTier, undefined);
 		assert.equal(specialist?.providerStrategy, undefined);
 		assert.equal(specialist?.thinking, "medium");
 	} finally {
@@ -157,6 +160,20 @@ test("rejects an unknown model tier in agent frontmatter", () => {
 		assert.throws(
 			() => loadAgentsFromDirectories([tempDir]),
 			/Invalid model_tier "turbo" for agent "broken"/,
+		);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("rejects an unknown alternate model tier in agent frontmatter", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "jihye-subagents-"));
+	writeFileSync(join(tempDir, "broken.md"), "---\nname: broken\ndescription: Broken fixture\nalternate_model_tier: turbo\n---\nBroken\n");
+
+	try {
+		assert.throws(
+			() => loadAgentsFromDirectories([tempDir]),
+			/Invalid alternate_model_tier "turbo" for agent "broken"/,
 		);
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });

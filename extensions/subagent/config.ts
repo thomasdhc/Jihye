@@ -39,12 +39,21 @@ export function loadConfig(configPath: string = CONFIG_PATH): ExtensionConfig {
 		if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
 		throw error;
 	}
+	let parsed: unknown;
 	try {
-		return JSON.parse(content) as ExtensionConfig;
+		parsed = JSON.parse(content) as unknown;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		throw new Error(`Invalid JSON at ${configPath}: ${message}`, { cause: error });
 	}
+	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+		throw new Error(`Invalid subagent config at ${configPath}: expected a JSON object`);
+	}
+	const config = parsed as ExtensionConfig;
+	if (config.enableAlternateProviders !== undefined && typeof config.enableAlternateProviders !== "boolean") {
+		throw new Error(`Invalid subagent config at ${configPath}: enableAlternateProviders must be a boolean`);
+	}
+	return config;
 }
 
 // Tools pi registers natively; the runner allowlists these with no `--extension`.

@@ -1,11 +1,11 @@
 /**
  * Subagent model selection.
  *
- * Bundled agents declare a capability tier and optional provider strategy
- * instead of a pinned model, so the same definitions work across parent
- * providers. Tier and alternate-provider maps live in data
- * (`model-profiles.json`, optionally overridden by the untracked `config.json`)
- * and never in the resolution logic below.
+ * Bundled agents declare baseline and optional alternate capability tiers plus
+ * a provider strategy instead of a pinned model, so the same definitions work
+ * across parent providers. Local config gates alternate selection; tier and
+ * alternate-provider maps live in data (`model-profiles.json`, optionally
+ * overridden by the gitignored `config.json`) rather than resolution branches.
  */
 import * as fs from "node:fs";
 
@@ -209,7 +209,9 @@ export interface ResolveModelInput {
 	/** Explicit `model` from agent frontmatter; always wins when present. */
 	pinnedModel?: string;
 	tier?: ModelTier;
+	alternateTier?: ModelTier;
 	providerStrategy?: ModelProviderStrategy;
+	enableAlternateProviders?: boolean;
 	profiles: ModelProfiles;
 	activeModel?: ActiveModel;
 }
@@ -218,26 +220,32 @@ export interface ResolveModelInput {
  * Resolve the model a subagent should run on.
  *
  * 1. A pinned frontmatter model, so user overrides keep exact control.
- * 2. For the `alternate` strategy, the tier entry for the configured alternate
- *    to the parent session's provider.
- * 3. The tier entry for the parent session's provider.
+ * 2. When alternate providers are locally enabled and the parent provider has
+ *    a route, the alternate tier entry for that route's provider.
+ * 3. The baseline tier entry for the parent session's provider.
  * 4. The parent session's own active model, for providers without a profile.
- * 5. The tier entry of the default provider, when no active model is known.
+ * 5. The baseline tier entry of the default provider, when no active model is known.
  */
 export function resolveAgentModel({
 	pinnedModel,
 	tier,
+	alternateTier,
 	providerStrategy,
+	enableAlternateProviders,
 	profiles,
 	activeModel,
 }: ResolveModelInput): string {
 	if (pinnedModel) return pinnedModel;
 
-	const resolvedTier = tier ?? profiles.defaultTier;
 	const provider = activeModel?.provider;
+	const useAlternateProvider = enableAlternateProviders === true
+		&& providerStrategy === "alternate"
+		&& !!provider
+		&& Object.hasOwn(profiles.alternateProviders, provider);
+	const resolvedTier = (useAlternateProvider ? alternateTier : undefined) ?? tier ?? profiles.defaultTier;
 
 	if (provider) {
-		if (providerStrategy === "alternate" && Object.hasOwn(profiles.alternateProviders, provider)) {
+		if (useAlternateProvider) {
 			const alternateProvider = profiles.alternateProviders[provider];
 			return profiles.providers[alternateProvider][resolvedTier];
 		}

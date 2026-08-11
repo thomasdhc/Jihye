@@ -2,7 +2,8 @@
 name: reviewer
 description: Bounded reviewer that challenges supplied claims and returns evidence-backed findings with a proportionate verdict.
 tools: read, grep, find, ls, safe_bash, web_search, web_fetch
-model_tier: deep
+model_tier: standard
+alternate_model_tier: deep
 provider_strategy: alternate
 thinking: medium
 ---

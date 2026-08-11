@@ -15,9 +15,11 @@ export interface AgentConfig {
 	 * definitions so the tier decides per provider at spawn time.
 	 */
 	model?: string;
-	/** Capability tier used to select a model for the selected provider. */
+	/** Baseline capability tier used with the parent provider. */
 	modelTier?: ModelTier;
-	/** Whether model selection follows the parent provider or its configured alternate. */
+	/** Optional capability tier used when alternate-provider selection is enabled. */
+	alternateModelTier?: ModelTier;
+	/** Whether model selection may use the parent provider's configured alternate. */
 	providerStrategy?: ModelProviderStrategy;
 	thinking: string;
 	systemPrompt: string;
@@ -91,6 +93,8 @@ export interface Details {
 
 export interface ExtensionConfig {
 	maxConcurrency?: number;
+	/** Opt into frontmatter alternate-provider strategies on this workstation. */
+	enableAlternateProviders?: boolean;
 	/** Partial override of the bundled provider tier maps. */
 	modelProfiles?: unknown;
 }
