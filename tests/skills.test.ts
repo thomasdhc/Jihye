@@ -50,6 +50,8 @@ test("coordinate preserves its execution-skeleton algorithm", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "coordinate", "SKILL.md"), "utf8");
 	assert.deepEqual(headings(content), ["Build the Execution Skeleton", "Run the Skeleton"]);
 	assertTerms(content, [
+		/Context and Delegation/,
+		/main-agent context/i,
 		/acceptance invariant/i,
 		/delivery boundar/i,
 		/safe parallel/i,
@@ -67,6 +69,9 @@ test("examen preserves introduced-defect and submission semantics", () => {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
+		/\bFidelity\b/,
+		/\bEntrypoint\b/,
+		/\bSafety\b/,
 		/introduced regression/i,
 		/realistic event, input, configuration, or caller/i,
 		/\[P0\]/,
@@ -85,6 +90,7 @@ test("vicara preserves evidence gates and resumable reporting", () => {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
+		/\bSolution Architecture\b/,
 		/follow the `coordinate` skill/i,
 		/finding gate/i,
 		/decisive support/i,

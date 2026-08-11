@@ -48,7 +48,7 @@ After drafting the ranking, require a reviewer to challenge ordering, impact, ov
 
 ## Rank and Update the Report
 
-Keep each opportunity atomic; split work when prerequisites, risks, implementation, or validation differ. Rank by:
+Apply Solution Architecture when assessing scope clarity, implementation safety, and validation. Keep each opportunity atomic; split work when prerequisites, risks, implementation, or validation differ. Rank by:
 
 1. likely repository value
 2. evidence strength

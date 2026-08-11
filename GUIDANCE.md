@@ -17,8 +17,21 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 - Use the glossary below as a controlled vocabulary. When a glossary term applies, use it; do not coin a synonym.
 - Where a term lists qualified kinds, use the qualified form ("approval gate", "delivery boundary"). Use the bare term only for the general concept.
 - Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
+- Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
 
 ## Glossary
+
+**main-agent context** — the primary agent's loaded runtime context and working memory. It holds universal Jihye policy, source-of-truth task state, decisions, decisive evidence, and final synthesis; a subagent receives independently loaded policy and its bounded brief, not this context.
+
+**Fidelity** — the continuous main-agent discipline of preserving the established outcome, intent, prompt boundary, and acceptance invariants while tracing root causes and maintaining a larger foundation.
+
+**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
+
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, established structure, necessary refactors, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+
+**Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, deciding whether and how to delegate, briefing subagents, verifying their output, and retaining ownership.
+
+**Safety** — the standing main-agent protections against exposing or committing secrets, credentials, environment files, workstation authentication material, or other protected data.
 
 **gate** — a condition that must be satisfied before a class of action may begin. A gate opens on the nature of the action, never on its size or obviousness. A gate is passed once per action.
 

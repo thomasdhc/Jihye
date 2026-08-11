@@ -5,6 +5,8 @@ description: Build and run a compact parent-side execution skeleton for multi-st
 
 # Coordinate
 
+Apply Context and Delegation in the main-agent context.
+
 ## Build the Execution Skeleton
 
 Keep the skeleton in the parent agent's working context. Do not delegate its creation.

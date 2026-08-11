@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PERSONAS_ROOT = join(REPO_ROOT, "personas");
+const GUIDANCE_PATH = join(REPO_ROOT, "GUIDANCE.md");
 
 const POLICY_FILES = [
 	"JIHYE.md",
@@ -87,6 +88,19 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
 });
 
+test("guidance defines the canonical Jihye policy domains", () => {
+	const guidance = readFileSync(GUIDANCE_PATH, "utf8");
+	assertTerms(guidance, [
+		/\*\*main-agent context\*\*\s+—/,
+		/\*\*Fidelity\*\*\s+—/,
+		/\*\*Entrypoint\*\*\s+—/,
+		/\*\*Solution Architecture\*\*\s+—/,
+		/\*\*Context and Delegation\*\*\s+—/,
+		/\*\*Safety\*\*\s+—/,
+		/downstream personas and skills[^\n]*exact capitalized term/i,
+	], "canonical Jihye vocabulary");
+});
+
 test("strict persona is the base persona plus its approval header", () => {
 	const baseBody = readPersona("JIHYE.md").replace(/^# Jihye\n\n/, "");
 	const strict = readPersona("JIHYE_strict.md");
@@ -98,11 +112,14 @@ test("strict persona is the base persona plus its approval header", () => {
 	assert.equal(match.groups.body, baseBody);
 });
 
-test("global personas preserve coordination gates and parent ownership", () => {
+test("global personas preserve canonical domains, coordination gates, and parent ownership", () => {
 	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
 		const persona = readPersona(path);
-		assert.ok(headings(persona).includes("Context and Delegation"), path);
+		assert.deepEqual(headings(persona), ["Fidelity", "Entrypoint", "Solution Architecture", "Context and Delegation", "Safety"], path);
 		assertTerms(persona, [
+			/alternatives and trade-offs/i,
+			/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
+			/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
 			/coordinate.*skill/is,
 			/before the first subagent call/i,
 			/delivery boundar/i,
@@ -115,6 +132,20 @@ test("global personas preserve coordination gates and parent ownership", () => {
 		], path);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
 	}
+});
+
+test("downstream personas invoke canonical main-agent domains", () => {
+	assertTerms(readPersona("WORKSPACE.md"), [
+		/main-agent context/i,
+		/\bFidelity\b/,
+		/\bEntrypoint\b/,
+		/\bSolution Architecture\b/,
+		/\bContext and Delegation\b/,
+		/\bSafety\b/,
+	], "workspace policy domains");
+	assertTerms(readPersona("DEVELOPMENT.md"), [/\bEntrypoint\b/, /\bSolution Architecture\b/], "development policy domains");
+	assertTerms(readPersona("GIT.md"), [/\bFidelity\b/, /\bEntrypoint\b/], "Git policy domains");
+	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bSolution Architecture\b/], "engineer policy domains");
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {

@@ -5,11 +5,11 @@ description: Review a GitHub pull request or GitLab merge request for concrete i
 
 # Examen
 
-Review changed behavior against intent and verified evidence. Treat a GitHub pull request or GitLab merge request as the **review target**.
+Apply Fidelity and Safety while reviewing changed behavior against intent and verified evidence. Treat a GitHub pull request or GitLab merge request as the **review target**.
 
 ## Review the Target
 
-1. Resolve an unambiguous target and whether the user wants a draft or a platform submission. A request to review is read-only; only explicit direction to post, approve, request changes, or submit a comment authorizes that specific external write.
+1. At Entrypoint, resolve an unambiguous target and whether the user wants a draft or a platform submission. A request to review is read-only; only explicit direction to post, approve, request changes, or submit a comment authorizes that specific external write.
 2. Snapshot the host, project, number, URL, state, exact base and head branches and SHAs, description, linked issues, commits, changed files, checks, reviews, and discussions. Preserve the reviewed head SHA.
 3. Read the complete diff and changed files. Inspect relevant callers, tests, configuration, history, issue context, and authoritative dependency or platform documentation. Trace realistic input, event, configuration, credential, platform, and failure paths. Prefer host metadata and Git objects for read-only analysis. Never check out the review target over a dirty working tree; use a configured isolated worktree when execution requires a checked-out source revision or the user requests isolation.
 4. Compare claimed and actual behavior. Distinguish an introduced regression from a pre-existing defect or documented limitation. Use CI evidence for validation, but omit dashboard-visible CI status from submitted comments and review bodies.

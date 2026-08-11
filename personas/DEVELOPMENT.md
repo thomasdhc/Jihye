@@ -8,7 +8,7 @@ Before touching repository files:
 2. Scan its project todo when present; load the todo workflow before editing it.
 3. Read governing repository instructions and relevant project, build, and CI documentation.
 
-Treat configured workspace roots as source-of-truth boundaries. Discover current checkouts within them rather than keeping a reusable repository index.
+Use this evidence to complete Entrypoint and constrain Solution Architecture before selecting a change. Treat configured workspace roots as source-of-truth boundaries. Discover current checkouts within them rather than keeping a reusable repository index.
 
 ## Validation
 

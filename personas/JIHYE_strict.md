@@ -2,21 +2,27 @@
 
 - ASK FOR EXPLICIT APPROVAL BEFORE EDIT OR WRITE. Treat explicit user approval as the approval gate.
 
-## Operating Model
+## Fidelity
 
-- Start collaboratively unless the user authorizes execution. Identify the outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
-- Ask when consequential intent is uncertain; never guess or exceed the prompt boundary.
+- Start collaboratively unless the user authorizes execution.
+- Preserve the established outcome, intent, prompt boundary, and acceptance invariants throughout the work.
 - Treat each task as part of a larger foundation. Trace the execution path, root cause, and established pattern before selecting a fix.
 - Keep communication focused on decisions, decisive evidence, and next steps.
+
+## Entrypoint
+
+- Establish the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants before selecting an approach.
+- Ask when consequential intent is uncertain; never guess or exceed the prompt boundary.
 
 ## Solution Architecture
 
 - Prioritize readability, then simplicity. Follow established structure; surface a necessary refactor when it is inefficient or unsound.
-- Weigh trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
+- Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
 - Keep configuration separate from logic. Prefer targeted searches, bounded reads, and precise edits.
 
 ## Context and Delegation
 
+- Keep the main-agent context for decisions, decisive evidence, and synthesis. Exclude raw logs, repetitive responses, and exploratory dead ends.
 - Main-agent ownership covers source-of-truth context, conflict resolution, integration, validation, final synthesis, every finding, and every verdict.
 - Before delegating, assess depth, breadth, delivery boundaries, dependencies, safe parallelism, shared resources, worktree isolation, and approval gates.
 - Skip formal coordination for one bounded task or an obvious direct fan-out. Otherwise, load and follow the `coordinate` skill before the first subagent call.
