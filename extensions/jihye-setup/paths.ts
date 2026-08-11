@@ -73,6 +73,35 @@ function realpathOrUndefined(target: string): string | undefined {
 	}
 }
 
+/** Fully resolved `target`, falling back to plain resolution when it does not exist. */
+function realpathOrResolve(target: string): string {
+	try {
+		return fs.realpathSync(target);
+	} catch {
+		return path.resolve(target);
+	}
+}
+
+/**
+ * The persona `contextFile` links to, when it lands inside `personasDirectory`.
+ *
+ * Both sides are resolved before comparison. Pi installs guidance as symlinks,
+ * and the package itself can sit behind a symlinked ancestor (macOS `/var` ->
+ * `/private/var`, a symlinked home, a linked checkout). Comparing a resolved
+ * target against a raw parent misreads managed guidance as unmanaged.
+ *
+ * The result is reported under the caller's `personasDirectory` so every fact
+ * the agent receives stays in one path family.
+ */
+function resolveManagedPersona(contextFile: string, personasDirectory: string): string | undefined {
+	const resolved = realpathOrUndefined(contextFile);
+	if (!resolved) return undefined;
+
+	const root = realpathOrResolve(personasDirectory);
+	if (!isWithin(root, resolved)) return undefined;
+	return path.join(personasDirectory, path.relative(root, resolved));
+}
+
 function isFile(target: string): boolean {
 	try {
 		return fs.statSync(target).isFile();
@@ -111,8 +140,7 @@ function ancestors(from: string): string[] {
  */
 function isWorkspaceRoot(directory: string, personasDirectory: string): boolean {
 	const contextFile = path.join(directory, CONTEXT_FILE_NAME);
-	const resolved = realpathOrUndefined(contextFile);
-	if (resolved && isWithin(personasDirectory, resolved)) return true;
+	if (resolveManagedPersona(contextFile, personasDirectory)) return true;
 	return LOCAL_ENVIRONMENT_FILES.every((file) => isFile(path.join(directory, file)));
 }
 
@@ -150,8 +178,8 @@ export function resolveProfile(agentDirectory: string, personasDirectory: string
 	const contextFile = path.join(agentDirectory, CONTEXT_FILE_NAME);
 	if (!isFile(contextFile)) return "missing";
 
-	const resolved = realpathOrUndefined(contextFile);
-	if (!resolved || !isWithin(personasDirectory, resolved)) return "unmanaged";
+	const resolved = resolveManagedPersona(contextFile, personasDirectory);
+	if (!resolved) return "unmanaged";
 
 	const name = path.basename(resolved);
 	if (name === STRICT_PROFILE_FILE) return "strict";
@@ -161,11 +189,11 @@ export function resolveProfile(agentDirectory: string, personasDirectory: string
 
 function describeGuidanceLink(contextFile: string, personasDirectory: string, loaded: Set<string>): GuidanceLink {
 	const resolved = realpathOrUndefined(contextFile);
-	const managed = resolved !== undefined && isWithin(personasDirectory, resolved);
+	const target = resolveManagedPersona(contextFile, personasDirectory);
 	return {
 		path: contextFile,
-		target: managed ? resolved : undefined,
-		managed,
+		target,
+		managed: target !== undefined,
 		loaded: loaded.has(contextFile) || (resolved !== undefined && loaded.has(resolved)),
 	};
 }

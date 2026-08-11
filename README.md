@@ -1,4 +1,4 @@
-# Jihye | 지혜 | 智慧
+# Jihye · 지혜 · 智慧
 
 Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your workflow. It bundles focused extensions, reusable skills, portable agent definitions, and global/workspace guidance into one package that works consistently across workstations.
 
