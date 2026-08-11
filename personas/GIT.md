@@ -2,52 +2,51 @@
 
 ## Safety and Branching
 
-- Check the current branch and status before changing a repository.
-- Ask before moving pre-existing changes between branches. Never stash, reset, discard, or overwrite them without approval.
-- Unless the user directs a different base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`, using the branch namespace from workspace-root `USERNAME.md`.
-- Never assume local `main` is current, and do not develop directly on `main`.
-- If the latest remote `main` cannot be fetched, ask before using another base.
-- Keep distinct features or independently deliverable outcomes on separate branches and pull requests; do not combine them merely because one change is small. Keep an outcome's implementation, tests, and supporting documentation together.
-- Use a separate Git worktree when concurrent work or isolation would prevent interference with the canonical checkout.
-- Keep the canonical checkout untouched and use the isolated-worktree location configured in workspace-root `REPO.md`.
-- Inspect repository and worktree state before creating, integrating, moving, or removing work. Never stash, reset, overwrite, or discard existing changes, and never remove a worktree containing uncommitted or untracked work.
-- When the user asks to commit or prepare isolated work for pushing, commit it on its branch in the worktree, then remove the clean worktree and switch the clean canonical checkout to that branch; the repository is shared, so never copy files between them.
+- Inspect the current branch, status, and worktree state before changing tracked files or Git state.
+- Pass an approval gate before moving pre-existing changes between branches. Never stash, reset, discard, overwrite, or otherwise destroy them without explicit user approval.
+- Unless the user names another base, fetch `origin` and create a focused `<username>/<feature>` branch from the updated `origin/main`; read workspace-root `USERNAME.md` for the namespace.
+- Never assume local `main` is current, and never develop directly on `main`.
+- Ask before using another base when the latest remote `main` cannot be fetched.
+- Keep distinct features or independently deliverable outcomes on separate branches and pull requests; do not combine them merely because one change is small. Treat each outcome as a delivery boundary. Keep an outcome's implementation, tests, and supporting documentation together.
+- Use a separate worktree when concurrent work or isolation prevents interference.
+- Keep the canonical checkout untouched and use the isolated-worktree location configured by workspace-root `REPO.md`.
+- Inspect repository and worktree state before creating, integrating, moving, or removing work. Never remove a worktree containing uncommitted or untracked work.
+- When the user requests a commit or isolated work prepared for pushing, commit on the worktree branch, remove the worktree only after it is clean, and switch the clean canonical checkout to that branch. Never copy files between them.
 
 ## Staging, Commits, and Pushing
 
-- Validate the change, stage only the task's files, review the staged diff, and commit automatically unless the user asks otherwise.
-- Prefer additional follow-up commits over amending existing commits. Amend only when the user explicitly asks.
-- Use the applicable commit command configured in workspace-root `USERNAME.md` so required signing and attribution are preserved.
-- Never push. Pushing is delegated to the user; provide a ready-to-run push command instead.
+- Validate the change, stage only files inside the prompt boundary, review the staged diff, and commit automatically unless the user directs otherwise.
+- Prefer a follow-up commit over amending an existing commit. Amend only after explicit user approval.
+- Use the agent commit command configured in workspace-root `USERNAME.md` to preserve required signing and attribution.
+- Never push. Preserve this invariant even after committing; give the user a ready-to-run push command instead.
 
 ## Commit Messages
 
-Use Conventional Commit style:
+Use Conventional Commit format:
 
 ```text
 <type>(<optional-scope>): <message>
 ```
 
-Supported primary types include:
+Use these primary types:
 
-- `feat`: new behavior or capability
-- `fix`: bug fix
-- `docs`: documentation-only change
-- `ci`: CI or build change
+- Use `feat` for new behavior or capability.
+- Use `fix` for a bug fix.
+- Use `docs` for a documentation-only change.
+- Use `ci` for CI or build changes.
 
 Use another Conventional Commit type only when it describes the change more accurately.
 
 ## Merge Requests and Pull Requests
 
-When the user asks to open a merge request or pull request, fetch `origin` and verify whether the current branch exists remotely before claiming that it needs to be pushed. If it exists, create the request directly; otherwise, provide the ready-to-run push command and resume creation after the user confirms the push.
-
-Use Conventional Commit format for every merge request and pull request title: `<type>(<optional-scope>): <message>`. Follow the same type rules as commit messages. Do not use a plain prose title unless the user explicitly requests it.
-
-Before drafting or updating a merge request or pull request description, look for a repository-owned template. Check that candidate template files or directories exist before reading or searching them. If one exists, show its headings and checklists to the user and agree with them how to format the description before proceeding.
-
-When the user asks to add or update a description, update the open MR or PR for the current branch directly with the repository's CLI or API and verify the result. If no open MR or PR exists, or access is unavailable, provide the drafted description and state the limitation. Do not create an MR or PR unless the user asks.
-
-If `gh pr edit` fails while querying deprecated Projects Classic APIs, upgrade to GitHub CLI 2.82.1 or newer before retrying.
+- When asked to open a merge request or pull request, fetch `origin` and verify whether the current branch exists remotely before deciding that a push is required.
+- Create the request directly when its remote branch exists. Otherwise, provide a ready-to-run push command and resume only after the user confirms the push.
+- Use Conventional Commit format for every merge request and pull request title. Do not use a plain prose title unless the user explicitly requests it.
+- Before drafting or updating a description, check whether the repository contains a request template.
+- If a template exists, show its headings and checklists to the user and agree on the description format before proceeding.
+- When asked to add or update a description, update the open request with the repository's CLI or API and verify the result.
+- If no open request exists or access is unavailable, provide the draft and state the limitation. Do not create a request unless the user asks.
+- If `gh pr edit` fails while querying deprecated Projects Classic APIs, upgrade to GitHub CLI 2.82.1 or newer before retrying.
 
 When no repository template exists, use only:
 
