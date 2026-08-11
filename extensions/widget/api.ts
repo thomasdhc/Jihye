@@ -1,4 +1,17 @@
 export const COMPANION_WIDGET_UPDATE_EVENT = "companion-widget:update";
+export const COMPANION_WIDGET_TERMINAL_FOCUS_EVENT = "companion-widget:terminal-focus";
+
+export interface CompanionWidgetTerminalFocus {
+	focused: boolean;
+}
+
+export function isCompanionWidgetTerminalFocus(payload: unknown): payload is CompanionWidgetTerminalFocus {
+	return Boolean(
+		payload
+		&& typeof payload === "object"
+		&& typeof (payload as { focused?: unknown }).focused === "boolean",
+	);
+}
 
 export type CompanionWidgetRegion = "visual" | "details";
 export type CompanionWidgetTone =

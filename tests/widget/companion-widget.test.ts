@@ -10,9 +10,18 @@ import {
 import { SUBAGENT_PROGRESS_EVENT } from "../../extensions/subagent/progress-events.ts";
 import { createDefaultWidgetConfig } from "../../extensions/widget/config.ts";
 import {
+	COMPANION_WIDGET_TERMINAL_FOCUS_EVENT,
 	COMPANION_WIDGET_UPDATE_EVENT,
 	type CompanionWidgetContribution,
 } from "../../extensions/widget/api.ts";
+import {
+	DISABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE,
+	ENABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE,
+	TERMINAL_FOCUS_IN_SEQUENCE,
+	TERMINAL_FOCUS_OUT_SEQUENCE,
+	parseTerminalFocusInput,
+	shouldEnableTerminalFocusReporting,
+} from "../../extensions/widget/terminal-focus.ts";
 
 test("keeps pi-pet internal to the package's sole widget entrypoint", () => {
 	const packageManifest = JSON.parse(
@@ -54,7 +63,11 @@ test("loads every companion component through one widget extension", () => {
 		},
 	} as never);
 
-	assert.deepEqual(sharedEventSubscriptions, [COMPANION_WIDGET_UPDATE_EVENT, SUBAGENT_PROGRESS_EVENT]);
+	assert.deepEqual(sharedEventSubscriptions, [
+		COMPANION_WIDGET_UPDATE_EVENT,
+		SUBAGENT_PROGRESS_EVENT,
+		COMPANION_WIDGET_TERMINAL_FOCUS_EVENT,
+	]);
 	assert.deepEqual(commands.sort(), ["ctx", "widget"]);
 	assert.equal(eventHandlers.filter((event) => event === "session_start").length, 4);
 	assert.equal(eventHandlers.filter((event) => event === "session_shutdown").length, 3);
@@ -162,4 +175,88 @@ test("preserves contributions published before the host session-start handler", 
 		{ fg(_tone: string, text: string) { return text; } },
 	);
 	assert.deepEqual(component?.render(80), [`${" ".repeat(65)}published early`]);
+});
+
+test("recognizes direct iTerm focus reporting and rejects unsafe multiplexer assumptions", () => {
+	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "iTerm.app" }), true);
+	assert.equal(shouldEnableTerminalFocusReporting({ ITERM_SESSION_ID: "w0t0p0:session" }), true);
+	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "iTerm.app", TMUX: "/tmp/tmux" }), false);
+	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "iTerm.app", STY: "screen" }), false);
+	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "Apple_Terminal" }), false);
+
+	assert.deepEqual(parseTerminalFocusInput(TERMINAL_FOCUS_IN_SEQUENCE), { focused: true, data: "" });
+	assert.deepEqual(parseTerminalFocusInput(TERMINAL_FOCUS_OUT_SEQUENCE), { focused: false, data: "" });
+	assert.deepEqual(
+		parseTerminalFocusInput(`before${TERMINAL_FOCUS_OUT_SEQUENCE}middle${TERMINAL_FOCUS_IN_SEQUENCE}after`),
+		{ focused: true, data: "beforemiddleafter" },
+	);
+	assert.equal(parseTerminalFocusInput("input"), undefined);
+});
+
+test("reports and consumes direct iTerm focus changes for companion components", async () => {
+	type Handler = (event: unknown, ctx: unknown) => Promise<void> | void;
+	type InputListener = (data: string) => { consume: true } | { data: string } | undefined;
+	const handlers = new Map<string, Handler>();
+	const terminalWrites: string[] = [];
+	const focusEvents: boolean[] = [];
+	let widgetFactory: ((tui: any, theme: any) => { dispose(): void }) | undefined;
+	let inputListener: InputListener | undefined;
+	let inputListenerRemoved = false;
+
+	registerCompanionWidgetHost({
+		events: {
+			on() {
+				return () => {};
+			},
+			emit(event: string, payload: { focused?: boolean }) {
+				assert.equal(event, COMPANION_WIDGET_TERMINAL_FOCUS_EVENT);
+				assert.equal(typeof payload.focused, "boolean");
+				focusEvents.push(payload.focused!);
+			},
+		},
+		on(event: string, handler: Handler) {
+			handlers.set(event, handler);
+		},
+	} as never, {
+		environment: { TERM_PROGRAM: "iTerm.app" },
+		writeTerminal(sequence) {
+			terminalWrites.push(sequence);
+		},
+	});
+
+	await handlers.get("session_start")?.({}, {
+		mode: "tui",
+		ui: {
+			setWidget(_id: string, factory: typeof widgetFactory) {
+				widgetFactory = factory;
+			},
+		},
+	});
+	const component = widgetFactory?.(
+		{
+			requestRender() {},
+			addInputListener(listener: InputListener) {
+				inputListener = listener;
+				return () => {
+					inputListenerRemoved = true;
+				};
+			},
+		},
+		{ fg(_tone: string, text: string) { return text; } },
+	);
+
+	assert.deepEqual(terminalWrites, [ENABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE]);
+	assert.deepEqual(focusEvents, [true], "widget initialization starts in the focused tab");
+	assert.equal(inputListener?.("ordinary-input"), undefined);
+	assert.deepEqual(inputListener?.(`${TERMINAL_FOCUS_OUT_SEQUENCE}ordinary-input`), { data: "ordinary-input" });
+	assert.deepEqual(inputListener?.(TERMINAL_FOCUS_IN_SEQUENCE), { consume: true });
+	assert.deepEqual(focusEvents, [true, false, true]);
+
+	component?.dispose();
+	assert.equal(inputListenerRemoved, true);
+	assert.deepEqual(terminalWrites, [
+		ENABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE,
+		DISABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE,
+	]);
+	assert.deepEqual(focusEvents, [true, false, true, false]);
 });
