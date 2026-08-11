@@ -5,34 +5,34 @@ description: Maintain a lean project todo and completion archive. Use when plann
 
 # Todo
 
-Keep the todo as a lean execution index, not a design document or activity log.
+Maintain one lean execution index for unfinished work and one completion archive.
 
-## Principles
+## Preserve the Todo Invariants
 
-- Active files contain only unfinished work.
+- Keep only unfinished work in the active file.
 - Archive completed work instead of accumulating checked items in the active file.
-- Track outcomes, order, status, and links.
-- Keep requirements, acceptance criteria, investigation notes, branch history, and operational evidence in project documentation or the linked issue tracker.
-- Respect the user's write boundary. If they ask to discuss, review, or plan without writing, do not modify todo files.
+- Track outcomes, order, status, and links; do not keep an activity log.
+- Put requirements, acceptance criteria, investigation notes, branch history, and operational evidence in project documentation or the linked issue tracker.
+- Respect the prompt boundary. Do not modify todo files when the user asks only to discuss, review, or plan.
 
-## Find the todo
+## Locate the Canonical Todo
 
-Follow the first applicable convention:
+Follow explicit user instructions. Before touching a todo target, pass the read gate for project instructions. Then follow the first applicable convention:
 
-1. Explicit user or project instructions.
-2. A workspace todo registry. When the Git repository is under a workspace containing `todo/README.md`, read that file and use its convention. A common layout is:
+1. Use the location required by user or project instructions.
+2. When the Git repository is under a workspace containing `todo/README.md`, read that registry and follow its convention. A common layout is:
    - `<workspace>/todo/<repo-slug>.md`
    - `<workspace>/todo/done/<repo-slug>.md`
-3. Repo-local structured files:
+3. Use existing repo-local structured files:
    - `docs/todo/project.md`
    - `docs/todo/done.md`
-4. An existing root `TODO.md`. Preserve its local format; if completion requires a new archive and no convention is documented, ask before creating one.
+4. Use an existing root `TODO.md` and preserve its format. If completion requires a new archive and no convention defines one, ask before creating it.
 
-If no todo exists and the workspace has no convention, create the repo-local structured files. Derive the project slug from the Git root directory using lowercase kebab-case; ask if the result is ambiguous.
+If no todo exists and no workspace convention applies, propose repo-local structured files. Derive the project slug from the Git root directory in lowercase kebab-case, ask when the result is ambiguous, and pass any applicable approval gate before creating files.
 
-Never create a second todo system when a canonical one already exists.
+Preserve this invariant: never create a second todo system when a canonical one exists.
 
-## Format
+## Use the Lean Format
 
 Use these states:
 
@@ -40,7 +40,7 @@ Use these states:
 - `[~]` — active
 - `[x]` — completed; archive only
 
-For a workspace todo, prefer:
+Prefer this workspace todo structure:
 
 ```markdown
 ---
@@ -60,9 +60,9 @@ project: <repo-slug>
 - [ ] <another outcome> ([issue](https://example.invalid))
 ```
 
-Use at most one level of nested items. If an item needs a paragraph, extensive sub-items, acceptance criteria, or decision history, move that detail to project documentation or an issue and link it.
+Use at most one nested item level. Move paragraphs, extensive sub-items, acceptance criteria, and decision history to project documentation or an issue, then link them.
 
-Archive entries by completion date, newest first:
+Archive completed entries by date, newest first:
 
 ```markdown
 # <Project> — Done
@@ -76,54 +76,53 @@ Archive entries by completion date, newest first:
 
 Treat prior archive entries as history; change them only to correct an error.
 
-## Operations
+## Perform the Requested Todo Operation
 
-### Plan or revise a milestone
+### Plan or Revise a Milestone
 
 1. Discuss the milestone outcome, scope, ordering, and unresolved decisions before writing.
-2. Use one `###` section and a small ordered set of independently finishable outcomes.
+2. Use one `###` section with a small ordered set of independently finishable outcomes.
 3. Keep dependencies implicit in ordering unless a short dependency note is essential.
-4. Link a design document or tracker issues rather than copying their contents.
-5. Check for overlap with existing active work.
-6. Show the proposed todo shape before writing when scope is still being negotiated.
+4. Link design documents or tracker issues instead of copying their contents.
+5. Check for overlap with active work.
+6. Show the proposed todo shape before writing while the prompt boundary remains unresolved.
 
-Do not add owners, priorities, due dates, labels, dependency schemas, or issue-tracker fields to the todo. The tracker owns that metadata.
+Do not add owners, priorities, due dates, labels, dependency schemas, or issue-tracker fields. Leave that metadata in the tracker.
 
-### Add an item
+### Add an Item
 
-- Put the item under the most specific existing milestone or workstream.
-- Keep the wording concise and outcome-oriented.
-- Create a named section when none fits; do not default roadmap work into `Misc`.
+- Place the item under the most specific existing milestone or workstream.
+- Write a concise, outcome-oriented item.
+- Create a named section when none fits; do not place roadmap work under `Misc` by default.
 - Avoid duplicates and near-duplicates.
 - Show what changed and where.
 
-### Start an item
+### Start an Item
 
-- Change its marker from `[ ]` to `[~]` without rewriting its scope.
-- Multiple active items are allowed, but do not mark work active merely because it is important.
+- Change `[ ]` to `[~]` without rewriting the item's scope.
+- Allow multiple active items, but do not mark an item active merely because it is important.
 
-### Show next
+### Show Next
 
-- Show the first `[~]` item.
-- If none is active, show the first `[ ]` item.
+- Show the first `[~]` item, or the first `[ ]` item when none is active.
 - Include its milestone or workstream and any inline link.
-- If neither exists, say all tracked work is complete.
+- State that all tracked work is complete when neither state exists.
 
-### Show all
+### Show All
 
 - Display active work cleanly.
-- Count both `[ ]` and `[~]` as remaining, and report how many are active.
+- Count `[ ]` and `[~]` as remaining, and report the active count.
 
-### Complete an item
+### Complete an Item
 
-1. Match pending or active text liberally, but ask if more than one item matches.
+1. Match pending or active text liberally; ask when more than one item matches.
 2. Remove the item from the active file.
-3. Insert it as `[x]` under today's date and the matching section in the archive.
-4. Remove an empty active section and its context only when no unfinished items remain in it.
+3. Insert it as `[x]` under today's date and the matching archive section.
+4. Remove an empty active section and its context only when no unfinished items remain there.
 5. Show both changes.
 
-## Handoff
+## Hand Off
 
-- Show the relevant diff or clearly summarize the changed items.
-- If staging is requested, stage only the todo files.
-- Do not commit unless the user explicitly requests it or governing project instructions require it.
+- Show the relevant diff or summarize changed items precisely.
+- Stage only the todo files when staging is requested.
+- Pass every applicable approval gate before committing. Do not commit unless the user explicitly requests it or governing project instructions require it.
