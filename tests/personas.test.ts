@@ -76,9 +76,10 @@ test("personas include the global and workspace guidance chain", () => {
 	}
 	assertTerms(workspace, [
 		/jihye-setup/i,
-		/workspace_directory/,
-		/personas_directory/,
-		/source of truth/i,
+		/configuration(?:(?!personas_directory)[^\n])*workspace_directory/i,
+		/guidance(?:(?!workspace_directory)[^\n])*personas_directory/i,
+		/REPO\.md[\s\S]*source of truth/i,
+		/activation command/i,
 		/read gate/i,
 		/first tool call/i,
 	], "workspace guidance topology");
@@ -127,6 +128,7 @@ test("git guidance preserves delivery and pull-request invariants", () => {
 		/headings and checklists/i,
 		/explicitly requests/i,
 		/never push/i,
+		/2\.82\.1/,
 	], "git workflow invariants");
 	assert.match(git, /## Summary[\s\S]*## Why/, "default request description keeps only its semantic sections");
 });
