@@ -349,6 +349,8 @@ test("always loads setup infrastructure without granting tools or tool extension
 		tempDir = built.tempDir;
 
 		assert.equal(built.args.includes("--no-extensions"), true);
+		assert.equal(built.args.includes("--no-skills"), true);
+		assert.equal(built.args.includes("--no-context-files"), false, "child keeps global, workspace, and repository guidance");
 		assert.equal(built.args.includes("--no-tools"), true);
 		assert.equal(built.args.includes("--tools"), false);
 		assert.deepEqual(extensionArgs(built.args), [

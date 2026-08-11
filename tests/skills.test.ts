@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -46,53 +46,75 @@ test("skills have valid identifying frontmatter", () => {
 	]);
 });
 
-test("coordinate preserves execution-skeleton and ownership semantics", () => {
+test("coordinate preserves its execution-skeleton algorithm", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "coordinate", "SKILL.md"), "utf8");
-	assert.deepEqual(headings(content), ["Decide Whether to Coordinate", "Build the Execution Skeleton", "Start the First Group", "Keep Parent Ownership"]);
+	assert.deepEqual(headings(content), ["Build the Execution Skeleton", "Run the Skeleton"]);
 	assertTerms(content, [
 		/acceptance invariant/i,
 		/delivery boundar/i,
 		/safe parallel/i,
 		/worktree isolation/i,
-		/approval gate/i,
+		/loaded gate/i,
 		/integration and validation/i,
 		/first actionable parallel group/i,
-		/ownership/i,
-		/final synthesis/i,
 	], "coordinate semantics");
-	assert.match(content, /branch[\s\S]*worktree[\s\S]*pull request/i, "delivery boundary spans all Git surfaces");
 	assert.doesNotMatch(content, /\bcoordinator\b/i);
 });
 
-test("vicara preserves evidence gates, parent ownership, and resumable reporting", () => {
-	const content = readFileSync(join(SKILLS_ROOT, "vicara", "SKILL.md"), "utf8");
-	for (const section of ["Set the Prompt Boundary and Report", "Keep Ownership and Delegate Bounded Work", "Apply the Finding Gates", "Rank and Update"]) {
+test("examen preserves introduced-defect and submission semantics", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "examen", "SKILL.md"), "utf8");
+	for (const section of ["Review the Target", "Apply the Finding Gate", "Assign Priority and Verdict", "Return the Draft", "Submit and Verify"]) {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
-		/coordinate.*skill/is,
+		/introduced regression/i,
+		/realistic event, input, configuration, or caller/i,
+		/\[P0\]/,
+		/\[P1\]/,
+		/\[P2\]/,
+		/\[P3\]/,
+		/current head SHA/i,
+		/references\/platforms\.md/,
+	], "examen semantics");
+	assert.match(content, /\[P2\] Findings:[^\n]*Proposal:/, "inline finding contract");
+});
+
+test("vicara preserves evidence gates and resumable reporting", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "vicara", "SKILL.md"), "utf8");
+	for (const section of ["Resume the Investigation", "Map and Investigate", "Apply the Opportunity Finding Gates", "Rank and Update the Report", "Return"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/loaded coordination guidance/i,
 		/finding gate/i,
-		/ownership/i,
-		/decisive evidence/i,
+		/decisive support/i,
+		/reviewer challenge/i,
 		/Frontier/,
 		/Needs More Investigation/,
-		/approval gate/i,
+		/references\/report\.md/,
 	], "vicara semantics");
 	assert.doesNotMatch(content, /\bcoordinator\b/i);
+
+	const reportPath = join(SKILLS_ROOT, "vicara", "references", "report.md");
+	assert.ok(existsSync(reportPath));
+	const report = readFileSync(reportPath, "utf8");
+	for (const section of ["Destination", "Repo Snapshot", "Frontier", "Opportunities", "Needs More Investigation", "Out of Scope", "Session Notes"]) {
+		assert.match(report, new RegExp(`^## ${section}$`, "m"), `report: ${section}`);
+	}
 });
 
 test("review-guidance preserves a narrow subject and evidence threshold", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "review-guidance", "SKILL.md"), "utf8");
-	for (const section of ["Set the Prompt Boundary", "Resolve the Subject and Instruction Boundary", "Apply the Finding Gate", "Return the Verdict"]) {
+	for (const section of ["Resolve the Subject and Instruction Boundary", "Inspect the Subject", "Apply the Finding Gate", "Return the Verdict"]) {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
-		/most-specific guidance/i,
-		/parent guidance files are references/i,
+		/most-specific governing guidance/i,
+		/parent guidance files as references/i,
+		/instruction boundary/i,
 		/finding gate/i,
-		/ownership/i,
 		/verdict/i,
-		/approval gate/i,
+		/remains read-only/i,
 	], "review-guidance semantics");
 	assert.match(content, /do not[^\n]*unrelated Markdown/i, "review scope excludes unrelated documentation");
 });
