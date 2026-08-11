@@ -33,6 +33,15 @@ function readPersona(path: string): string {
 	return readFileSync(join(PERSONAS_ROOT, path), "utf8");
 }
 
+function headings(content: string): string[] {
+	const prose = content.replace(/```[\s\S]*?```/g, "");
+	return [...prose.matchAll(/^##+\s+(.+)$/gm)].map((match) => match[1]!);
+}
+
+function assertTerms(content: string, terms: RegExp[], subject: string): void {
+	for (const term of terms) assert.match(content, term, `${subject}: ${term}`);
+}
+
 test("the two-link installation resolves the complete policy topology", () => {
 	const root = mkdtempSync(join(tmpdir(), "jihye-personas-"));
 	const agentDir = join(root, "home", ".pi", "agent");
@@ -61,47 +70,65 @@ test("the two-link installation resolves the complete policy topology", () => {
 test("personas include the global and workspace guidance chain", () => {
 	for (const path of POLICY_FILES) assert.ok(existsSync(join(PERSONAS_ROOT, path)), path);
 
-	assert.match(readPersona("JIHYE_strict.md"), /ASK FOR EXPLICIT APPROVAL BEFORE EDIT OR WRITE/);
-
 	const workspace = readPersona("WORKSPACE.md");
 	for (const path of ["REPO.md", "USERNAME.md", "DEVELOPMENT.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
-	assert.match(workspace, /jihye-setup.*resolves `workspace_directory` and `personas_directory`/);
+	assertTerms(workspace, [
+		/jihye-setup/i,
+		/workspace_directory/,
+		/personas_directory/,
+		/source of truth/i,
+		/read gate/i,
+		/first tool call/i,
+	], "workspace guidance topology");
 	assert.doesNotMatch(workspace, /readlink|dirname/, "path resolution belongs to the jihye-setup extension");
-	assert.match(workspace, /workspace_directory.*machine- and workspace-specific configuration/is);
-	assert.match(workspace, /personas_directory.*reusable workflow guidance/is);
-	assert.match(workspace, /REPO\.md.*source of truth for environment-specific values/i);
-	assert.match(workspace, /Begin each independent shell invocation with the configured environment activation command/i);
-	assert.match(workspace, /mandatory gates, not references/, "guidance reads are gates rather than optional references");
-	assert.match(workspace, /before the first tool call that touches the target/);
 	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
 });
 
-test("global personas require the coordinate skill for complex delegation", () => {
+test("strict persona is the base persona plus its approval header", () => {
+	const baseBody = readPersona("JIHYE.md").replace(/^# Jihye\n\n/, "");
+	const strict = readPersona("JIHYE_strict.md");
+	const match = strict.match(
+		/^# Jihye — Strict\n\n(?<header>- [^\n]*EXPLICIT APPROVAL[^\n]*\n)\n(?<body>[\s\S]*)$/,
+	);
+
+	assert.ok(match?.groups, "strict persona must contain one approval header");
+	assert.equal(match.groups.body, baseBody);
+});
+
+test("global personas preserve coordination gates and parent ownership", () => {
 	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
 		const persona = readPersona(path);
-		assert.match(persona, /Skip formal coordination for one bounded task or an obvious direct fan-out/);
-		assert.match(persona, /Otherwise, load and follow the `coordinate` skill before the first subagent call/);
-		assert.match(persona, /do not call a subagent before loading it/);
-		assert.match(persona, /Consider delivery boundaries, dependencies, safe parallelism/);
-		assert.match(persona, /Launch the first actionable parallel group immediately/);
-		assert.match(persona, /own integration, validation, and final synthesis/);
+		assert.ok(headings(persona).includes("Context and Delegation"), path);
+		assertTerms(persona, [
+			/coordinate.*skill/is,
+			/before the first subagent call/i,
+			/delivery boundar/i,
+			/safe parallel/i,
+			/first actionable parallel group/i,
+			/ownership/i,
+			/integration/i,
+			/validation/i,
+			/final synthesis/i,
+		], path);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
 	}
 });
 
-test("merge requests and pull requests use strict title and description defaults", () => {
+test("git guidance preserves delivery and pull-request invariants", () => {
 	const git = readPersona("GIT.md");
-	assert.match(git, /Keep distinct features or independently deliverable outcomes on separate branches and pull requests/);
-	assert.match(git, /do not combine them merely because one change is small/);
-	assert.match(git, /Keep an outcome's implementation, tests, and supporting documentation together/);
-	assert.match(git, /Use Conventional Commit format for every merge request and pull request title/);
-	assert.match(git, /Do not use a plain prose title unless the user explicitly requests it/);
-	assert.match(git, /show its headings and checklists to the user/);
-	assert.match(git, /If `gh pr edit` fails while querying deprecated Projects Classic APIs, upgrade to GitHub CLI 2\.82\.1 or newer before retrying/);
-	assert.match(git, /When no repository template exists, use only:/);
-	assert.match(git, /Do not add other headings, checklists, validation notes, or supporting sections unless the user explicitly requests them/);
+	assert.deepEqual(headings(git), ["Safety and Branching", "Staging, Commits, and Pushing", "Commit Messages", "Merge Requests and Pull Requests"]);
+	assertTerms(git, [
+		/delivery boundar/i,
+		/implementation, tests, and supporting documentation/i,
+		/Conventional Commit/i,
+		/request template/i,
+		/headings and checklists/i,
+		/explicitly requests/i,
+		/never push/i,
+	], "git workflow invariants");
+	assert.match(git, /## Summary[\s\S]*## Why/, "default request description keeps only its semantic sections");
 });
 
 test("persona policy remains portable", () => {

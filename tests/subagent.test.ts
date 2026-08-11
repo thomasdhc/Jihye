@@ -18,6 +18,13 @@ function extensionArgs(args: string[]): string[] {
 	return paths;
 }
 
+function assertProhibits(prompt: string, actions: string[], subject: string): void {
+	const prohibitions = prompt.split("\n").filter((line) => /\b(?:never|do not|must not)\b/i.test(line));
+	for (const action of actions) {
+		assert.ok(prohibitions.some((line) => line.includes(action)), `${subject} must prohibit ${action}`);
+	}
+}
+
 test("loads portable bundled agent model specifications", () => {
 	const bundledAgents = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
 	const byName = new Map(bundledAgents.map((agent) => [agent.name, agent]));
@@ -36,16 +43,37 @@ test("loads portable bundled agent model specifications", () => {
 	assert.equal(byName.get("engineer")?.thinking, "high");
 });
 
-test("keeps the bundled reviewer bounded", () => {
+test("bundled agent roles preserve their mutation boundaries", () => {
+	const agents = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
+	const byName = new Map(agents.map((agent) => [agent.name, agent]));
+
+	for (const name of ["scout", "researcher", "reviewer"]) {
+		const agent = byName.get(name);
+		assert.ok(agent, name);
+		assert.equal(agent.tools.includes("write"), false, `${name} must not receive write`);
+		assert.equal(agent.tools.includes("edit"), false, `${name} must not receive edit`);
+		assertProhibits(agent.systemPrompt, ["edit", "write"], name);
+	}
+
+	const engineer = byName.get("engineer");
+	assert.ok(engineer);
+	assert.equal(engineer.tools.includes("write"), true);
+	assert.equal(engineer.tools.includes("edit"), true);
+	assertProhibits(engineer.systemPrompt, ["commit", "push"], "engineer");
+});
+
+test("keeps the bundled reviewer bounded by semantic limits", () => {
 	const reviewer = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR])
 		.find((agent) => agent.name === "reviewer");
 
 	assert.ok(reviewer);
-	assert.match(reviewer.systemPrompt, /Treat that scope as a hard boundary/);
-	assert.match(reviewer.systemPrompt, /at most three falsifiable/);
-	assert.match(reviewer.systemPrompt, /no more than six tool calls total/);
-	assert.match(reviewer.systemPrompt, /verify only the listed fixes and their immediate regression surface/);
-	assert.match(reviewer.systemPrompt, /at most 300 words/);
+	assert.match(reviewer.systemPrompt, /## Scope Contract/);
+	assert.match(reviewer.systemPrompt, /finding gate/i);
+	assert.match(reviewer.systemPrompt, /at most three/i, "hypothesis limit");
+	assert.match(reviewer.systemPrompt, /six tool calls/i, "tool-call limit");
+	assert.match(reviewer.systemPrompt, /re-review/i, "re-review boundary");
+	assert.match(reviewer.systemPrompt, /at most 300 words/i, "response budget");
+	assertProhibits(reviewer.systemPrompt, ["edit", "write", "stage", "commit"], "reviewer");
 });
 
 test("resolves bundled, user, then package-local agent directories", () => {
