@@ -11,12 +11,13 @@ description: Maintain a lean project todo and completion archive. Use when plann
 - Track outcomes, order, status, and links, not an activity log.
 - Keep requirements, acceptance criteria, investigation notes, branch history, and operational evidence in project documentation or linked tracker.
 - Never create a second todo system when a canonical one exists.
+- Never write when the user asked only to discuss, review, or plan.
 
 ## Locate the Canonical Todo
 
 Follow an explicit target, then the first applicable:
 
-1. Use the project-required location.
+1. Follow explicit user or project instructions.
 2. Under a workspace containing `todo/README.md`, follow that registry. A common layout is `<workspace>/todo/<repo-slug>.md` with archive `<workspace>/todo/done/<repo-slug>.md`.
 3. Use existing repo-local `docs/todo/project.md` and `docs/todo/done.md`.
 4. Preserve an existing root `TODO.md`. If completion needs an undefined archive, ask where to create it.

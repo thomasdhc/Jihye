@@ -15,7 +15,7 @@ Review changed behavior against intent and verified evidence. Treat a GitHub pul
 4. Compare claimed and actual behavior. Distinguish an introduced regression from a pre-existing defect or documented limitation. Use CI evidence for validation, but omit dashboard-visible CI status from submitted comments and review bodies.
 5. Run focused checks. For explicit behavioral claims and repeated changes, define finite acceptance invariants over changed files, direct runtime dependencies, and any named subsystem. Classify every residual as intentional or actionable.
 6. Consolidate manifestations with one root cause while retaining every verified trigger class and affected path needed for a fix. On a new head, rerun the original invariants and reconcile unresolved candidates before concluding the review is clean.
-7. Apply the loaded coordination guidance when delegation is warranted. Directly verify decisive evidence and use a reviewer challenge for consequential or uncertain candidates.
+7. Load and follow the `coordinate` skill when delegation is warranted. Directly verify decisive evidence and use a reviewer challenge for consequential or uncertain candidates.
 
 ## Apply the Finding Gate
 

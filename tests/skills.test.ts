@@ -54,7 +54,7 @@ test("coordinate preserves its execution-skeleton algorithm", () => {
 		/delivery boundar/i,
 		/safe parallel/i,
 		/worktree isolation/i,
-		/loaded gate/i,
+		/approval or read gate/i,
 		/integration and validation/i,
 		/first actionable parallel group/i,
 	], "coordinate semantics");
@@ -81,11 +81,11 @@ test("examen preserves introduced-defect and submission semantics", () => {
 
 test("vicara preserves evidence gates and resumable reporting", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "vicara", "SKILL.md"), "utf8");
-	for (const section of ["Resume the Investigation", "Map and Investigate", "Apply the Opportunity Finding Gates", "Rank and Update the Report", "Return"]) {
+	for (const section of ["Resume the Investigation", "Map and Investigate", "Apply the Opportunity Finding Gate", "Rank and Update the Report", "Return"]) {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
-		/loaded coordination guidance/i,
+		/follow the `coordinate` skill/i,
 		/finding gate/i,
 		/decisive support/i,
 		/reviewer challenge/i,

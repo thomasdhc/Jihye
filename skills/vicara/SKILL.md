@@ -26,12 +26,12 @@ Use the user's report path or default to `OPPORTUNITIES.md` at the repository ro
 2. Set the Destination for this pass.
 3. Map the repository's purpose, major areas, commands, validation surfaces, conventions, and low-signal areas.
 4. Update the snapshot and Frontier; exclude generated, vendored, irrelevant, and explicitly excluded areas.
-5. Investigate bounded Frontier streams. Use scoped scout or researcher work where useful and follow loaded coordination guidance for non-trivial multi-stream delegation.
+5. Investigate bounded Frontier streams. Use scoped scout or researcher work where useful, and load and follow the `coordinate` skill for non-trivial multi-stream delegation.
 6. Separate observed facts from proposed work. Deduplicate shared root causes without losing distinct trigger classes. Move weak or unfinished candidates to `Frontier` or `Needs More Investigation`.
 
 Let the Destination and repository evidence control expansion; do not start an unbounded repository-wide bug search.
 
-## Apply the Opportunity Finding Gates
+## Apply the Opportunity Finding Gate
 
 An opportunity passes the finding gate only when:
 

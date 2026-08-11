@@ -16,7 +16,7 @@ Record:
 3. **Dependencies** — Mark required ordering, unlocking evidence, and uncertainties that could change the sequence.
 4. **Safe parallel groups** — Group calls that neither depend on nor invalidate one another; put dependent calls later.
 5. **Collision controls** — Identify overlapping files, generated artifacts, services, ports, external records, and other mutable resources. Serialize conflicting access and note required worktree isolation.
-6. **Blocked work** — Mark calls waiting on an applicable loaded gate.
+6. **Blocked work** — Mark calls waiting on an approval or read gate.
 7. **Integration and validation** — Set reconciliation order and focused checks for each outcome and the integrated result.
 
 Prefer a small dependency map and ready-to-run briefs over narrative planning. Revisit the skeleton only when evidence changes it.
