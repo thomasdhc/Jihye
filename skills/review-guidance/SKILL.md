@@ -1,64 +1,52 @@
 ---
 name: review-guidance
-description: Review the most-specific agent guidance governing one user-selected file or directory. Use parent guidance only to verify conflicts and duplication. Use when asked to audit scoped AGENTS.md, CLAUDE.md, or related agent instructions.
+description: Review the most-specific agent guidance governing one selected file or directory, using parent guidance only to verify conflicts and duplication. Use when asked to audit scoped AGENTS.md, CLAUDE.md, or related agent instructions.
 ---
 
 # Review Guidance
 
 Review one most-specific guidance subject for accuracy, focus, conflicts, and justified context cost.
 
-## Set the Prompt Boundary
-
-Enforce that scope is required. Accept one of:
-
-- an explicit guidance file, such as `AGENTS.md` or `CLAUDE.md`
-- a source file whose governing guidance must be reviewed
-- a directory or work area whose governing guidance must be reviewed
-
-If the scope is absent or ambiguous, ask the user to set the prompt boundary before investigating. Do not default to every loaded context file, the repository root, or the whole workspace. Accept a broad prompt boundary such as "all loaded guidance" only when the user explicitly requests it.
-
 ## Resolve the Subject and Instruction Boundary
 
+Require an explicit guidance file, source file, directory, or work area. Ask when scope is absent or ambiguous; only treat all loaded guidance as the subject when explicitly requested.
+
 1. Resolve relative paths from the current working directory.
-2. Preserve the distinction between a loaded guidance symlink and its canonical target. Review maintained content at the canonical target and identify the loaded path it governs.
-3. Treat an explicit guidance file as the review subject.
-4. For a source file or directory, locate its nearest, most-specific guidance and treat that file as the review subject.
-5. Remember that parent guidance files are references, not additional review subjects; use them only for inheritance, conflicts, and duplication.
-6. State the resolved prompt boundary, subject file, and reference files before presenting findings.
-7. Ask the user to choose when more than one guidance file is equally specific.
+2. For an explicit guidance file, use that file as the subject.
+3. For source or directory scope, locate its nearest, most-specific governing guidance and use that file as the subject.
+4. Preserve the distinction between a loaded symlink and its canonical target: review maintained content at the canonical target and identify the loaded path it governs.
+5. Use parent guidance files as references for inheritance, conflicts, and duplication, never as additional subjects.
+6. Ask the user to choose when multiple guidance files are equally specific.
+7. State the resolved scope, subject, and reference files with the verdict.
 
-Respect the instruction boundary: repository-owned guidance governs repository-specific commands, architecture, and conventions; workspace- or user-owned guidance governs its broader safeguards and environment. Report a conflict instead of silently choosing one authority.
+Do not expand into unrelated Markdown, READMEs, documentation trees, or every discoverable instruction file.
 
-Do not review unrelated Markdown files, README files, documentation trees, or every instruction file merely because they are discoverable.
+Respect the instruction boundary: repository guidance owns repository-specific commands, architecture, and conventions; workspace or user guidance owns broader safeguards and environment. Report conflicts rather than silently choosing an authority.
 
-## Inspect the Evidence
+## Inspect the Subject
 
-Read the subject file completely. Inspect only enough scoped implementation, current commands, and reference guidance to verify candidates against these criteria:
+Read the subject completely and inspect only enough scoped implementation, commands, and reference guidance to evaluate:
 
-1. **Accuracy and staleness** — identify paths, commands, architecture, workflows, or tool behavior that no longer match the scoped implementation.
-2. **Scope and focus** — identify instructions outside the selected scope or detail whose maintenance and context cost clearly exceeds its practical value. Do not treat length alone as a defect.
-3. **Conflicts and redundancy** — identify instructions that contradict parent guidance or repeat it without a scope-specific reason.
-4. **Missing durable guidance** — identify omitted recurring decisions or constraints only when repository or session evidence shows that the omission is likely to cause future mistakes.
+- **Accuracy and staleness** — paths, commands, architecture, workflows, or tool behavior no longer match the scoped implementation.
+- **Scope and focus** — instructions are outside the selected scope, or their maintenance and context cost clearly exceeds practical value. Length alone is not a defect.
+- **Conflicts and redundancy** — instructions contradict parent guidance or repeat it without a scope-specific reason.
+- **Missing durable guidance** — repository or session evidence shows an omitted recurring decision or constraint is likely to cause future mistakes.
 
-Do not propose guidance for one-off activity, transient state, obvious code behavior, or speculative preferences.
+Exclude one-off activity, transient state, obvious code behavior, and speculative preferences.
 
 ## Apply the Finding Gate
 
-Report a candidate as a finding only when it passes this finding gate:
+Report a candidate only when all are true:
 
-1. Verify it against current files, commands, or governing guidance.
-2. Tie it to a concrete mistake, conflict, maintenance burden, or context-cost impact within the prompt boundary.
-3. Cite the smallest useful line range in the subject file.
-4. Give a concrete, scope-preserving correction.
+1. Current files, commands, or governing guidance verify it.
+2. It causes a concrete mistake, conflict, maintenance burden, or context-cost impact inside the selected scope.
+3. The smallest useful subject-file line range anchors it.
+4. A concrete, scope-preserving correction is available.
 
-Do not report style preference, unsupported speculation, or an observation about a reference file that has no practical effect on the subject. If no candidate passes the finding gate, report no findings.
-
-Keep ownership of every finding and verdict in the calling agent. If subagents gather or challenge evidence, verify every decisive claim directly before reporting it.
+Exclude style preferences, unsupported speculation, and reference-file observations without practical effect on the subject. If nothing passes, report no findings.
 
 ## Return the Verdict
 
-Present findings first, ordered by practical impact. For each finding, state the subject-file location, verified problem, practical impact, and concrete correction. Keep reference-file observations subordinate to their effect on the subject.
+Present findings first by practical impact. For each, give the subject location, verified problem, practical impact, and concrete correction. Keep reference observations subordinate to their effect on the subject.
 
-Conclude with a proportionate verdict: either the guidance is fit for the selected scope or specific corrections are warranted. A verdict follows from findings and must never be stronger than their evidence.
-
-Keep edits behind an approval gate. Open that approval gate only when the user explicitly asks to revise the guidance; a request to review or audit does not authorize edits.
+Conclude that the guidance is fit for scope or that specific corrections are warranted. A review or audit remains read-only; revise guidance only when the user explicitly requests that action.

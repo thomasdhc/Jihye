@@ -1,117 +1,54 @@
 ---
 name: examen
-description: Conduct evidence-based GitHub pull request and GitLab merge request reviews, identify concrete introduced defects, draft concise priority-tagged inline comments, and optionally submit platform-native comments and verdicts after explicit user direction. Use when asked to review, assess, comment on, approve, or request changes on a PR or MR.
+description: Review a GitHub pull request or GitLab merge request for concrete introduced defects, draft priority-tagged inline findings, and optionally submit a platform-native verdict. Use when asked to review, assess, comment on, approve, or request changes on a PR or MR.
 ---
 
 # Examen
 
-Weigh each proposed change against its intent and verified evidence, then return a proportionate verdict.
+Review changed behavior against intent and verified evidence. Treat a GitHub pull request or GitLab merge request as the **review target**.
 
-Throughout this skill, **review target** means either a GitHub pull request or a GitLab merge request.
+## Review the Target
 
-## Principles
+1. Resolve an unambiguous target and whether the user wants a draft or a platform submission. A request to review is read-only; only explicit direction to post, approve, request changes, or submit a comment authorizes that specific external write.
+2. Snapshot the host, project, number, URL, state, exact base and head branches and SHAs, description, linked issues, commits, changed files, checks, reviews, and discussions. Preserve the reviewed head SHA.
+3. Read the complete diff and changed files. Inspect relevant callers, tests, configuration, history, issue context, and authoritative dependency or platform documentation. Trace realistic input, event, configuration, credential, platform, and failure paths.
+4. Compare claimed and actual behavior. Distinguish an introduced regression from a pre-existing defect or documented limitation. Use CI evidence for validation, but omit dashboard-visible CI status from submitted comments and review bodies.
+5. Run focused checks. For explicit behavioral claims and repeated changes, define finite acceptance invariants over changed files, direct runtime dependencies, and any named subsystem. Classify every residual as intentional or actionable.
+6. Consolidate manifestations with one root cause while retaining every verified trigger class and affected path needed for a fix. On a new head, rerun the original invariants and reconcile unresolved candidates before concluding the review is clean.
+7. Apply the loaded coordination guidance when delegation is warranted. Directly verify decisive evidence and use a reviewer challenge for consequential or uncertain candidates.
 
-- Review changed behavior, not merely changed text.
-- Trace root cause and execution paths before reporting a defect.
-- Report only concrete, actionable problems introduced by the review target.
-- Prefer correctness, security, reliability, compatibility, and meaningful performance findings over style preferences.
-- Distinguish a regression from a pre-existing defect or an explicitly documented limitation.
-- Keep ownership of source-of-truth context, conflict resolution, validation, every finding and verdict, and final synthesis in the calling agent. Treat subagent output as evidence to verify, never as authority.
-- Keep review comments concise enough for the author to act on immediately.
-- Use CI/CD evidence privately. Do not repeat check status, pipeline results, or other dashboard-visible CI/CD information in platform review bodies or comments.
-- Keep posting comments, approving, and requesting changes behind an approval gate because they are external writes. Open that gate only when the user explicitly requests the specific submission action.
+## Apply the Finding Gate
 
-## Review Workflow
+Report a candidate only when all are true:
 
-### 1. Establish the target and prompt boundary
+1. The review target introduced it, or explicitly claims to fix or support the affected path.
+2. A realistic event, input, configuration, or caller triggers it.
+3. The concrete failure or risk is established.
+4. The smallest useful changed-line range anchors it.
+5. A minimal, scope-preserving correction is available.
 
-Accept a pull or merge request URL, or an unambiguous host, project, and number. Detect the hosting platform from the URL or remote; ask when the target or desired action is unclear.
+Exclude speculation, wholly pre-existing defects, automated style concerns, unrelated architectural wishes, duplicate symptoms, and unverified delegated claims. If nothing passes, report no findings.
 
-Unless the user already opened the approval gate for submission, keep the prompt boundary read-only and return a draft. Do not interpret "review this" as permission to post, approve, or request changes.
+## Assign Priority and Verdict
 
-For a local checkout:
-
-1. Check its branch and status.
-2. Read applicable agent guidance, repository instructions, and the relevant project todo when one exists.
-3. Do not check out the review target over a dirty working tree. Prefer host metadata and Git objects for read-only analysis; use an isolated worktree only when execution requires a checked-out source revision or the user requests isolation.
-
-### 2. Snapshot the review target
-
-Record:
-
-- host, project, number or IID, URL, author, state, and draft status
-- exact target/base and source/head branch names and commit SHAs
-- title, description, linked issues, commits, and changed-file list
-- current checks or pipelines, approval state, existing reviews, and discussions
-
-Use the exact source/head SHA throughout the review. Preserve it for submission so comments cannot silently attach to a newer revision.
-
-### 3. Understand intent and changed behavior
-
-1. Read the complete diff.
-2. Read the full changed files, not only patch hunks.
-3. Inspect relevant callers, tests, configuration, history, and linked issue context.
-4. Trace affected execution paths, including realistic input, event, credential, platform, and failure matrices.
-5. Compare claimed behavior in the review target's description with actual behavior.
-6. Use authoritative external documentation when semantics depend on a platform or dependency.
-7. Inspect CI or production evidence when the review target cites specific runs.
-
-Do not expose confidential information or include secrets in commands, logs, searches, comments, or review bodies.
-
-### 4. Validate and delegate proportionately
-
-Run the narrowest relevant checks first. Record exactly what was run and distinguish local validation from existing CI results.
-
-When a review target makes an explicit behavioral claim or applies a repeated or mechanical change, define a finite acceptance invariant before validating it. For that invariant, search only the changed files, their direct runtime dependencies, and any named subsystem explicitly covered by the description; expand further only when evidence from those paths requires it. Classify every residual violation as intentional or actionable before recommending approval. Do not turn this into an unconstrained repository-wide bug search.
-
-Enforce these rules:
-
-- **Deduplicate comments, not obligations.** When multiple manifestations share one root cause, consolidate the feedback while preserving every verified trigger class and affected path necessary for the author to resolve the finding.
-- **Re-review against the original invariants.** Carry bounded acceptance checks and unresolved candidates forward, rerun them against the new head, and reconcile every residual before treating the review as clean. Failed checks, unexplained residuals, or conflicting evidence prevent a no-findings conclusion or unconditional approval.
-
-For broad or uncertain reviews, split independent workstreams:
-
-- `scout` — execution paths, callers, history, and repeated patterns
-- `researcher` — authoritative external behavior and service documentation
-- `reviewer` — challenge consequential or uncertain candidate findings
-
-Parallelize independent work, but directly verify the decisive evidence behind every final finding. When sources conflict, resolve the conflict before commenting.
-
-### 5. Apply the finding gate
-
-Report a candidate as a finding only when it passes this finding gate:
-
-1. **What changed?** The problem is introduced by this review target, or its description explicitly claims to fix or support the affected path.
-2. **How is it triggered?** Give a realistic event, input, configuration, or caller.
-3. **What is the impact?** State the concrete failure or risk.
-4. **Where is it anchored?** Point to the smallest useful changed-line range.
-5. **How can it be resolved?** Give a minimal direction without designing an unrelated refactor.
-
-Do not report:
-
-- speculation without a demonstrable trigger
-- defects wholly outside the changed behavior
-- style or naming preferences already handled by automated checks
-- broad architectural wishes unrelated to the review target
-- duplicate symptoms of one root cause
-- claims based only on an unverified subagent conclusion
-
-If no candidate passes the finding gate, say that no findings were identified. Do not invent a comment to make the review look substantive.
-
-## Priority
-
-Prefix every inline finding with one priority:
+Prefix every finding by impact and urgency, never confidence:
 
 - `[P0]` — catastrophic and broadly blocking; immediate correction required
 - `[P1]` — high-impact or common-path defect; block merge
 - `[P2]` — valid defect or broken supported edge case; require a fix but normally do not block merge
 - `[P3]` — concrete introduced defect with small, localized impact
 
-Choose priority from impact and urgency, not confidence. Omit low-confidence findings rather than lowering their priority.
+Omit low-confidence candidates rather than lowering priority. Map findings to the verdict:
 
-## Draft Output
+- Any `[P0]` or `[P1]`: request changes.
+- Only `[P2]` or `[P3]`: approval may be appropriate when non-blocking and the user agrees.
+- No findings: approve when the user requests submission.
 
-Present findings first, ordered by priority. For each finding use this exact structure:
+Checks inform but do not override a verified defect. A non-blocking inline finding may coexist with approval.
+
+## Return the Draft
+
+Present findings first by priority using exactly:
 
 ```markdown
 ### [P2] <short actionable title>
@@ -120,79 +57,26 @@ Present findings first, ordered by priority. For each finding use this exact str
 Findings: <one concise sentence describing the trigger and concrete impact> Proposal: <one concise imperative sentence describing the minimal correction>
 ```
 
-Replace placeholders only. Do not add extra fields, evidence blocks, confidence scores, or prose between findings. Keep `Findings:` and `Proposal:` concise and straight to the point: state only the concrete defect and the minimal actionable correction.
+Then give the verdict recommendation, at most three high-signal notes, local validation, unresolved evidence limits, and whether anything was posted.
 
-Then include a concise review summary:
-
-- verdict recommendation
-- at most three high-signal review notes
-- local validation performed
-- unresolved evidence limitations
-- whether anything was posted to the hosting platform
-
-### Inline comment style
-
-Use this exact single-paragraph template:
+For each platform inline comment, use this exact single paragraph and anchor it to the changed line causing the behavior:
 
 ```markdown
 [P2] Findings: <one concise sentence describing the trigger and concrete impact> Proposal: <one concise imperative sentence describing the minimal correction>
 ```
 
-Keep the `Findings:` and `Proposal:` labels, their capitalization, their order, and the single-paragraph form. Do not add a title, compliment, review summary, raw log, CI/CD status, or a second finding. Anchor the comment to the changed line that causes the behavior.
+Do not add a title, compliment, summary, raw log, CI status, or second finding to an inline comment.
 
-## Draw the Verdict
+## Submit and Verify
 
-Draw a proportionate verdict from the findings; a verdict follows from findings and must never be stronger than their evidence:
+Before an authorized submission:
 
-- Any `[P0]` or `[P1]`: request changes.
-- Only `[P2]` or `[P3]`: approval may be appropriate when the findings are non-blocking and the user agrees.
-- No findings: approve when the user requests submission.
+1. Re-fetch metadata; require an open, reviewable target whose current head SHA equals the reviewed SHA.
+2. Revalidate affected findings after any head change and confirm every inline line still exists in that diff revision.
+3. Confirm the authenticated account can perform the requested action and is not approving its own change.
+4. Reconcile the requested platform state with the evidence-based verdict; ask if they conflict.
+5. Read [references/platforms.md](references/platforms.md), resolve revision-specific positions, and use the host's native review model.
 
-A green check suite informs the review but does not override a verified defect. Likewise, a non-blocking inline finding can coexist with approval when its priority and the user's direction make that intent clear.
+Prefer one logical review submission when supported; never claim transactional atomicity. When operations are separate, publish and verify comments before formal approval, rechecking the head SHA immediately before the irreversible verdict. On partial failure, stop and report the persisted state rather than retrying blindly.
 
-## Strict Submitted Review Template
-
-Use this exact template for every platform review body:
-
-```markdown
-<verdict>
-
-### Review notes
-- <concise verified behavior note>
-- <concise verified behavior note>
-```
-
-Replace `<verdict>` with a concise platform-appropriate verdict, such as `LGTM.`, `Review completed.`, or `Changes requested.` Always include exactly two behavior-focused review notes. Do not add author greetings, agent-review announcements, commit SHAs, file counts, validation commands, evidence limitations, CI/CD status, check results, or pipeline summaries.
-
-Do not place findings in the review body; submit each finding inline using the exact `Findings:` / `Proposal:` template.
-
-## Pass the Approval Gate
-
-Keep every external write behind the approval gate. Explicit user direction opens the approval gate only for the requested submission action. Before any submission:
-
-1. Re-fetch review-target metadata from its host.
-2. Confirm it is still open and reviewable.
-3. Confirm the current source/head SHA matches the reviewed SHA. If it changed, inspect the delta and revalidate affected findings first.
-4. Confirm inline target lines still exist in the reviewed diff revision.
-5. Confirm the authenticated account is allowed to submit the requested verdict and is not approving its own change.
-6. Reconcile the requested verdict with the evidence-based recommendation. Ask whenever approval, changes requested, or comment-only submission conflicts with that recommendation.
-
-Use the host's native review model and terminology. Prefer one logical review submission containing the summary, verdict, and inline comments when supported, but do not claim transactional atomicity. Map the recommendation to the closest supported state:
-
-- approve
-- request changes or mark the review as blocking
-- comment or mark reviewed without approval
-
-Read [references/platforms.md](references/platforms.md) before resolving inline positions or submitting. It records the GitHub and GitLab API differences, revision guards, and verification steps.
-
-When a host requires separate operations, publish the summary and comments before formal approval. Recheck the source/head SHA immediately before every irreversible verdict operation. If a later operation fails, stop, report the partial state precisely, and do not retry blindly.
-
-After submission, verify:
-
-- persisted summary and reviewer identity
-- each inline comment's file, line, body, and URL
-- submitted revision or diff-version coordinates
-- review state, requested-changes state, or formal approval as supported by the host
-- current source/head SHA
-
-Return the review-target URL, inline discussion URLs, and final platform-visible verdict. If submission is unavailable, provide the complete draft and state the limitation.
+Read back and verify the summary, reviewer, every inline body/path/line/URL, submitted revision coordinates, platform-visible review or approval state, and current head SHA. Return the target URL, discussion URLs, and final visible verdict; if submission is unavailable, return the complete draft and limitation.
