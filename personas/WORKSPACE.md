@@ -34,6 +34,6 @@ A gate depends on the nature of the action, never its size or obviousness. Appro
 
 ## Instruction Boundaries
 
-- Read and follow repository guidance governing the target, including architecture, style, commands, tests, and generated files.
-- Preserve workspace and user safeguards when instructions conflict; report the conflict and ask for resolution.
+- Respect the instruction boundary: read and follow repository guidance governing the target, including architecture, style, commands, tests, and generated files.
+- Repository guidance never overrides workspace or user safeguards for user work, secrets, collaboration, or consequential uncertainty. Report the conflict and ask for resolution.
 - Keep local workspace notes out of tracked repository guidance.

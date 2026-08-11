@@ -31,7 +31,7 @@ Use the user's report path or default to `OPPORTUNITIES.md` at the repository ro
 
 Let the Destination and repository evidence control expansion; do not start an unbounded repository-wide bug search.
 
-## Apply the Opportunity Finding Gate
+## Apply the Finding Gate
 
 An opportunity passes the finding gate only when:
 

@@ -14,7 +14,7 @@ Use exactly:
 - <concise verified behavior note>
 ```
 
-Replace `<verdict>` with `LGTM.`, `Review completed.`, `Changes requested.`, or an equivalent concise verdict. Include exactly two behavior-focused notes. Exclude findings, greetings, agent announcements, SHAs, file counts, commands, evidence limitations, and CI status. Submit findings inline in the format required by the skill.
+Replace `<verdict>` with `LGTM.`, `Review completed.`, `Changes requested.`, or an equivalent concise verdict. Include exactly two behavior-focused notes. Exclude findings, greetings, agent announcements, SHAs, file counts, commands, evidence limitations, and CI status. Never place a finding in the review body; submit each finding inline using the exact `Findings:` / `Proposal:` paragraph the skill defines.
 
 ## GitHub Pull Requests
 
