@@ -125,14 +125,14 @@ export const SUBAGENT_PI_PET_ASSETS = {
 		},
 	}),
 	engineer: createPiPetModeAssets({
-		top: repeatPiPetElement(" /===\\ "),
+		top: repeatPiPetElement([" ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "," ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "]),
 		face: CAT_FACES,
 		bottom: {
-			idle: " /|_|\\ ",
-			thinking: " /|_|\\ ",
-			working: [" /|_|\\ ", " /|#|\\ "],
-			success: " /|_|\\ ",
-			error: " /|_|\\ ",
+			idle: " ⊑   ⊒ ",
+			thinking: [" ⊑ 🬃 ⊒ ", " ⊑ 🬖 ⊒ ", " ⊑ 🬞 ⊒ ", " ⊑ 🬢 ⊒ "],
+			working: [" ⊑∿∼∿⊒ ", " ⊑∼∿∼⊒ "],
+			success: [" ⊑∼∻∼⊒ ", " ⊑∻∼∻⊒ "],
+			error: [" ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ "],
 		},
 	}),
 } satisfies Readonly<Record<string, PiPetModeAssets>>;
