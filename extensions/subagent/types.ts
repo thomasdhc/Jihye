@@ -4,7 +4,7 @@
  * Leaf module: describes the agent definitions, live progress, and results
  * exchanged between discovery, the runner, the renderer, and the tool wiring.
  */
-import type { ModelTier } from "./models.ts";
+import type { ModelProviderStrategy, ModelTier } from "./models.ts";
 
 export interface AgentConfig {
 	name: string;
@@ -15,8 +15,10 @@ export interface AgentConfig {
 	 * definitions so the tier decides per provider at spawn time.
 	 */
 	model?: string;
-	/** Capability tier used to select a model for the active provider. */
+	/** Capability tier used to select a model for the selected provider. */
 	modelTier?: ModelTier;
+	/** Whether model selection follows the parent provider or its configured alternate. */
+	providerStrategy?: ModelProviderStrategy;
 	thinking: string;
 	systemPrompt: string;
 	filePath: string;

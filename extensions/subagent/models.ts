@@ -1,16 +1,21 @@
 /**
  * Subagent model selection.
  *
- * Bundled agents declare a capability tier instead of a pinned model, so the
- * same definitions work whichever provider backs the parent session. Tier maps
- * live in data (`model-profiles.json`, optionally overridden by the untracked
- * `config.json`) and never in the resolution logic below.
+ * Bundled agents declare a capability tier and optional provider strategy
+ * instead of a pinned model, so the same definitions work across parent
+ * providers. Tier and alternate-provider maps live in data
+ * (`model-profiles.json`, optionally overridden by the untracked `config.json`)
+ * and never in the resolution logic below.
  */
 import * as fs from "node:fs";
 
 export const MODEL_TIERS = ["standard", "deep"] as const;
 
 export type ModelTier = typeof MODEL_TIERS[number];
+
+export const MODEL_PROVIDER_STRATEGIES = ["parent", "alternate"] as const;
+
+export type ModelProviderStrategy = typeof MODEL_PROVIDER_STRATEGIES[number];
 
 /** Fully specified `provider/model-id` per tier for one provider. */
 export type ProviderProfile = Record<ModelTier, string>;
@@ -21,6 +26,8 @@ export interface ModelProfiles {
 	/** Tier used when an agent definition declares none. */
 	defaultTier: ModelTier;
 	providers: Record<string, ProviderProfile>;
+	/** Parent-provider to alternate-provider routing for independent model selection. */
+	alternateProviders: Record<string, string>;
 }
 
 /** Provider and model id of the parent session's active model. */
@@ -30,7 +37,8 @@ export interface ActiveModel {
 }
 
 const TIER_SET = new Set<string>(MODEL_TIERS);
-const PROFILE_KEYS = new Set(["defaultProvider", "defaultTier", "providers"]);
+const PROVIDER_STRATEGY_SET = new Set<string>(MODEL_PROVIDER_STRATEGIES);
+const PROFILE_KEYS = new Set(["defaultProvider", "defaultTier", "providers", "alternateProviders"]);
 
 function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -38,6 +46,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 export function isModelTier(value: unknown): value is ModelTier {
 	return typeof value === "string" && TIER_SET.has(value);
+}
+
+export function isModelProviderStrategy(value: unknown): value is ModelProviderStrategy {
+	return typeof value === "string" && PROVIDER_STRATEGY_SET.has(value);
 }
 
 function requireModelReference(value: unknown, source: string, label: string): string {
@@ -66,6 +78,35 @@ function parseProviderProfile(value: unknown, source: string, provider: string):
 	return profile;
 }
 
+function parseAlternateProviders(
+	value: unknown,
+	source: string,
+	providers: Record<string, ProviderProfile>,
+): Record<string, string> {
+	if (value === undefined) return {};
+	if (!isObject(value)) {
+		throw new Error(`Invalid model profiles at ${source}: alternateProviders must be a JSON object`);
+	}
+
+	const alternateProviders: Record<string, string> = {};
+	for (const [parentProvider, targetProvider] of Object.entries(value)) {
+		if (!parentProvider.trim()) {
+			throw new Error(`Invalid model profiles at ${source}: alternateProviders keys must be non-empty`);
+		}
+		if (typeof targetProvider !== "string" || !targetProvider.trim()) {
+			throw new Error(`Invalid model profiles at ${source}: alternateProviders.${parentProvider} must name a provider`);
+		}
+		if (parentProvider === targetProvider) {
+			throw new Error(`Invalid model profiles at ${source}: alternateProviders.${parentProvider} must name a different provider`);
+		}
+		if (!Object.hasOwn(providers, targetProvider)) {
+			throw new Error(`Invalid model profiles at ${source}: alternateProviders.${parentProvider} must name a configured provider`);
+		}
+		alternateProviders[parentProvider] = targetProvider;
+	}
+	return alternateProviders;
+}
+
 /** Validate a complete profile document, including its internal references. */
 export function parseModelProfiles(value: unknown, source = "model-profiles.json"): ModelProfiles {
 	if (!isObject(value)) throw new Error(`Invalid model profiles at ${source}: expected a JSON object`);
@@ -87,11 +128,12 @@ export function parseModelProfiles(value: unknown, source = "model-profiles.json
 	}
 
 	const defaultProvider = value.defaultProvider;
-	if (typeof defaultProvider !== "string" || !providers[defaultProvider]) {
+	if (typeof defaultProvider !== "string" || !Object.hasOwn(providers, defaultProvider)) {
 		throw new Error(`Invalid model profiles at ${source}: defaultProvider must name a configured provider`);
 	}
+	const alternateProviders = parseAlternateProviders(value.alternateProviders, source, providers);
 
-	return { defaultProvider, defaultTier: value.defaultTier, providers };
+	return { defaultProvider, defaultTier: value.defaultTier, providers, alternateProviders };
 }
 
 /**
@@ -134,10 +176,16 @@ export function mergeModelProfiles(base: ModelProfiles, override: unknown, sourc
 		}
 	}
 
+	const alternateProviders = {
+		...base.alternateProviders,
+		...parseAlternateProviders(override.alternateProviders, source, providers),
+	};
+
 	return parseModelProfiles({
 		defaultProvider: override.defaultProvider ?? base.defaultProvider,
 		defaultTier: override.defaultTier ?? base.defaultTier,
 		providers,
+		alternateProviders,
 	}, source);
 }
 
@@ -161,6 +209,7 @@ export interface ResolveModelInput {
 	/** Explicit `model` from agent frontmatter; always wins when present. */
 	pinnedModel?: string;
 	tier?: ModelTier;
+	providerStrategy?: ModelProviderStrategy;
 	profiles: ModelProfiles;
 	activeModel?: ActiveModel;
 }
@@ -169,18 +218,30 @@ export interface ResolveModelInput {
  * Resolve the model a subagent should run on.
  *
  * 1. A pinned frontmatter model, so user overrides keep exact control.
- * 2. The tier entry for the parent session's provider.
- * 3. The parent session's own active model, for providers without a profile.
- * 4. The tier entry of the default provider, when no active model is known.
+ * 2. For the `alternate` strategy, the tier entry for the configured alternate
+ *    to the parent session's provider.
+ * 3. The tier entry for the parent session's provider.
+ * 4. The parent session's own active model, for providers without a profile.
+ * 5. The tier entry of the default provider, when no active model is known.
  */
-export function resolveAgentModel({ pinnedModel, tier, profiles, activeModel }: ResolveModelInput): string {
+export function resolveAgentModel({
+	pinnedModel,
+	tier,
+	providerStrategy,
+	profiles,
+	activeModel,
+}: ResolveModelInput): string {
 	if (pinnedModel) return pinnedModel;
 
 	const resolvedTier = tier ?? profiles.defaultTier;
 	const provider = activeModel?.provider;
 
 	if (provider) {
-		const profile = profiles.providers[provider];
+		if (providerStrategy === "alternate" && Object.hasOwn(profiles.alternateProviders, provider)) {
+			const alternateProvider = profiles.alternateProviders[provider];
+			return profiles.providers[alternateProvider][resolvedTier];
+		}
+		const profile = Object.hasOwn(profiles.providers, provider) ? profiles.providers[provider] : undefined;
 		if (profile) return profile[resolvedTier];
 		if (activeModel?.id) return `${provider}/${activeModel.id}`;
 	}

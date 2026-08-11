@@ -17,7 +17,7 @@ Dependency direction is strict and acyclic: `types.ts` → `{config.ts, progress
 - `discovery.ts` parses agent markdown frontmatter into `AgentConfig`, validates it, merges directories, and owns the registry plus the `globalThis.__pi_subagents` bridge. Frontmatter validation lives here, not in the runner; `isKnownTool` in `config.ts` is the single definition of a usable tool name.
 - `runner.ts` owns the child process end to end: argv construction, environment, spawn, event-stream parsing, abort, and output truncation.
 - `render.ts` turns an `AgentResult` into TUI components, recursing into nested subagent results.
-- `models.ts` owns tier→model resolution; `model-profiles.json` is its data, optionally overridden by a local `config.json` that is not part of the package. Bundled agents declare a `model_tier`, so the same definitions work whichever provider backs the parent session.
+- `models.ts` owns tier and provider-strategy resolution; `model-profiles.json` is its data, optionally overridden by a local `config.json` that is not part of the package. Bundled agents declare a `model_tier` and may declare `provider_strategy: alternate`, so capability and provider-diversity policy remain separate from concrete model IDs.
 - `tools/safe-bash.ts` is not part of this graph. It is a standalone extension loaded into a child process when an agent declares the `safe_bash` tool.
 
 ## Invariants
@@ -41,10 +41,10 @@ Dependency direction is strict and acyclic: `types.ts` → `{config.ts, progress
 ## Adding an Agent
 
 1. Add a markdown file to `personas/subagents/` with `name`, `description`, and comma-separated `tools` frontmatter. Names must be unique within a directory; a duplicate throws at load. A non-empty `description` is required, since it is what the parent model selects on. A markdown file with no `name` is skipped, so a stray `README.md` can sit in an agents directory.
-2. Prefer `model_tier` (`standard` or `deep`) over a pinned `model`, so the agent follows the parent session's provider. A pinned model always wins.
+2. Prefer `model_tier` (`standard` or `deep`) over a pinned `model`. Omit `provider_strategy` to follow the parent provider; use `provider_strategy: alternate` only when independent provider perspective is part of the role. A pinned model always wins.
 3. Every tool must be in `BUILTIN_TOOLS` or `CUSTOM_TOOL_EXTENSIONS`; an unknown name throws at load rather than leaving the agent quietly without that capability.
 4. If the agent gets the `subagent` tool, set `subagent_agents` to the agents it may spawn. Omitting it grants the whole registry.
-5. Extend `tests/personas.test.ts`, which pins the exact bundled definition set and requires `model_tier` with no pinned `model`, and add prompt-boundary coverage in `tests/subagent.test.ts` alongside the existing reviewer assertions.
+5. Extend `tests/personas.test.ts`, which pins the exact bundled definition set and requires `model_tier` with no pinned `model`, and add model-policy and prompt-boundary coverage in `tests/subagent.test.ts` alongside the existing reviewer assertions.
 
 ## Changing the Runner
 

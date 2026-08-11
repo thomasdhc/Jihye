@@ -109,30 +109,33 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 
 ### `subagent` agent definitions
 
-Portable default definitions are tracked in `personas/subagents/`. They declare a capability tier instead of a fixed model, so the same definitions follow whichever provider backs the parent session:
+Portable default definitions are tracked in `personas/subagents/`. They declare a capability tier instead of a fixed model. A provider strategy independently controls whether the tier follows the parent provider or a configured alternate:
 
-| Agent | Tier | Thinking |
-|---|---|---|
-| `scout` | standard | medium |
-| `researcher` | standard | medium |
-| `reviewer` | standard | medium |
-| `engineer` | deep | high |
+| Agent | Tier | Provider strategy | Thinking |
+|---|---|---|---|
+| `scout` | standard | parent | medium |
+| `researcher` | standard | parent | medium |
+| `reviewer` | deep | alternate | medium |
+| `engineer` | deep | parent | high |
 
-Tier maps live in `extensions/subagent/model-profiles.json`:
+Tier and alternate-provider maps live in `extensions/subagent/model-profiles.json`:
 
-| Provider | standard | deep |
-|---|---|---|
-| `openai-codex` | `gpt-5.6-sol` | `gpt-5.6-sol` |
-| `anthropic` | `claude-sonnet-5` | `claude-opus-5` |
+| Provider | standard | deep | Alternate when parent |
+|---|---|---|---|
+| `openai-codex` | `gpt-5.6-sol` | `gpt-5.6-sol` | `anthropic` |
+| `anthropic` | `claude-sonnet-5` | `claude-opus-5` | `openai-codex` |
+
+The reviewer therefore uses `anthropic/claude-opus-5` under an OpenAI or OpenAI Codex parent and `openai-codex/gpt-5.6-sol` under an Anthropic parent. Other bundled agents continue to use the parent provider.
 
 A model is resolved per spawn in this order:
 
 1. an explicit `model` in agent frontmatter, so an override can pin one model exactly;
-2. the tier entry for the parent session's provider;
-3. the parent session's own active model, when its provider has no tier map;
-4. the default provider's tier entry, when no active model is known.
+2. for `provider_strategy: alternate`, the tier entry for the alternate mapped from the parent provider;
+3. the tier entry for the parent session's provider;
+4. the parent session's own active model, when its provider has no tier or alternate map;
+5. the default provider's tier entry, when no active model is known.
 
-Override the maps per workstation in the untracked `extensions/subagent/config.json`. Existing providers may override a single tier; a new provider must supply both:
+Override the maps per workstation in the untracked `extensions/subagent/config.json`. Existing providers may override a single tier; a new provider must supply both. Alternate routes must target a configured provider:
 
 ```json
 {
@@ -140,6 +143,9 @@ Override the maps per workstation in the untracked `extensions/subagent/config.j
     "providers": {
       "anthropic": { "deep": "anthropic/claude-opus-4-8" },
       "google": { "standard": "google/gemini-3-flash", "deep": "google/gemini-3-pro" }
+    },
+    "alternateProviders": {
+      "anthropic": "google"
     }
   }
 }

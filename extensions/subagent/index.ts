@@ -71,6 +71,7 @@ export default function (pi: ExtensionAPI) {
 				model: resolveAgentModel({
 					pinnedModel: agent.model,
 					tier: agent.modelTier,
+					providerStrategy: agent.providerStrategy,
 					profiles: modelProfiles,
 					activeModel: ctx.model as ActiveModel | undefined,
 				}),
