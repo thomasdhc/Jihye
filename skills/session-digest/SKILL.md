@@ -1,91 +1,76 @@
 ---
 name: session-digest
-description: Extract and save important conversation exchanges from the current Pi session. Use when the user says "digest", "save session", "export important parts", or asks to record meaningful discoveries, decisions, findings, conceptual shifts, or plans from this session.
+description: Extract and save important exchanges from the current session. Use when the user asks to digest, save, export, or record discoveries, decisions, findings, conceptual shifts, or plans.
 ---
 
 # Session Digest
 
-Save the important conversational flow from the current Pi session as readable Markdown.
+## Extract Exchanges
 
-## 1. Extract Exchanges
-
-Resolve `scripts/extract_pairs.py` relative to this `SKILL.md`; do not assume a fixed installation path. Run:
+Resolve `scripts/extract_pairs.py` relative to this `SKILL.md` and run:
 
 ```bash
 python3 <skill-directory>/scripts/extract_pairs.py
 ```
 
-Use the resulting JSON as the ordered set of user and assistant messages from the active branch.
+Use its JSON as the ordered user and assistant messages from the active branch.
 
-## 2. Select Important Exchanges
+## Select Exchanges
 
-Retain only exchanges that capture:
+Retain exchanges that capture discoveries, decisions, verified findings, conceptual shifts, or agreed concrete plans. Exclude tool activity, mechanical status, fruitless clarification, and repetition represented by a stronger exchange.
 
-- **Discoveries** — unexpected knowledge or understanding
-- **Decisions** — architectural, implementation, or workflow choices
-- **Findings** — verified conclusions that passed their finding gate during the session
-- **Conceptual shifts** — meaningful reframing of the problem
-- **Plans** — agreed, concrete next steps
+Keep selection proportionate: a 200-message session usually needs 10–20 exchanges, not 80.
 
-Exclude tool invocations and results, mechanical status updates, fruitless clarifications, and repetition already represented by a stronger exchange.
+## Choose the Output Path
 
-Keep the selection proportionate. For a 200-message session, usually retain 10–20 exchanges rather than 80.
-
-## 3. Choose the Output Path
-
-Before touching a project output path, pass the read gate for project context and documented session-note conventions. Then follow the first applicable rule:
+Follow the first applicable rule:
 
 1. Use the project's existing session archive location and format.
 2. In a Git repository without a convention, use `docs/sessions/<YYYY-MM-DD>-<short-topic-slug>.md`.
-3. Outside a Git repository, ask the user where to save the digest.
+3. Outside a Git repository, ask where to save the digest.
 
-Keep workstation-specific and unrelated project paths out of this reusable workflow.
+## Write the Digest
 
-## 4. Write the Digest
-
-Use the project-state format when the session primarily changed a project:
+Use project-state format when the session primarily changed a project:
 
 ```markdown
 # Session <YYYY-MM-DD> — <Topic>
 
 ## State
-- <what is true now after this session>
+- <what is true now>
 
 ## Findings
-- <verified conclusion with enough context to be useful cold>
+- <verified conclusion useful without session context>
 
 ## Decisions
-- <choice and the reason it matters>
+- <choice and why it matters>
 
 ## Changes
-- `path/to/file` — what changed and why
+- `path` — <what changed and why>
 ```
 
-Use the exchange format when preserving the discussion is more useful:
+Use exchange format when preserving the discussion is more useful:
 
 ```markdown
 # <Topic> — <YYYY-MM-DD>
 
-> <Two or three sentence summary of the session and its outcome.>
+> <Two or three sentence outcome summary.>
 
 ---
 
 ## Exchanges
 
-**User:** <message text>
+**User:** <message>
 
-**Assistant:** <response text>
+**Assistant:** <response>
 
 ---
 
 ## Key takeaways
-
-- <important finding>
+- <finding>
 - <decision or next step>
 ```
 
-## 5. Hand Off
+## Return the Result
 
-- Report the saved path and summarize what you retained.
-- Show the relevant diff when the digest is inside a repository.
-- Treat a commit as an approval gate. Commit only after the user explicitly approves it.
+Report the saved path and summarize what was retained. Show the relevant diff when the digest is inside a repository.
