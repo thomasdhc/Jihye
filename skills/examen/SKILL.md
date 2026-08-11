@@ -5,7 +5,7 @@ description: Conduct evidence-based GitHub pull request and GitLab merge request
 
 # Examen
 
-*Examen* is Latin for the needle of a balance and, by extension, weighing or examination. Apply the same idea to proposed code changes: weigh the change against its intent and evidence, then return a proportionate verdict.
+Weigh each proposed change against its intent and verified evidence, then return a proportionate verdict.
 
 Throughout this skill, **review target** means either a GitHub pull request or a GitLab merge request.
 
@@ -16,18 +16,18 @@ Throughout this skill, **review target** means either a GitHub pull request or a
 - Report only concrete, actionable problems introduced by the review target.
 - Prefer correctness, security, reliability, compatibility, and meaningful performance findings over style preferences.
 - Distinguish a regression from a pre-existing defect or an explicitly documented limitation.
-- Verify decisive claims directly. Subagents gather and challenge evidence; the calling agent owns every finding and verdict.
+- Keep ownership of every finding and verdict in the calling agent. Use subagents only to gather or challenge evidence, and verify their decisive claims directly.
 - Keep review comments concise enough for the author to act on immediately.
 - Use CI/CD evidence privately. Do not repeat check status, pipeline results, or other dashboard-visible CI/CD information in platform review bodies or comments.
-- Treat posting comments, approving, and requesting changes as external writes. Do not perform them unless the user explicitly asks.
+- Keep posting comments, approving, and requesting changes behind an approval gate because they are external writes. Open that gate only when the user explicitly requests the specific submission action.
 
 ## Review Workflow
 
-### 1. Establish the review boundary
+### 1. Establish the target and prompt boundary
 
 Accept a pull or merge request URL, or an unambiguous host, project, and number. Detect the hosting platform from the URL or remote; ask when the target or desired action is unclear.
 
-Unless the user already requested submission, conduct a read-only review and return a draft. Do not interpret "review this" as permission to post, approve, or request changes.
+Unless the user already opened the approval gate for submission, keep the prompt boundary read-only and return a draft. Do not interpret "review this" as permission to post, approve, or request changes.
 
 For a local checkout:
 
@@ -166,9 +166,9 @@ Replace `<verdict>` with a concise platform-appropriate verdict, such as `LGTM.`
 
 Do not place findings in the review body; submit each finding inline using the exact `Findings:` / `Proposal:` template.
 
-## Submit Only After Explicit Direction
+## Pass the Approval Gate
 
-Before any submission:
+Explicit user direction opens the approval gate only for the requested submission action. Before any submission:
 
 1. Re-fetch review-target metadata from its host.
 2. Confirm it is still open and reviewable.

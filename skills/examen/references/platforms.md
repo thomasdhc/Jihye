@@ -1,15 +1,8 @@
 # Hosting Platform Reference
 
-Use this reference only after the review itself is complete. Platform APIs and self-managed versions can change; inspect the host's current metadata and authoritative documentation when a capability is uncertain.
+Use this reference only after completing the review, when resolving positions or preparing or performing platform writes. Keep every external write behind the approval gate defined in [`../SKILL.md`](../SKILL.md). Platform APIs and self-managed versions can change; inspect the host's current metadata and authoritative documentation when a capability is uncertain.
 
-## Common Rules
-
-- Read the current source/head SHA immediately before submission.
-- Derive inline positions from the exact reviewed diff revision.
-- Include a revision guard wherever the platform accepts one.
-- Prefer pending or draft comments until the complete review is ready.
-- Treat a batched API request as one logical submission, not a guaranteed database transaction.
-- Verify persisted comments and verdict state after every write.
+This reference defines only platform-specific coordinates, revision guards, write ordering, and verification behavior. Apply the common approval gate and submission invariants from the skill workflow.
 
 ## GitHub Pull Requests
 

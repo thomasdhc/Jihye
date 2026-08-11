@@ -45,8 +45,14 @@ test("coordinate conducts complex delegation without a planning-only handoff", (
 	assert.match(description, /multiple subagent calls require decisions about dependencies, delivery boundaries, safe parallelism/);
 	assert.match(description, /Skip one bounded task and obvious independent direct fan-out/);
 	assert.match(content, /Outcomes and delivery boundaries/);
-	assert.match(content, /Keep separate outcomes on separate branch, worktree, and pull-request boundaries/);
-	assert.match(content, /keep one outcome's implementation, tests, and supporting documentation together/);
+	const outcomes = content.match(/^1\. \*\*Outcomes and delivery boundaries\*\* — (.+)$/m)?.[1] ?? "";
+	assert.match(outcomes, /acceptance invariant/);
+	assert.match(outcomes, /separate outcome/i);
+	assert.match(outcomes, /delivery boundary/);
+	assert.match(outcomes, /branch/);
+	assert.match(outcomes, /worktree/);
+	assert.match(outcomes, /pull request/);
+	assert.match(outcomes, /implementation, tests, and supporting documentation/);
 	assert.match(content, /Likely calls/);
 	assert.match(content, /Dependencies/);
 	assert.match(content, /Safe parallel groups/);
