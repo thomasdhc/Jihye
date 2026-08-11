@@ -16,7 +16,7 @@ Throughout this skill, **review target** means either a GitHub pull request or a
 - Report only concrete, actionable problems introduced by the review target.
 - Prefer correctness, security, reliability, compatibility, and meaningful performance findings over style preferences.
 - Distinguish a regression from a pre-existing defect or an explicitly documented limitation.
-- Keep ownership of every finding and verdict in the calling agent. Use subagents only to gather or challenge evidence, and verify their decisive claims directly.
+- Keep ownership of source-of-truth context, conflict resolution, validation, every finding and verdict, and final synthesis in the calling agent. Treat subagent output as evidence to verify, never as authority.
 - Keep review comments concise enough for the author to act on immediately.
 - Use CI/CD evidence privately. Do not repeat check status, pipeline results, or other dashboard-visible CI/CD information in platform review bodies or comments.
 - Keep posting comments, approving, and requesting changes behind an approval gate because they are external writes. Open that gate only when the user explicitly requests the specific submission action.
@@ -79,7 +79,7 @@ Parallelize independent work, but directly verify the decisive evidence behind e
 
 ### 5. Apply the finding gate
 
-A finding must answer all of these:
+Report a candidate as a finding only when it passes this finding gate:
 
 1. **What changed?** The problem is introduced by this review target, or its description explicitly claims to fix or support the affected path.
 2. **How is it triggered?** Give a realistic event, input, configuration, or caller.
@@ -96,15 +96,15 @@ Do not report:
 - duplicate symptoms of one root cause
 - claims based only on an unverified subagent conclusion
 
-If no issue passes this gate, say that no findings were identified. Do not invent a comment to make the review look substantive.
+If no candidate passes the finding gate, say that no findings were identified. Do not invent a comment to make the review look substantive.
 
 ## Priority
 
 Prefix every inline finding with one priority:
 
 - `[P0]` — catastrophic and broadly blocking; immediate correction required
-- `[P1]` — high-impact or common-path defect that should block merge
-- `[P2]` — valid defect or broken supported edge case that should be fixed but is normally non-blocking
+- `[P1]` — high-impact or common-path defect; block merge
+- `[P2]` — valid defect or broken supported edge case; require a fix but normally do not block merge
 - `[P3]` — concrete introduced defect with small, localized impact
 
 Choose priority from impact and urgency, not confidence. Omit low-confidence findings rather than lowering their priority.
@@ -140,9 +140,9 @@ Use this exact single-paragraph template:
 
 Keep the `Findings:` and `Proposal:` labels, their capitalization, their order, and the single-paragraph form. Do not add a title, compliment, review summary, raw log, CI/CD status, or a second finding. Anchor the comment to the changed line that causes the behavior.
 
-## Verdict
+## Draw the Verdict
 
-Recommend the verdict from the findings:
+Draw a proportionate verdict from the findings; a verdict follows from findings and must never be stronger than their evidence:
 
 - Any `[P0]` or `[P1]`: request changes.
 - Only `[P2]` or `[P3]`: approval may be appropriate when the findings are non-blocking and the user agrees.
@@ -168,7 +168,7 @@ Do not place findings in the review body; submit each finding inline using the e
 
 ## Pass the Approval Gate
 
-Explicit user direction opens the approval gate only for the requested submission action. Before any submission:
+Keep every external write behind the approval gate. Explicit user direction opens the approval gate only for the requested submission action. Before any submission:
 
 1. Re-fetch review-target metadata from its host.
 2. Confirm it is still open and reviewable.

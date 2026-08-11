@@ -1,30 +1,28 @@
 ---
 name: vicara
-description: Orchestrate subagents to explore an existing repository, write a resumable markdown opportunity report, and identify high-impact work grounded in repo evidence.
+description: Investigate one existing repository, orchestrate evidence-gathering subagents, rank verified opportunities, and write a resumable Markdown report. Use when asked to identify high-impact repository work grounded in repository evidence.
 disable-model-invocation: true
 ---
 
 # Vicara
 
-Vicara means inquiry or investigation; this skill uses repo evidence and delegated exploration to find high-impact work.
+Investigate one existing repository and write a persistent report of atomic, evidence-backed opportunities. Keep implementation outside this workflow unless the user separately requests a selected opportunity.
 
-Use this skill to explore an existing repository and identify valuable work: refactors, bug fixes, tests, docs, workflow improvements, features, cleanup, or anything else the repo itself suggests.
+## Set the Prompt Boundary and Report
 
-This is an orchestration skill. The calling agent maps the repo, delegates bounded investigations to subagents, reconciles their findings, ranks opportunities, and writes a persistent markdown report that future sessions can resume from.
+Define the **Destination** as what this investigation pass must make possible. Define the **Frontier** as the open investigation streams and candidate opportunities worth continuing.
 
-## Persistent Report
+Use a user-provided report path. Otherwise, use `OPPORTUNITIES.md` at the repository root. Pass every applicable approval gate before creating or updating the report.
 
-Create or update a markdown report. Prefer a user-provided path. If none is given, use `OPPORTUNITIES.md` at the repo root.
-
-If the report already exists:
+When the report exists:
 
 - read it first
-- continue from `Frontier` and `Needs More Investigation`
+- resume from `Frontier` and `Needs More Investigation`
 - preserve useful prior findings
 - mark stale, superseded, or resolved items instead of silently deleting them
-- add a new session note
+- add a session note
 
-Report structure:
+Use this report structure:
 
 ```markdown
 # Repo Opportunity Report
@@ -44,8 +42,6 @@ Report structure:
 
 ## Frontier
 
-Open investigation streams or candidate opportunities to continue later.
-
 - [ ] <area/question> — <why it matters; next check>
 
 ## Opportunities
@@ -59,7 +55,7 @@ Open investigation streams or candidate opportunities to continue later.
 - Confidence: <low | medium | high> — <why>
 - Agent suitability: <good | mixed | poor> — <why>
 - Evidence:
-  - `<path>` — <observed fact>
+  - `<path>` — <observed fact and verification>
 - Suggested first step:
 - Validation:
 
@@ -81,219 +77,91 @@ Open investigation streams or candidate opportunities to continue later.
 - Next recommended action:
 ```
 
-## Calling Agent Role
+## Map Before Delegating
 
-The calling agent owns context, judgment, and the final report for this pass.
+1. Read the existing report, repository guidance, metadata, and relevant project todo when one exists.
+2. Set the Destination and prompt boundary for this pass.
+3. Build a low-resolution map of the repository's purpose, major areas, important commands, validation artifacts, conventions, and low-signal areas.
+4. Update `Repo Snapshot` and identify the Frontier.
+5. Exclude generated, vendored, irrelevant, or explicitly out-of-scope areas.
 
-The calling agent should:
+Do not begin with an unbounded repository-wide bug search. Let the Destination and repository evidence control expansion.
 
-1. Read the existing report and repo guidance.
-2. Build a low-resolution repo map before delegating.
-3. Identify the current **Destination**: what this pass should make possible.
-4. Identify the **Frontier**: promising investigation streams or candidate opportunities.
-5. When the frontier is multi-stream or dependency-heavy, load and follow the `coordinate` skill before the first subagent call; otherwise delegate bounded, independent workstreams directly.
-6. Reconcile subagent outputs into a coherent opportunity list.
-7. Verify each top opportunity through direct inspection, local reproduction, or a focused reviewer pass.
-8. Draft a ranking of atomic, independently actionable opportunities.
-9. Give the draft top ranking a final reviewer challenge.
-10. Update the report so a future session can continue cleanly.
+## Keep Ownership and Delegate Bounded Work
 
-Subagents gather evidence. They do not own the final ranking unless a later calling agent explicitly gives them their own bounded orchestration task.
+Keep ownership of source-of-truth context, conflict resolution, validation, every finding and verdict, ranking, report updates, and final synthesis in the calling agent. Treat subagent output as evidence to verify, never as authority.
 
-## Subagent Roles
+Use these specialist roles:
 
-Use subagents when workstreams are independent, the repo is large, or a bounded challenge pass would improve confidence.
+- `scout` — inspect one repository-local area, execution path, repeated pattern, validation surface, or documentation/code consistency question
+- `researcher` — resolve one external API, dependency, framework, service, CI, or lifecycle question raised by repository evidence
+- `reviewer` — challenge one falsifiable opportunity claim or the draft ranking
+- `engineer` — implement only after the user separately requests a selected opportunity
 
-### `scout`
+When the Frontier has multiple streams, dependencies, shared resources, isolation needs, or non-trivial integration, load and follow the `coordinate` skill before the first subagent call; build the execution skeleton in the calling agent's context, then immediately launch its first actionable group. For one bounded stream or an obvious direct fan-out, launch bounded independent calls directly and parallelize only safe work.
 
-Use for repo-local exploration:
+Give each subagent the Destination, bounded question, relevant repository context, reason the stream matters, areas to ignore, and required output. Request:
 
-- major directory or file-cluster reconnaissance
-- execution-path tracing
-- repeated-pattern checks
-- validation discovery
-- docs/code consistency
-- TODO/FIXME/HACK triage
-- locating decisive evidence without editing files
+1. conclusion
+2. decisive evidence with paths, line numbers, symbols, or commands
+3. candidate opportunities
+4. confidence and uncertainty
+5. next verification or report update
 
-### `researcher`
+Prefer several small independent tasks over one broad task. Stop delegating when the calling agent can finish the remaining bounded work more directly.
 
-Use when repo evidence points outside the repository:
+## Reconcile Candidates
 
-- public docs
-- third-party APIs or tools
-- dependency behavior
-- framework or language behavior
-- CI/service metadata
-- known external issues or lifecycle concerns
+For every candidate:
 
-### `reviewer`
+- separate observed facts from proposed work
+- deduplicate shared root causes without dropping distinct trigger classes
+- resolve conflicting evidence through direct inspection or a focused reviewer challenge
+- move weak or unfinished candidates to `Frontier` or `Needs More Investigation`
+- preserve the prompt boundary and record excluded areas under `Out of Scope`
 
-Use after candidate opportunities exist:
+Use a focused reviewer challenge when a candidate is high-impact, surprising, risky, or evidence-sensitive. Give the reviewer the exact claim, decisive evidence, affected files, risk questions, and evidence that would change the verdict. Reconcile the reviewer verdict directly; do not adopt it without verification.
 
-- challenge a specific opportunity
-- test whether evidence supports claimed impact
-- look for reasons the work is unsafe, already handled, poorly scoped, or lower-value than it appears
+## Apply the Finding Gates
 
-Reviewer tasks should be narrow and falsifiable.
+Treat a candidate opportunity as a finding only after it passes this finding gate:
 
-### `engineer`
+1. Verify the underlying repository fact directly or with focused local validation.
+2. Identify one independently implementable and independently validatable change.
+3. State concrete repository impact, bounded scope, a safe first step, and a credible validation path.
+4. Separate unresolved assumptions into `Needs More Investigation`.
 
-Use only if the user explicitly asks to implement a selected opportunity. Implementation is separate from opportunity discovery.
+Pass top findings through this additional finding gate before ranking:
 
-## Delegation Flow
+- Give each of the top three findings, or every finding when fewer than three exist, decisive support from direct calling-agent verification, a local reproduction or focused validation command, or a focused reviewer verdict.
+- Record the verification method and result in `Evidence` or `Validation`.
+- Do not let an unverified scout conclusion pass the finding gate.
 
-### 1. Map before delegating
+After drafting the ranking, give a reviewer the proposed top findings and decisive evidence. Require the reviewer to challenge ordering, impact, overlap, bundled scope, existing mitigations, implementation clarity, validation clarity, and credible higher-value alternatives. Reconcile that verdict by splitting, merging, reordering, downgrading, or returning candidates to `Needs More Investigation`.
 
-Before launching subagents, the calling agent should know enough to give useful boundaries:
+## Rank and Update
 
-- repo purpose inferred so far
-- guidance files read
-- important commands discovered
-- major areas
-- low-signal areas to ignore or sample lightly
-- why each delegated stream matters
+Make each opportunity atomic. Split work that shares a subsystem or motivation when its prerequisites, risks, implementation, or validation differ.
 
-### 2. Split the frontier
+Rank findings by:
 
-Choose workstreams that can be investigated independently.
-
-Good delegation targets:
-
-- `scout`: one repo-local area, capability, execution path, or repeated pattern
-- `researcher`: one external question suggested by repo evidence
-- `reviewer`: one specific opportunity claim that needs challenge
-
-Prefer several small, independent tasks over one broad task. When dependencies, parallel groups, shared resources, isolation, or integration make the split non-trivial, use the `coordinate` skill to build the execution skeleton in the calling agent's context, then immediately launch its first actionable group. For an obvious direct fan-out, launch the independent specialist calls in parallel without formal coordination.
-
-### 3. Give bounded tasks
-
-A good subagent task includes:
-
-```text
-Investigate <bounded area/question>.
-
-Context:
-- Repo purpose inferred so far: <summary>
-- Current destination: <summary>
-- Why this area matters: <reason>
-- What to ignore: <generated/vendor/low-signal areas>
-
-Return:
-1. Conclusion
-2. Evidence with file paths, line numbers, symbols, or commands
-3. Candidate opportunities, if any
-4. Confidence and uncertainty
-5. Suggested report updates or next verification
-```
-
-Avoid handing off an unbounded "review everything" task.
-
-### 4. Reconcile findings
-
-The calling agent should:
-
-- deduplicate overlapping findings
-- check whether evidence supports impact
-- separate observed facts from suggested work
-- resolve conflicts by direct verification or reviewer pass
-- downgrade weak findings into `Needs More Investigation`
-- preserve useful continuation points in `Frontier`
-
-### 5. Review when useful
-
-Use a reviewer when a candidate is high-impact, surprising, risky, or evidence-sensitive.
-
-A reviewer task should include:
-
-- the exact claim to test
-- files or areas involved
-- risk questions
-- what kind of evidence would change the decision
-
-### 6. Apply final quality gates
-
-Before finalizing the report:
-
-1. **Verify the top findings.** Each of the top three opportunities, or every opportunity when fewer than three exist, must have decisive support from at least one of:
-   - direct verification by the calling agent
-   - a local reproduction or focused validation command
-   - a focused reviewer verdict
-
-   An unreviewed scout conclusion alone does not satisfy this gate. Record the verification method and result under the opportunity's `Evidence` or `Validation` field.
-
-2. **Review the ranking as a whole.** After drafting the ranking, give a reviewer the proposed top opportunities and their decisive evidence. Ask the reviewer to challenge:
-   - ordering and claimed impact
-   - overlap or bundled scope
-   - existing mitigations
-   - implementation and validation clarity
-   - credible higher-value alternatives that were overlooked
-
-   Reconcile the reviewer verdict into the report. Split, merge, reorder, downgrade, or move findings back to `Needs More Investigation` when warranted.
-
-## Opportunity Ranking
-
-Each opportunity must describe one independently implementable and independently validatable change. Split findings that merely share a subsystem, motivation, or destination. Avoid umbrella opportunities whose parts have different prerequisites, risks, or validation paths.
-
-Rank opportunities by:
-
-1. likely value in this repository
-2. strength of evidence
+1. likely repository value
+2. evidence strength
 3. scope clarity
 4. implementation safety
-5. ease of validation
+5. validation ease
 6. agent suitability
 
-Useful opportunity categories include:
+Use repository-relevant categories such as bug fix, refactor, validation/testing, documentation, workflow/automation, feature, or cleanup. Do not force every category into the report.
 
-- bug fix
-- refactor
-- validation/testing
-- documentation
-- workflow/automation
-- feature
-- cleanup
-- other repo-specific category
-
-Let the repo determine which categories matter.
-
-## Workflow
-
-1. **Resume or initialize**
-   - Read existing report if present.
-   - Read repo guidance and metadata.
-   - Define the current destination.
-
-2. **Map**
-   - Identify repo purpose, major areas, commands, validation artifacts, conventions, and low-signal areas.
-   - Update `Repo Snapshot`.
-
-3. **Delegate and investigate**
-   - Choose the frontier.
-   - Load and follow the `coordinate` skill when the frontier has multiple or dependent streams.
-   - Launch the first actionable scout or researcher group immediately, grouping independent calls in parallel.
-   - Search and sample directly where the calling agent needs context.
-
-4. **Reconcile and review**
-   - Merge subagent findings.
-   - Verify the strongest evidence.
-   - Use reviewers for risky or uncertain candidates.
-   - Apply the top-finding evidence gate.
-
-5. **Rank and report**
-   - Draft atomic opportunities and have a reviewer challenge the ranking as a whole.
-   - Reconcile the final reviewer verdict.
-   - Add or revise opportunities.
-   - Move unfinished questions to `Frontier` or `Needs More Investigation`.
-   - Record out-of-scope areas.
-   - Add a session note.
+Update the Destination, Repo Snapshot, Frontier, Opportunities, Needs More Investigation, Out of Scope, and Session Notes so another session can resume without reconstructing the investigation.
 
 ## Final Response
 
-After updating the report, respond briefly with:
+After updating the report, return only:
 
 - report path
-- top 3 opportunities
+- top three opportunities
 - safest first task
 - highest-impact task
-- what to investigate next
+- next investigation target

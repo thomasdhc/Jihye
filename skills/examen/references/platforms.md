@@ -1,8 +1,8 @@
 # Hosting Platform Reference
 
-Use this reference only after completing the review, when resolving positions or preparing or performing platform writes. Keep every external write behind the approval gate defined in [`../SKILL.md`](../SKILL.md). Platform APIs and self-managed versions can change; inspect the host's current metadata and authoritative documentation when a capability is uncertain.
+Consult this reference only after completing the review, when resolving positions or preparing or performing platform writes. Keep every external write behind the approval gate defined in [`../SKILL.md`](../SKILL.md). Platform APIs and self-managed versions can change; inspect the host's current metadata and authoritative documentation when a capability is uncertain.
 
-This reference defines only platform-specific coordinates, revision guards, write ordering, and verification behavior. Apply the common approval gate and submission invariants from the skill workflow.
+Use this reference only for platform-specific coordinates, revision guards, write ordering, and verification behavior. Apply the approval gate and submission invariants from the skill workflow.
 
 ## GitHub Pull Requests
 
@@ -33,7 +33,7 @@ Important fields:
 
 Use `side: RIGHT` for added or context lines in the head version and `side: LEFT` for deleted base lines. Prefer `line` and `side`; the older diff `position` coordinate is closing down.
 
-A pending review is also possible: create it without `event`, then submit through:
+To use a pending review, create it without `event`, then submit it through:
 
 ```text
 POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events
@@ -100,7 +100,7 @@ POST /projects/:id/merge_requests/:merge_request_iid/draft_notes/bulk_publish
 
 Use `note` for the overall summary. When supported by the GitLab tier and project configuration, use `reviewer_state: requested_changes` for a changes-requested review or `reviewer_state: reviewed` for a non-approval review. This state does not record formal approval.
 
-Immediate discussions are available through:
+Create immediate discussions through:
 
 ```text
 POST /projects/:id/merge_requests/:merge_request_iid/discussions
@@ -132,9 +132,9 @@ GET /projects/:id/merge_requests/:merge_request_iid/approvals
 GET /projects/:id/merge_requests/:merge_request_iid/approval_state
 ```
 
-The detailed `approval_state` endpoint can depend on GitLab tier. Verify the authenticated reviewer appears in `approved_by` for approval. Also confirm draft notes are exhausted when bulk publication was used and the merge request's current `sha` still matches.
+Account for the GitLab tier when using the detailed `approval_state` endpoint. Verify the authenticated reviewer appears in `approved_by` for approval. Also confirm draft notes are exhausted when bulk publication was used and the merge request's current `sha` still matches.
 
-GitLab may not expose a definitive REST readback for every reviewer-state variant on every version or tier. When requested-changes verification is ambiguous, report that limitation rather than inferring success from the write response alone.
+Do not assume every GitLab version or tier exposes a definitive REST readback for every reviewer-state variant. When requested-changes verification is ambiguous, report that limitation rather than inferring success from the write response alone.
 
 Official documentation:
 
