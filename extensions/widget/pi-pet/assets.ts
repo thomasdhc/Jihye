@@ -119,7 +119,7 @@ export const SUBAGENT_PI_PET_ASSETS = {
 		bottom: {
 			idle: " /___\\ ",
 			thinking: [" / 🬃 \\ ", " / 🬖 \\ ", " / 🬞 \\ ", " / 🬢 \\ "],
-			working: [" / 🞐 \\ ", " / 🞎 \\ ", " / 🞓 \\ ", " / 🞎 \\ "],
+			working: [" / □ \\ ", " / ▫ \\ ", " / ■ \\ ", " / ▫ \\ "],
 			success: " /___\\ ",
 			error: " /___\\ ",
 		},
