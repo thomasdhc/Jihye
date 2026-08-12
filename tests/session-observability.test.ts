@@ -1,0 +1,250 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+import type { SessionEntry } from "@earendil-works/pi-coding-agent";
+
+import { analyzeSession } from "../extensions/session-observability/analyzer.ts";
+import sessionObservabilityExtension from "../extensions/session-observability/index.ts";
+import { formatObservationReport } from "../extensions/session-observability/render.ts";
+
+const FIXTURE_PATH = new URL("./fixtures/session-observability.jsonl", import.meta.url);
+
+function fixtureEntries(): SessionEntry[] {
+	return readFileSync(FIXTURE_PATH, "utf8")
+		.trim()
+		.split("\n")
+		.map((line) => JSON.parse(line) as Record<string, unknown>)
+		.filter((entry) => entry.type !== "session") as unknown as SessionEntry[];
+}
+
+function closeEnough(actual: number, expected: number): void {
+	assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} != ${expected}`);
+}
+
+test("analyzes models, tools, usage, and recursive subagents on one branch", () => {
+	const report = analyzeSession(fixtureEntries(), {
+		sessionId: "session-fixture",
+		sessionName: "Fixture",
+	});
+
+	assert.equal(report.schemaVersion, 1);
+	assert.deepEqual(
+		{
+			prompts: report.session.userPrompts,
+			turns: report.session.assistantTurns,
+			toolCalls: report.session.toolCalls,
+			toolResults: report.session.toolResults,
+			toolErrors: report.session.toolErrors,
+			compactions: report.session.compactions,
+		},
+		{ prompts: 1, turns: 3, toolCalls: 5, toolResults: 5, toolErrors: 1, compactions: 1 },
+	);
+	assert.equal(report.session.usage.assistant.totalTokens, 255);
+	assert.equal(report.session.usage.tools.totalTokens, 85);
+	assert.equal(report.session.usage.summaries.totalTokens, 12);
+	assert.equal(report.session.usage.observedTotal.totalTokens, 352);
+	closeEnough(report.session.usage.observedTotal.cost, 0.081);
+
+	assert.deepEqual(report.models.map(({ provider, model, turns }) => ({ provider, model, turns })), [
+		{ provider: "openai-codex", model: "gpt-test", turns: 3 },
+	]);
+	assert.deepEqual(report.tools.map((tool) => ({
+		name: tool.name,
+		calls: tool.calls,
+		results: tool.results,
+		errors: tool.errors,
+		truncated: tool.truncatedResults,
+	})), [
+		{ name: "bash", calls: 2, results: 2, errors: 1, truncated: 0 },
+		{ name: "read", calls: 2, results: 2, errors: 0, truncated: 1 },
+		{ name: "subagent", calls: 1, results: 1, errors: 0, truncated: 0 },
+	]);
+
+	assert.equal(report.maxSubagentDepth, 2);
+	assert.deepEqual(report.subagents.map((subagent) => ({
+		agent: subagent.agent,
+		calls: subagent.calls,
+		tools: subagent.toolCalls,
+		depth: subagent.maxDepth,
+		tokens: subagent.usage.totalTokens,
+		models: subagent.models,
+	})), [
+		{ agent: "reviewer", calls: 1, tools: 1, depth: 2, tokens: 25, models: ["anthropic/claude-test"] },
+		{ agent: "scout", calls: 1, tools: 2, depth: 1, tokens: 60, models: ["openai-codex/gpt-test"] },
+	]);
+	assert.deepEqual(report.signals.map(({ kind, confidence, tool, toolCallIds }) => ({
+		kind,
+		confidence,
+		tool,
+		toolCallIds,
+	})), [
+		{ kind: "tool-error", confidence: "fact", tool: "bash", toolCallIds: ["bash-1"] },
+		{ kind: "truncated-tool-result", confidence: "fact", tool: "read", toolCallIds: ["read-2"] },
+		{ kind: "repeated-after-error", confidence: "heuristic", tool: "bash", toolCallIds: ["bash-1", "bash-2"] },
+	]);
+});
+
+test("prefers declared tool usage over the subagent-detail fallback", () => {
+	const entries = fixtureEntries();
+	for (const entry of entries) {
+		if (entry.type !== "message" || entry.message.role !== "toolResult" || entry.message.toolName !== "subagent") continue;
+		entry.message.usage = {
+			input: 5,
+			output: 2,
+			cacheRead: 0,
+			cacheWrite: 0,
+			totalTokens: 7,
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0.04 },
+		};
+	}
+
+	const report = analyzeSession(entries);
+	assert.equal(report.session.usage.tools.totalTokens, 7);
+	closeEnough(report.session.usage.tools.cost, 0.04);
+	assert.equal(report.subagents.reduce((total, item) => total + item.usage.totalTokens, 0), 85);
+});
+
+test("keeps prompts, arguments, tasks, and outputs out of normalized observations", () => {
+	const serialized = JSON.stringify(analyzeSession(fixtureEntries()));
+
+	for (const secret of ["private user request", "private-command", "secret.ts", "private scout task", "private final answer"]) {
+		assert.equal(serialized.includes(secret), false, secret);
+	}
+});
+
+test("reports missing and orphan tool results without guessing at intent", () => {
+	const entries = [
+		{
+			type: "message",
+			id: "assistant",
+			parentId: null,
+			timestamp: "2026-01-01T00:00:00.000Z",
+			message: {
+				role: "assistant",
+				provider: "test",
+				model: "test",
+				usage: {},
+				content: [{ type: "toolCall", id: "missing", name: "read", arguments: { path: "private" } }],
+			},
+		},
+		{
+			type: "message",
+			id: "result",
+			parentId: "assistant",
+			timestamp: "2026-01-01T00:00:01.000Z",
+			message: {
+				role: "toolResult",
+				toolCallId: "orphan",
+				toolName: "bash",
+				content: [],
+				isError: false,
+			},
+		},
+	] as unknown as SessionEntry[];
+
+	const report = analyzeSession(entries);
+	assert.deepEqual(report.signals.map((item) => item.kind), ["missing-tool-result", "orphan-tool-result"]);
+	assert.equal(report.tools.find((tool) => tool.name === "read")?.missingResults, 1);
+	assert.equal(report.tools.find((tool) => tool.name === "bash")?.orphanResults, 1);
+});
+
+test("formats a concise report with evidence labels and coverage limits", () => {
+	const text = formatObservationReport(analyzeSession(fixtureEntries(), {
+		sessionId: "session-fixture",
+		sessionName: "Fixture",
+	}));
+
+	assert.match(text, /^Jihye session observation/m);
+	assert.match(text, /1 prompt · 3 assistant turns · 5 tool calls/);
+	assert.match(text, /1 compaction · 0 model changes · 0 thinking-level changes/);
+	assert.match(text, /352 tokens · \$0\.0810 observed/);
+	assert.match(text, /Subagents · max depth 2/);
+	assert.match(text, /FACT · 1 tool error · bash \(bash-1\)/);
+	assert.match(text, /HEURISTIC · 1 repeated after error · bash \(bash-1, bash-2\)/);
+	assert.match(text, /parent tool timing unavailable/);
+});
+
+test("registers a read-only command that waits for idle and analyzes the active branch", async () => {
+	type Command = { handler(args: string, ctx: any): Promise<void> };
+	let commandName = "";
+	let command: Command | undefined;
+	sessionObservabilityExtension({
+		registerCommand(name: string, registered: Command) {
+			commandName = name;
+			command = registered;
+		},
+	} as never);
+
+	const order: string[] = [];
+	let rendered = "";
+	let closes = 0;
+	await command?.handler("", {
+		mode: "tui",
+		waitForIdle: async () => { order.push("idle"); },
+		sessionManager: {
+			getBranch() {
+				order.push("branch");
+				return fixtureEntries();
+			},
+			getSessionId: () => "session-fixture",
+			getSessionName: () => "Fixture",
+		},
+		ui: {
+			notify() {
+				assert.fail("unexpected notification");
+			},
+			async custom(factory: any) {
+				const component = factory({ requestRender() {} }, {}, {}, () => { closes += 1; });
+				rendered = component.render(100).join("\n");
+				component.handleInput("\u001b");
+				component.handleInput("\u0003");
+			},
+		},
+	});
+
+	assert.equal(commandName, "jihye-observe");
+	assert.deepEqual(order, ["idle", "branch"]);
+	assert.equal(closes, 2, "both Escape and Ctrl+C close the report");
+	assert.match(rendered, /Jihye session observation/);
+});
+
+test("rejects unsupported arguments before inspecting the session", async () => {
+	type Command = { handler(args: string, ctx: any): Promise<void> };
+	let command: Command | undefined;
+	sessionObservabilityExtension({
+		registerCommand(_name: string, registered: Command) {
+			command = registered;
+		},
+	} as never);
+
+	const notifications: Array<[string, string]> = [];
+	await command?.handler("tools", {
+		mode: "tui",
+		waitForIdle: async () => assert.fail("must not wait"),
+		sessionManager: { getBranch: () => assert.fail("must not inspect") },
+		ui: { notify: (message: string, level: string) => notifications.push([message, level]) },
+	});
+
+	assert.deepEqual(notifications, [["Usage: /jihye-observe", "warning"]]);
+});
+
+test("does not analyze or write anything outside interactive mode", async () => {
+	type Command = { handler(args: string, ctx: any): Promise<void> };
+	let command: Command | undefined;
+	sessionObservabilityExtension({
+		registerCommand(_name: string, registered: Command) {
+			command = registered;
+		},
+	} as never);
+
+	const notifications: Array<[string, string]> = [];
+	await command?.handler("", {
+		mode: "json",
+		waitForIdle: async () => assert.fail("must not wait"),
+		sessionManager: { getBranch: () => assert.fail("must not inspect") },
+		ui: { notify: (message: string, level: string) => notifications.push([message, level]) },
+	});
+
+	assert.deepEqual(notifications, [["/jihye-observe requires interactive mode", "error"]]);
+});
