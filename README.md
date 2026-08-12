@@ -10,6 +10,7 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 | `custom-header` | Custom Pi startup header |
 | `jihye-setup` | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts |
 | `project-info` | Footer status showing current git project + branch |
+| `session-observability` | Read-only active-branch report for model, tool, usage, and subagent activity |
 | `subagent` | Run Pi subagents as tools with portable bundled definitions and per-user overrides |
 | `terminal-notify` | Send a native desktop alert when Pi is ready for input |
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
@@ -192,6 +193,14 @@ Workspace roots are discovered by walking up from the working directory, looking
   "card": false
 }
 ```
+
+### Session observability
+
+Use `/jihye-observe` in an interactive session to inspect the current active branch. The command waits for Pi to become idle, then opens a centered, keyboard-scrollable overlay showing assistant and nested-tool usage, model turns, tool outcomes, recursive subagent activity, and operational signals such as errors, truncation, missing results, and repeated calls after an error. Press Escape or Ctrl+C to close it without reflowing the underlying session.
+
+The report is computed in memory from Pi's existing session entries. It does not add a message or custom entry, write another file, or send anything to the model. Normalized observations exclude prompts, tool arguments, subagent task briefs, and outputs. Facts and heuristics remain labeled separately; an unused tool is not classified as a miss.
+
+Pi persists normal interactive sessions continuously, so the command can be used at any point and does not need to run before exit. Parent tool timing is not reconstructable from current session entries, and subagent traces contain final returned results rather than durable partial child activity.
 
 ### Companion widget
 
