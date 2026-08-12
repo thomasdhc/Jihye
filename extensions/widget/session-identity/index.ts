@@ -29,6 +29,7 @@ interface SessionLeaseAllocator {
 interface SessionIdentityExtensionOptions {
 	allocator?: SessionLeaseAllocator;
 	createConfig?: () => SessionIdentityConfig;
+	formatSessionName?: (identity: string, createdAt: string) => string;
 	formatTitle?: (name: string, cwd: string) => string;
 	reportWarning?: (message: string) => void;
 	shouldReleaseOnReload?: () => boolean;
@@ -38,12 +39,24 @@ export function formatSessionIdentityTitle(name: string, cwd: string): string {
 	return `π - ${name} - ${basename(cwd) || cwd}`;
 }
 
+export function formatAutomaticSessionName(identity: string, createdAt: string): string {
+	const date = new Date(createdAt);
+	if (Number.isNaN(date.getTime())) {
+		throw new Error(`Invalid session creation timestamp: ${createdAt}`);
+	}
+	const pad = (value: number) => String(value).padStart(2, "0");
+	const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+	const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+	return `${identity} · ${day} ${time}`;
+}
+
 export function createSessionIdentityExtension(
 	options: SessionIdentityExtensionOptions = {},
 ) {
 	return function sessionIdentityExtension(pi: ExtensionAPI): void {
 		let allocator = options.allocator;
 		const createConfig = options.createConfig ?? createSessionIdentityConfig;
+		const formatSessionName = options.formatSessionName ?? formatAutomaticSessionName;
 		const formatTitle = options.formatTitle ?? formatSessionIdentityTitle;
 		const reportWarning = options.reportWarning ?? ((message: string) => process.stderr.write(`${message}\n`));
 		let lease: SessionNameLease | undefined;
@@ -87,6 +100,12 @@ export function createSessionIdentityExtension(
 			}
 		}
 
+		function nameUnnamedSession(ctx: ExtensionContext): void {
+			if (!lease || pi.getSessionName()) return;
+			const createdAt = ctx.sessionManager.getHeader().timestamp;
+			pi.setSessionName(formatSessionName(lease.name, createdAt));
+		}
+
 		function clearActiveIdentity(identity: string | undefined): void {
 			if (identity !== undefined && getActiveSessionIdentity() === identity) {
 				setActiveSessionIdentity(undefined);
@@ -99,6 +118,7 @@ export function createSessionIdentityExtension(
 				allocator ??= new SessionNameAllocator(createConfig());
 				lease = await allocator.acquire();
 				clearLegacySessionName(legacySessionName);
+				nameUnnamedSession(ctx);
 				synchronizeIdentity(ctx);
 			} catch (error) {
 				lease = undefined;
