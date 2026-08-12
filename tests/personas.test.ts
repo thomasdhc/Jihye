@@ -118,6 +118,8 @@ test("global personas preserve canonical domains, coordination gates, and parent
 		assert.deepEqual(headings(persona), ["Fidelity", "Entrypoint", "Solution Architecture", "Context and Delegation", "Safety"], path);
 		assertTerms(persona, [
 			/alternatives and trade-offs/i,
+			/copy the exact paste-ready command to the local clipboard[^\n]*display the identical command/i,
+			/never copy protected data/i,
 			/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
 			/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
 			/coordinate.*skill/is,
