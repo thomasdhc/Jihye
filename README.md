@@ -16,6 +16,7 @@ Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your wor
 | `web-fetch` | Fetch a URL and extract readable content as markdown |
 | `web-search` | Search the web via Serper (Google results) |
 | `widget` | Companion widget with pet reactions, context management, and session identity |
+| `worktree-health` | Read-only cleanup-candidate checks for registered and dangling worktrees |
 
 ## Skills
 
@@ -193,6 +194,16 @@ Workspace roots are discovered by walking up from the working directory, looking
   "card": false
 }
 ```
+
+### Worktree health
+
+`worktree-health` performs an offline, read-only check at session startup and warns only when it finds cleanup candidates. Use the command for the full report:
+
+```text
+/worktree-health          # registered and dangling worktree status
+```
+
+The extension reads the isolated-worktree root from workspace `REPO.md`. It treats clean tracked branches already contained in the local default base, clean branches whose upstream is gone, prunable registrations, and broken worktree `.git` pointers as candidates. Current, dirty, locked, detached, untracked, and unclassifiable worktrees remain protected or advisory. It never fetches, prunes, removes, switches branches, or treats age alone as evidence of staleness.
 
 ### Session observability
 
