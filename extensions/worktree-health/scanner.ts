@@ -4,6 +4,7 @@ import {
 	readFileSync,
 	readdirSync,
 	realpathSync,
+	statSync,
 } from "node:fs";
 import * as path from "node:path";
 
@@ -38,14 +39,23 @@ export interface WorktreeHealthItem {
 	state: WorktreeHealthState;
 	candidate: boolean;
 	branch?: string;
+	repositoryRoot?: string;
 	detail: string;
+}
+
+export interface WorktreeHealthRepository {
+	root: string;
+	commonDirectory?: string;
+	baseRef?: string;
 }
 
 export interface WorktreeHealthReport {
 	workspaceDirectory?: string;
 	worktreeRoot?: string;
+	repositoryCheckoutRoot?: string;
 	repositoryRoot?: string;
 	baseRef?: string;
+	repositories?: WorktreeHealthRepository[];
 	items: WorktreeHealthItem[];
 	warnings: string[];
 }
@@ -59,13 +69,20 @@ interface RegisteredWorktree {
 	prunable?: string;
 }
 
-export interface ConfiguredWorktreeRoot {
+export interface ConfiguredWorkspacePath {
 	path?: string;
 	warning?: string;
 }
 
+export type ConfiguredWorktreeRoot = ConfiguredWorkspacePath;
+
 const WORKTREE_ROOT_PREFIX = "- Parallel and isolated worktrees:";
+const REPOSITORY_ROOT_PREFIX = "- Repository checkouts:";
 const GIT_TIMEOUT_MS = 5000;
+const WORKTREE_DISCOVERY_MAX_DEPTH = 4;
+const REPOSITORY_DISCOVERY_MAX_DEPTH = 2;
+const DISCOVERY_MAX_DIRECTORIES = 2000;
+const DISCOVERY_EXAMPLE_LIMIT = 5;
 
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
@@ -84,33 +101,57 @@ function isWithin(parent: string, candidate: string): boolean {
 	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
-export function parseConfiguredWorktreeRoot(content: string, source = "REPO.md"): ConfiguredWorktreeRoot {
+function parseConfiguredAbsolutePath(
+	content: string,
+	prefix: string,
+	label: string,
+	source: string,
+): ConfiguredWorkspacePath {
 	const values = content
 		.split(/\r?\n/)
-		.filter((line) => line.startsWith(WORKTREE_ROOT_PREFIX))
-		.map((line) => line.slice(WORKTREE_ROOT_PREFIX.length).trim())
+		.filter((line) => line.startsWith(prefix))
+		.map((line) => line.slice(prefix.length).trim())
 		.map((value) => value.match(/^`([^`]+)`$/)?.[1]?.trim())
 		.filter((value): value is string => value !== undefined && value !== "");
 
 	if (values.length === 0) {
-		return { warning: `${source} does not declare an absolute parallel-worktree path` };
+		return { warning: `${source} does not declare an absolute ${label} path` };
 	}
 	if (values.length > 1) {
-		return { warning: `${source} declares more than one parallel-worktree path` };
+		return { warning: `${source} declares more than one ${label} path` };
 	}
 	if (!path.isAbsolute(values[0]!)) {
-		return { warning: `${source} parallel-worktree path must be absolute: ${values[0]}` };
+		return { warning: `${source} ${label} path must be absolute: ${values[0]}` };
 	}
 	return { path: path.normalize(values[0]!) };
 }
 
-export function readConfiguredWorktreeRoot(workspaceDirectory: string): ConfiguredWorktreeRoot {
+export function parseConfiguredWorktreeRoot(content: string, source = "REPO.md"): ConfiguredWorktreeRoot {
+	return parseConfiguredAbsolutePath(content, WORKTREE_ROOT_PREFIX, "parallel-worktree", source);
+}
+
+export function parseConfiguredRepositoryRoot(content: string, source = "REPO.md"): ConfiguredWorkspacePath {
+	return parseConfiguredAbsolutePath(content, REPOSITORY_ROOT_PREFIX, "repository-checkout", source);
+}
+
+function readConfiguredPath(
+	workspaceDirectory: string,
+	parse: (content: string, source: string) => ConfiguredWorkspacePath,
+): ConfiguredWorkspacePath {
 	const source = path.join(workspaceDirectory, "REPO.md");
 	try {
-		return parseConfiguredWorktreeRoot(readFileSync(source, "utf8"), source);
+		return parse(readFileSync(source, "utf8"), source);
 	} catch (error) {
 		return { warning: `Cannot read ${source}: ${errorMessage(error)}` };
 	}
+}
+
+export function readConfiguredWorktreeRoot(workspaceDirectory: string): ConfiguredWorktreeRoot {
+	return readConfiguredPath(workspaceDirectory, parseConfiguredWorktreeRoot);
+}
+
+export function readConfiguredRepositoryRoot(workspaceDirectory: string): ConfiguredWorkspacePath {
+	return readConfiguredPath(workspaceDirectory, parseConfiguredRepositoryRoot);
 }
 
 export function parseWorktreePorcelain(output: string): RegisteredWorktree[] {
@@ -149,7 +190,7 @@ async function run(
 	cwd: string,
 ): Promise<CommandResult | undefined> {
 	try {
-		return await runner("git", args, { cwd, timeout: GIT_TIMEOUT_MS });
+		return await runner("git", ["--no-optional-locks", ...args], { cwd, timeout: GIT_TIMEOUT_MS });
 	} catch {
 		return undefined;
 	}
@@ -159,7 +200,15 @@ async function resolveRepositoryRoot(runner: CommandRunner, cwd: string): Promis
 	const result = await run(runner, ["rev-parse", "--show-toplevel"], cwd);
 	if (!result || result.code !== 0) return undefined;
 	const root = result.stdout.trim();
-	return root ? path.resolve(root) : undefined;
+	return root ? canonicalPath(root) : undefined;
+}
+
+async function resolveGitCommonDirectory(runner: CommandRunner, cwd: string): Promise<string | undefined> {
+	const result = await run(runner, ["rev-parse", "--git-common-dir"], cwd);
+	if (!result || result.code !== 0) return undefined;
+	const value = result.stdout.trim();
+	if (!value) return undefined;
+	return canonicalPath(path.isAbsolute(value) ? value : path.resolve(cwd, value));
 }
 
 async function resolveBaseRef(runner: CommandRunner, repositoryRoot: string): Promise<string | undefined> {
@@ -318,7 +367,28 @@ async function inspectRegisteredWorktree(input: {
 	};
 }
 
-function inspectGitdirPointer(directory: string): WorktreeHealthItem | undefined {
+interface GitdirPointer {
+	target: string;
+	missing: boolean;
+}
+
+interface DiscoveryCoverage {
+	limitReached: boolean;
+	skippedPaths: string[];
+	unreadablePaths: string[];
+	symbolicLinkPaths: string[];
+}
+
+export interface WorktreeRootDiscovery extends DiscoveryCoverage {
+	linkedWorktrees: string[];
+	dangling: WorktreeHealthItem[];
+}
+
+export interface RepositoryRootDiscovery extends DiscoveryCoverage {
+	checkouts: string[];
+}
+
+function readGitdirPointer(directory: string): GitdirPointer | undefined {
 	const gitFile = path.join(directory, ".git");
 	let stat;
 	try {
@@ -337,41 +407,206 @@ function inspectGitdirPointer(directory: string): WorktreeHealthItem | undefined
 	const targetValue = content.match(/^gitdir:\s*(.+?)\s*$/m)?.[1];
 	if (!targetValue) return undefined;
 	const target = path.isAbsolute(targetValue) ? targetValue : path.resolve(directory, targetValue);
-	if (existsSync(target)) return undefined;
+	return { target, missing: !existsSync(target) };
+}
+
+function inspectGitdirPointer(directory: string): WorktreeHealthItem | undefined {
+	const pointer = readGitdirPointer(directory);
+	if (!pointer?.missing) return undefined;
 	return {
 		path: directory,
 		state: "dangling",
 		candidate: true,
-		detail: `gitdir target is missing: ${target}; manual review required`,
+		detail: `gitdir target is missing: ${pointer.target}; manual review required`,
 	};
 }
 
-export function findDanglingWorktreeDirectories(worktreeRoot: string, maxDepth = 2): WorktreeHealthItem[] {
-	if (!existsSync(worktreeRoot)) return [];
-	const found: WorktreeHealthItem[] = [];
+interface QueuedDirectory {
+	directory: string;
+	depth: number;
+}
 
-	const visit = (directory: string, depth: number) => {
-		let entries;
-		try {
-			entries = readdirSync(directory, { withFileTypes: true });
-		} catch {
-			return;
-		}
-		for (const entry of entries) {
-			if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
-			const candidate = path.join(directory, entry.name);
-			const pointer = inspectGitdirPointer(candidate);
-			if (pointer) {
-				found.push(pointer);
-				continue;
+interface ChildDirectories {
+	directories: string[];
+	symbolicLinks: string[];
+}
+
+function childDirectories(directory: string): ChildDirectories | undefined {
+	try {
+		const directories: string[] = [];
+		const symbolicLinks: string[] = [];
+		for (const entry of readdirSync(directory, { withFileTypes: true })) {
+			const target = path.join(directory, entry.name);
+			if (entry.isDirectory()) directories.push(target);
+			else if (entry.isSymbolicLink()) {
+				try {
+					if (statSync(target).isDirectory()) symbolicLinks.push(target);
+				} catch {
+					symbolicLinks.push(target);
+				}
 			}
-			if (existsSync(path.join(candidate, ".git"))) continue;
-			if (depth + 1 < maxDepth) visit(candidate, depth + 1);
 		}
-	};
+		return {
+			directories: directories.sort((left, right) => left.localeCompare(right)),
+			symbolicLinks: symbolicLinks.sort((left, right) => left.localeCompare(right)),
+		};
+	} catch {
+		return undefined;
+	}
+}
 
-	visit(worktreeRoot, 0);
-	return found;
+function addExamples(target: string[], values: string[]): void {
+	for (const value of values) {
+		if (target.length >= DISCOVERY_EXAMPLE_LIMIT) return;
+		if (!target.includes(value)) target.push(value);
+	}
+}
+
+export function discoverWorktreeRoot(
+	worktreeRoot: string,
+	maxDepth = WORKTREE_DISCOVERY_MAX_DEPTH,
+	maxDirectories = DISCOVERY_MAX_DIRECTORIES,
+): WorktreeRootDiscovery {
+	const linkedWorktrees: string[] = [];
+	const dangling: WorktreeHealthItem[] = [];
+	const linkedPaths = new Set<string>();
+	const danglingPaths = new Set<string>();
+	const skippedPaths: string[] = [];
+	const unreadablePaths: string[] = [];
+	const symbolicLinkPaths: string[] = [];
+	const queue: QueuedDirectory[] = [{ directory: worktreeRoot, depth: 0 }];
+	let queueIndex = 0;
+	let limitReached = false;
+
+	while (existsSync(worktreeRoot) && queueIndex < queue.length) {
+		if (queueIndex >= maxDirectories) {
+			limitReached = true;
+			addExamples(skippedPaths, queue.slice(queueIndex).map((entry) => entry.directory));
+			break;
+		}
+		const { directory, depth } = queue[queueIndex++]!;
+		const pointer = readGitdirPointer(directory);
+		if (pointer) {
+			const key = canonicalPath(directory);
+			if (pointer.missing) {
+				if (!danglingPaths.has(key)) {
+					danglingPaths.add(key);
+					dangling.push({
+						path: directory,
+						state: "dangling",
+						candidate: true,
+						detail: `gitdir target is missing: ${pointer.target}; manual review required`,
+					});
+				}
+			} else if (!linkedPaths.has(key)) {
+				linkedPaths.add(key);
+				linkedWorktrees.push(directory);
+			}
+			continue;
+		}
+
+		try {
+			lstatSync(path.join(directory, ".git"));
+			continue;
+		} catch {
+			// No Git marker: this may be a grouping directory under the configured root.
+		}
+		const children = childDirectories(directory);
+		if (!children) {
+			addExamples(unreadablePaths, [directory]);
+			continue;
+		}
+		addExamples(symbolicLinkPaths, children.symbolicLinks);
+		if (depth >= maxDepth) {
+			if (children.directories.length > 0) {
+				limitReached = true;
+				addExamples(skippedPaths, children.directories);
+			}
+			continue;
+		}
+		queue.push(...children.directories.map((child) => ({ directory: child, depth: depth + 1 })));
+	}
+
+	linkedWorktrees.sort((left, right) => left.localeCompare(right));
+	dangling.sort((left, right) => left.path.localeCompare(right.path));
+	return { linkedWorktrees, dangling, limitReached, skippedPaths, unreadablePaths, symbolicLinkPaths };
+}
+
+export function discoverRepositoryRoot(
+	repositoryCheckoutRoot: string,
+	maxDepth = REPOSITORY_DISCOVERY_MAX_DEPTH,
+	maxDirectories = DISCOVERY_MAX_DIRECTORIES,
+): RepositoryRootDiscovery {
+	const checkouts: string[] = [];
+	const skippedPaths: string[] = [];
+	const unreadablePaths: string[] = [];
+	const symbolicLinkPaths: string[] = [];
+	const queue: QueuedDirectory[] = [{ directory: repositoryCheckoutRoot, depth: 0 }];
+	let queueIndex = 0;
+	let limitReached = false;
+
+	while (existsSync(repositoryCheckoutRoot) && queueIndex < queue.length) {
+		if (queueIndex >= maxDirectories) {
+			limitReached = true;
+			addExamples(skippedPaths, queue.slice(queueIndex).map((entry) => entry.directory));
+			break;
+		}
+		const { directory, depth } = queue[queueIndex++]!;
+		try {
+			lstatSync(path.join(directory, ".git"));
+			checkouts.push(directory);
+			continue;
+		} catch {
+			// No Git marker: descend only through the bounded checkout-root hierarchy.
+		}
+		const children = childDirectories(directory);
+		if (!children) {
+			addExamples(unreadablePaths, [directory]);
+			continue;
+		}
+		addExamples(symbolicLinkPaths, children.symbolicLinks);
+		if (depth >= maxDepth) {
+			if (children.directories.length > 0) {
+				limitReached = true;
+				addExamples(skippedPaths, children.directories);
+			}
+			continue;
+		}
+		queue.push(...children.directories.map((child) => ({ directory: child, depth: depth + 1 })));
+	}
+
+	checkouts.sort((left, right) => left.localeCompare(right));
+	return { checkouts, limitReached, skippedPaths, unreadablePaths, symbolicLinkPaths };
+}
+
+export function findDanglingWorktreeDirectories(worktreeRoot: string, maxDepth = 2): WorktreeHealthItem[] {
+	return discoverWorktreeRoot(worktreeRoot, maxDepth).dangling;
+}
+
+function appendDiscoveryWarnings(
+	warnings: string[],
+	label: string,
+	root: string,
+	coverage: DiscoveryCoverage,
+	maxDepth: number,
+): void {
+	if (coverage.limitReached) {
+		const examples = coverage.skippedPaths.length > 0
+			? `; unscanned examples: ${coverage.skippedPaths.join(", ")}`
+			: "";
+		warnings.push(
+			`${label} discovery is incomplete at its bounds (depth ${maxDepth}, ${DISCOVERY_MAX_DIRECTORIES} directories)${examples}`,
+		);
+	}
+	if (coverage.unreadablePaths.length > 0) {
+		warnings.push(`${label} discovery could not read: ${coverage.unreadablePaths.join(", ")}; those paths remain protected`);
+	}
+	if (coverage.symbolicLinkPaths.length > 0) {
+		warnings.push(
+			`${label} discovery does not follow symbolic-link directories: ${coverage.symbolicLinkPaths.join(", ")}; those paths remain protected`,
+		);
+	}
+	if (!existsSync(root)) warnings.push(`${label} does not exist or is inaccessible: ${root}`);
 }
 
 export async function scanWorktreeHealth(input: {
@@ -379,44 +614,122 @@ export async function scanWorktreeHealth(input: {
 	runner: CommandRunner;
 	workspaceDirectory?: string;
 	worktreeRoot?: string;
+	repositoryCheckoutRoot?: string;
 	warnings?: string[];
 }): Promise<WorktreeHealthReport> {
 	const warnings = [...(input.warnings ?? [])];
-	const repositoryRoot = await resolveRepositoryRoot(input.runner, input.cwd);
-	const baseRef = repositoryRoot ? await resolveBaseRef(input.runner, repositoryRoot) : undefined;
+	const currentRepositoryRoot = await resolveRepositoryRoot(input.runner, input.cwd);
+	const currentBaseRef = currentRepositoryRoot
+		? await resolveBaseRef(input.runner, input.cwd)
+		: undefined;
+	const targets = new Map<string, { cwd: string; commonDirectory?: string; current: boolean }>();
 	const items: WorktreeHealthItem[] = [];
+	const itemPaths = new Set<string>();
+	const repositories: WorktreeHealthRepository[] = [];
+	let worktreeDiscovery: WorktreeRootDiscovery | undefined;
 
-	if (repositoryRoot) {
-		const list = await run(input.runner, ["worktree", "list", "--porcelain"], repositoryRoot);
-		if (!list || list.code !== 0) {
-			warnings.push(`Cannot list worktrees for ${repositoryRoot}`);
-		} else {
-			const registered = parseWorktreePorcelain(list.stdout);
-			for (const worktree of registered.slice(1)) {
-				items.push(await inspectRegisteredWorktree({
-					runner: input.runner,
-					repositoryRoot,
-					cwd: input.cwd,
-					worktree,
-					baseRef,
-				}));
+	const addTarget = async (cwd: string, current: boolean) => {
+		const commonDirectory = await resolveGitCommonDirectory(input.runner, cwd);
+		if (!commonDirectory) {
+			if (!current) {
+				warnings.push(`Cannot resolve Git common repository for ${cwd}; it remains protected`);
+				return;
 			}
+			const key = `current:${canonicalPath(currentRepositoryRoot ?? cwd)}`;
+			targets.set(key, { cwd, current: true });
+			return;
 		}
+		const existing = targets.get(commonDirectory);
+		if (!existing) {
+			targets.set(commonDirectory, { cwd, commonDirectory, current });
+		} else if (current) {
+			targets.set(commonDirectory, { cwd, commonDirectory, current: true });
+		}
+	};
+
+	if (currentRepositoryRoot) await addTarget(input.cwd, true);
+
+	if (input.repositoryCheckoutRoot) {
+		const repositoryDiscovery = discoverRepositoryRoot(input.repositoryCheckoutRoot);
+		appendDiscoveryWarnings(
+			warnings,
+			"Repository-root",
+			input.repositoryCheckoutRoot,
+			repositoryDiscovery,
+			REPOSITORY_DISCOVERY_MAX_DEPTH,
+		);
+		for (const checkout of repositoryDiscovery.checkouts) await addTarget(checkout, false);
 	}
 
 	if (input.worktreeRoot) {
-		const registeredPaths = new Set(items.map((item) => canonicalPath(item.path)));
-		for (const dangling of findDanglingWorktreeDirectories(input.worktreeRoot)) {
-			if (!registeredPaths.has(canonicalPath(dangling.path))) items.push(dangling);
+		worktreeDiscovery = discoverWorktreeRoot(input.worktreeRoot);
+		appendDiscoveryWarnings(
+			warnings,
+			"Worktree-root",
+			input.worktreeRoot,
+			worktreeDiscovery,
+			WORKTREE_DISCOVERY_MAX_DEPTH,
+		);
+		for (const linkedWorktree of worktreeDiscovery.linkedWorktrees) await addTarget(linkedWorktree, false);
+	}
+
+	const auditedRepositoryRoots = new Set<string>();
+	for (const target of targets.values()) {
+		const list = await run(input.runner, ["worktree", "list", "--porcelain"], target.cwd);
+		if (!list || list.code !== 0) {
+			warnings.push(`Cannot list worktrees for ${target.cwd}`);
+			continue;
+		}
+		const registered = parseWorktreePorcelain(list.stdout);
+		const repositoryRoot = registered[0]?.path
+			? canonicalPath(registered[0].path)
+			: await resolveRepositoryRoot(input.runner, target.cwd);
+		if (!repositoryRoot) {
+			warnings.push(`Cannot resolve repository root for ${target.cwd}`);
+			continue;
+		}
+		if (auditedRepositoryRoots.has(repositoryRoot)) continue;
+		auditedRepositoryRoots.add(repositoryRoot);
+
+		const baseRef = target.current && currentBaseRef
+			? currentBaseRef
+			: await resolveBaseRef(input.runner, target.cwd);
+		repositories.push({ root: repositoryRoot, commonDirectory: target.commonDirectory, baseRef });
+
+		for (const worktree of registered.slice(1)) {
+			const item = await inspectRegisteredWorktree({
+				runner: input.runner,
+				repositoryRoot: target.cwd,
+				cwd: input.cwd,
+				worktree,
+				baseRef,
+			});
+			const key = canonicalPath(item.path);
+			if (itemPaths.has(key)) continue;
+			itemPaths.add(key);
+			items.push({ ...item, repositoryRoot });
 		}
 	}
 
-	items.sort((left, right) => Number(right.candidate) - Number(left.candidate) || left.path.localeCompare(right.path));
+	for (const dangling of worktreeDiscovery?.dangling ?? []) {
+		const key = canonicalPath(dangling.path);
+		if (itemPaths.has(key)) continue;
+		itemPaths.add(key);
+		items.push(dangling);
+	}
+
+	repositories.sort((left, right) => left.root.localeCompare(right.root));
+	items.sort((left, right) =>
+		Number(right.candidate) - Number(left.candidate)
+		|| (left.repositoryRoot ?? "").localeCompare(right.repositoryRoot ?? "")
+		|| left.path.localeCompare(right.path));
 	return {
 		workspaceDirectory: input.workspaceDirectory,
 		worktreeRoot: input.worktreeRoot,
-		repositoryRoot,
-		baseRef,
+		repositoryCheckoutRoot: input.repositoryCheckoutRoot,
+		repositoryRoot: currentRepositoryRoot,
+		baseRef: currentBaseRef,
+		repositories,
 		items,
 		warnings,
 	};
@@ -424,18 +737,27 @@ export async function scanWorktreeHealth(input: {
 
 function formatItem(item: WorktreeHealthItem): string {
 	const branch = item.branch ? ` (${item.branch})` : "";
-	return `- [${item.state}] ${item.path}${branch} — ${item.detail}`;
+	const repository = item.repositoryRoot ? `repository ${item.repositoryRoot}; ` : "";
+	return `- [${item.state}] ${item.path}${branch} — ${repository}${item.detail}`;
 }
 
 export function formatWorktreeHealthReport(report: WorktreeHealthReport): string {
 	const candidates = report.items.filter((item) => item.candidate);
 	const retained = report.items.filter((item) => !item.candidate);
+	const repositories = report.repositories ?? (report.repositoryRoot ? [{
+		root: report.repositoryRoot,
+		baseRef: report.baseRef,
+	}] : []);
 	const lines = [
 		"Worktree health (read-only, local refs)",
 		`Workspace: ${report.workspaceDirectory ?? "unresolved"}`,
-		`Configured root: ${report.worktreeRoot ?? "unresolved"}`,
+		`Configured repository root: ${report.repositoryCheckoutRoot ?? "unresolved"}`,
+		`Configured worktree root: ${report.worktreeRoot ?? "unresolved"}`,
 		`Current repository: ${report.repositoryRoot ?? "none"}`,
-		`Local base: ${report.baseRef ?? "unresolved"}`,
+		`Current local base: ${report.baseRef ?? "unresolved"}`,
+		`Repositories audited (${repositories.length})`,
+		...repositories.map((repository) =>
+			`- ${repository.root} — local base: ${repository.baseRef ?? "unresolved"}`),
 		"",
 		`Cleanup candidates (${candidates.length})`,
 		...(candidates.length > 0 ? candidates.map(formatItem) : ["- None"]),
