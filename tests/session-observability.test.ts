@@ -3,9 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import type { SessionEntry } from "@earendil-works/pi-coding-agent";
+import { visibleWidth } from "@earendil-works/pi-tui";
 
 import { analyzeSession } from "../extensions/session-observability/analyzer.ts";
 import sessionObservabilityExtension from "../extensions/session-observability/index.ts";
+import { OBSERVATION_OVERLAY_OPTIONS } from "../extensions/session-observability/overlay.ts";
 import { formatObservationReport } from "../extensions/session-observability/render.ts";
 
 const FIXTURE_PATH = new URL("./fixtures/session-observability.jsonl", import.meta.url);
@@ -165,7 +167,7 @@ test("formats a concise report with evidence labels and coverage limits", () => 
 	assert.match(text, /parent tool timing unavailable/);
 });
 
-test("registers a read-only command that waits for idle and analyzes the active branch", async () => {
+test("opens a bordered overlay after waiting for idle and analyzing the active branch", async () => {
 	type Command = { handler(args: string, ctx: any): Promise<void> };
 	let commandName = "";
 	let command: Command | undefined;
@@ -177,8 +179,11 @@ test("registers a read-only command that waits for idle and analyzes the active 
 	} as never);
 
 	const order: string[] = [];
-	let rendered = "";
+	let rendered: string[] = [];
+	let scrolled: string[] = [];
 	let closes = 0;
+	let renderRequests = 0;
+	let customOptions: unknown;
 	await command?.handler("", {
 		mode: "tui",
 		waitForIdle: async () => { order.push("idle"); },
@@ -194,19 +199,36 @@ test("registers a read-only command that waits for idle and analyzes the active 
 			notify() {
 				assert.fail("unexpected notification");
 			},
-			async custom(factory: any) {
-				const component = factory({ requestRender() {} }, {}, {}, () => { closes += 1; });
-				rendered = component.render(100).join("\n");
+			async custom(factory: any, options: unknown) {
+				customOptions = options;
+				const component = factory({
+					terminal: { rows: 12 },
+					requestRender() { renderRequests += 1; },
+				}, {
+					fg(_color: string, text: string) { return text; },
+				}, {}, () => { closes += 1; });
+				rendered = component.render(80);
 				component.handleInput("\u001b");
 				component.handleInput("\u0003");
+				component.handleInput("\u001b[B");
+				scrolled = component.render(80);
 			},
 		},
 	});
 
 	assert.equal(commandName, "jihye-observe");
 	assert.deepEqual(order, ["idle", "branch"]);
+	assert.deepEqual(customOptions, {
+		overlay: true,
+		overlayOptions: OBSERVATION_OVERLAY_OPTIONS,
+	});
 	assert.equal(closes, 2, "both Escape and Ctrl+C close the report");
-	assert.match(rendered, /Jihye session observation/);
+	assert.equal(renderRequests, 1, "scroll input rerenders the overlay");
+	assert.notDeepEqual(scrolled, rendered, "Down scrolls a report longer than the overlay");
+	assert.match(rendered.join("\n"), /Jihye session observation/);
+	assert.match(rendered[0] ?? "", /^╭─+╮$/);
+	assert.match(rendered.at(-1) ?? "", /^╰─+╯$/);
+	assert.ok(rendered.every((line) => visibleWidth(line) === 80), "every overlay row fits its box");
 });
 
 test("rejects unsupported arguments before inspecting the session", async () => {

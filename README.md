@@ -196,7 +196,7 @@ Workspace roots are discovered by walking up from the working directory, looking
 
 ### Session observability
 
-Use `/jihye-observe` in an interactive session to inspect the current active branch. The command waits for Pi to become idle, then shows assistant and nested-tool usage, model turns, tool outcomes, recursive subagent activity, and operational signals such as errors, truncation, missing results, and repeated calls after an error.
+Use `/jihye-observe` in an interactive session to inspect the current active branch. The command waits for Pi to become idle, then opens a centered, keyboard-scrollable overlay showing assistant and nested-tool usage, model turns, tool outcomes, recursive subagent activity, and operational signals such as errors, truncation, missing results, and repeated calls after an error. Press Escape or Ctrl+C to close it without reflowing the underlying session.
 
 The report is computed in memory from Pi's existing session entries. It does not add a message or custom entry, write another file, or send anything to the model. Normalized observations exclude prompts, tool arguments, subagent task briefs, and outputs. Facts and heuristics remain labeled separately; an unused tool is not classified as a miss.
 

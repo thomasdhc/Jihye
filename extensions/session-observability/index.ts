@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { Key, matchesKey, Text } from "@earendil-works/pi-tui";
 
 import { analyzeSession } from "./analyzer.ts";
+import { ObservationOverlay, OBSERVATION_OVERLAY_OPTIONS } from "./overlay.ts";
 import { formatObservationReport } from "./render.ts";
 
 export default function (pi: ExtensionAPI) {
@@ -22,18 +22,15 @@ export default function (pi: ExtensionAPI) {
 				sessionId: ctx.sessionManager.getSessionId(),
 				sessionName: ctx.sessionManager.getSessionName(),
 			});
-			const content = `${formatObservationReport(report)}\n\nPress Esc or Ctrl+C to close.`;
+			const content = formatObservationReport(report);
 
-			await ctx.ui.custom<void>((_tui, _theme, _keybindings, done) => {
-				const text = new Text(content, 1, 1);
-				return {
-					render: (width) => text.render(width),
-					invalidate: () => text.invalidate(),
-					handleInput: (data) => {
-						if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c"))) done(undefined);
-					},
-				};
-			});
+			await ctx.ui.custom<void>(
+				(tui, theme, _keybindings, done) => new ObservationOverlay(tui, theme, content, () => done(undefined)),
+				{
+					overlay: true,
+					overlayOptions: OBSERVATION_OVERLAY_OPTIONS,
+				},
+			);
 		},
 	});
 }
