@@ -270,7 +270,7 @@ The names may be any unique, non-empty labels without terminal control character
 
 Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
 
-The leased name appears below the context status in the companion widget using Pi's teal accent color, and it remains part of the terminal tab title and notification title. It does not replace Pi's session display name or appear in the built-in footer. Manual names set with `/name` remain independent of the leased process identity.
+The leased name appears below the context status in the companion widget using Pi's teal accent color, and it remains part of the terminal tab title and notification title. An unnamed session automatically receives a display name such as `Agent One · 2026-02-19 14:32`, combining that identity with the session's original creation time in the local timezone. The name persists in Pi's built-in footer and `/resume` selector; an existing name or a later manual `/name` remains untouched.
 
 ### Terminal notifications
 

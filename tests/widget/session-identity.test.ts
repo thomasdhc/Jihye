@@ -25,6 +25,7 @@ import {
 } from "../../extensions/widget/session-identity/config.ts";
 import {
 	createSessionIdentityExtension,
+	formatAutomaticSessionName,
 	formatSessionIdentityTitle,
 } from "../../extensions/widget/session-identity/index.ts";
 import {
@@ -498,11 +499,14 @@ test("reports an invalid user config without disabling extension registration", 
 	}
 });
 
-test("publishes the session identity without taking over the session display name", async () => {
+test("names an unnamed session from its identity and creation time without overriding manual names", async () => {
 	type Handler = (event: Record<string, unknown>, ctx: TestContext) => Promise<void> | void;
 	interface TestContext {
 		hasUI: boolean;
 		cwd: string;
+		sessionManager: {
+			getHeader(): { timestamp: string };
+		};
 		ui: {
 			setTitle(title: string): void;
 			notify(message: string, level: string): void;
@@ -514,7 +518,9 @@ test("publishes the session identity without taking over the session display nam
 		leaseId: "lease-1",
 		ownerId: "owner-1",
 	};
-	let currentName: string | undefined = "Agent One";
+	const createdAt = "2026-02-19T14:32:00";
+	const automaticName = "Agent One · 2026-02-19 14:32";
+	let currentName: string | undefined;
 	let releaseCount = 0;
 	const titles: string[] = [];
 	const notifications: string[] = [];
@@ -558,6 +564,9 @@ test("publishes the session identity without taking over the session display nam
 	const ctx: TestContext = {
 		hasUI: true,
 		cwd: "/workspace/project",
+		sessionManager: {
+			getHeader: () => ({ timestamp: createdAt }),
+		},
 		ui: {
 			setTitle(title) {
 				titles.push(title);
@@ -569,12 +578,11 @@ test("publishes the session identity without taking over the session display nam
 	};
 
 	setActiveSessionIdentity(undefined);
-	setActiveSessionIdentity("Agent One");
 	try {
 		const handlers = registerRuntime();
 		await handlers.get("session_start")?.({ reason: "reload" }, ctx);
-		assert.equal(currentName, "");
-		assert.deepEqual(assignedSessionNames, [""]);
+		assert.equal(currentName, automaticName);
+		assert.deepEqual(assignedSessionNames, [automaticName]);
 		assert.equal(getActiveSessionIdentity(), "Agent One");
 		assert.equal(titles.at(-1), "π - Agent One - project");
 		assert.deepEqual(notifications, []);
@@ -597,10 +605,10 @@ test("publishes the session identity without taking over the session display nam
 		await new Promise<void>((resolve) => setImmediate(resolve));
 		assert.equal(titles.at(-1), "π - Agent One - project");
 
-		currentName = "Agent One";
-		await handlers.get("session_info_changed")?.({ name: "Agent One" }, ctx);
-		assert.equal(currentName, "Agent One");
-		assert.deepEqual(assignedSessionNames, [""]);
+		currentName = "manual-name";
+		await handlers.get("session_info_changed")?.({ name: "manual-name" }, ctx);
+		assert.equal(currentName, "manual-name");
+		assert.deepEqual(assignedSessionNames, [automaticName]);
 		assert.equal(titles.at(-1), "π - Agent One - project");
 
 		await handlers.get("session_shutdown")?.({ reason: "reload" }, ctx);
@@ -610,8 +618,8 @@ test("publishes the session identity without taking over the session display nam
 
 		const reloadedHandlers = registerRuntime();
 		await reloadedHandlers.get("session_start")?.({ reason: "reload" }, ctx);
-		assert.equal(currentName, "Agent One");
-		assert.deepEqual(assignedSessionNames, [""]);
+		assert.equal(currentName, "manual-name");
+		assert.deepEqual(assignedSessionNames, [automaticName]);
 		assert.deepEqual(companionUpdates.at(-1), {
 			id: "session-identity",
 			contribution: {
@@ -626,12 +634,6 @@ test("publishes the session identity without taking over the session display nam
 		await reloadedHandlers.get("resources_discover")?.({ reason: "reload" }, ctx);
 		titles.push("π - project");
 		await new Promise<void>((resolve) => setImmediate(resolve));
-		assert.equal(titles.at(-1), "π - Agent One - project");
-
-		currentName = "manual-name";
-		await reloadedHandlers.get("session_info_changed")?.({ name: "manual-name" }, ctx);
-		assert.equal(currentName, "manual-name");
-		assert.deepEqual(assignedSessionNames, [""]);
 		assert.equal(titles.at(-1), "π - Agent One - project");
 
 		await reloadedHandlers.get("session_shutdown")?.({ reason: "quit" }, ctx);
@@ -684,6 +686,7 @@ test("releases its lease when the widget disables session identity during reload
 		const ctx = {
 			hasUI: true,
 			cwd: "/workspace/project",
+			sessionManager: { getHeader: () => ({ timestamp: "2026-02-19T14:32:00" }) },
 			ui: { setTitle() {}, notify() {} },
 		};
 		await handlers.get("session_start")?.({ reason: "reload" }, ctx);
@@ -697,6 +700,10 @@ test("releases its lease when the widget disables session identity during reload
 	}
 });
 
-test("formats terminal titles consistently", () => {
+test("formats automatic session names and terminal titles consistently", () => {
+	assert.equal(
+		formatAutomaticSessionName("Agent Three", "2026-02-19T14:32:00"),
+		"Agent Three · 2026-02-19 14:32",
+	);
 	assert.equal(formatSessionIdentityTitle("Agent Three", "/workspace/jihye"), "π - Agent Three - jihye");
 });
