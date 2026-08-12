@@ -161,6 +161,8 @@ test("git guidance preserves delivery and pull-request invariants", () => {
 		/headings and checklists/i,
 		/explicitly requests/i,
 		/never push/i,
+		/cleanup candidate/i,
+		/never infer staleness from age alone/i,
 		/2\.82\.1/,
 	], "git workflow invariants");
 	assert.match(git, /## Summary[\s\S]*## Why/, "default request description keeps only its semantic sections");

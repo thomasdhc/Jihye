@@ -10,7 +10,8 @@
 - Give each independently deliverable outcome a delivery boundary, keeping its implementation, tests, and supporting documentation together.
 - Use a configured isolated worktree when concurrency or isolation requires it; keep the canonical checkout untouched.
 - Inspect state before creating, integrating, moving, or removing worktrees. Never remove one with uncommitted or untracked files.
-- To prepare isolated work for pushing, commit in its worktree, remove it only when clean, then switch the clean canonical checkout to that branch. Never copy files between them.
+- Keep isolated work in its worktree through delivery when moving it would disturb another delivery boundary. Otherwise, prepare it for pushing by committing in the worktree, removing the clean worktree, and switching the clean canonical checkout to that branch. Never copy files between them.
+- Reconcile registered worktrees and the configured worktree root before creating another worktree and after a branch is known to be merged or abandoned. Treat clean merged or upstream-gone worktrees and dangling registrations as cleanup candidates; report them and ask before removal or pruning. Never infer staleness from age alone.
 
 ## Staging, Commits, and Pushing
 
