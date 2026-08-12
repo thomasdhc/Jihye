@@ -203,7 +203,7 @@ Workspace roots are discovered by walking up from the working directory, looking
 /worktree-health          # registered and dangling worktree status
 ```
 
-The extension reads the isolated-worktree root from workspace `REPO.md`. It treats clean tracked branches already contained in the local default base, clean branches whose upstream is gone, prunable registrations, and broken worktree `.git` pointers as candidates. Current, dirty, locked, detached, untracked, and unclassifiable worktrees remain protected or advisory. It never fetches, prunes, removes, switches branches, or treats age alone as evidence of staleness.
+The extension reads the repository-checkout and isolated-worktree roots from workspace `REPO.md`. It audits registrations across canonical checkouts and repositories represented by linked worktrees, then treats clean tracked branches already contained in the local default base, clean branches whose upstream is gone, prunable registrations, and broken worktree `.git` pointers as candidates. Current, dirty, locked, detached, untracked, inaccessible, and unclassifiable worktrees remain protected or advisory. Bounded or unreadable discovery is reported as incomplete. The extension never fetches, prunes, removes, switches branches, or treats age alone as evidence of staleness.
 
 ### Session observability
 

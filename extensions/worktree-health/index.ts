@@ -1,10 +1,10 @@
 /**
  * Worktree Health Extension
  *
- * Performs an offline, read-only audit of registered worktrees for the current
- * repository and dangling worktree directories under the workspace-configured
- * root. Candidates are advisory; this extension never fetches, prunes, removes,
- * switches, or otherwise mutates Git state.
+ * Performs an offline, read-only audit of the current repository, canonical
+ * checkouts under the workspace repository root, and repositories represented by
+ * linked worktrees under the configured worktree root. Candidates are advisory;
+ * it never fetches, prunes, removes, switches, or otherwise mutates Git state.
  */
 
 import * as path from "node:path";
@@ -21,6 +21,7 @@ import {
 } from "../jihye-setup/paths.ts";
 import {
 	formatWorktreeHealthReport,
+	readConfiguredRepositoryRoot,
 	readConfiguredWorktreeRoot,
 	scanWorktreeHealth,
 	type WorktreeHealthReport,
@@ -52,16 +53,24 @@ export function createWorktreeHealthExtension(dependencies: WorktreeHealthExtens
 				personasDirectory,
 				workspaceRoots: config.workspaceRoots,
 			});
-			const configured = workspaceDirectory
+			const configuredWorktrees = workspaceDirectory
 				? readConfiguredWorktreeRoot(workspaceDirectory)
 				: { warning: "No managed workspace root could be resolved" };
-			const warnings = [configWarning, configured.warning].filter((warning): warning is string => Boolean(warning));
+			const configuredRepositories = workspaceDirectory
+				? readConfiguredRepositoryRoot(workspaceDirectory)
+				: {};
+			const warnings = [
+				configWarning,
+				configuredWorktrees.warning,
+				configuredRepositories.warning,
+			].filter((warning): warning is string => Boolean(warning));
 
 			return scanWorktreeHealth({
 				cwd: ctx.cwd,
 				runner: (command, args, options) => pi.exec(command, args, options),
 				workspaceDirectory,
-				worktreeRoot: configured.path,
+				worktreeRoot: configuredWorktrees.path,
+				repositoryCheckoutRoot: configuredRepositories.path,
 				warnings,
 			});
 		});
@@ -84,7 +93,7 @@ export function createWorktreeHealthExtension(dependencies: WorktreeHealthExtens
 		});
 
 		pi.registerCommand("worktree-health", {
-			description: "Report registered and dangling worktree cleanup candidates",
+			description: "Report workspace-registered and dangling worktree cleanup candidates",
 			handler: async (args, ctx) => {
 				const action = args.trim();
 				if (action !== "" && action !== "status") {
