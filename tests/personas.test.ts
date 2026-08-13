@@ -77,12 +77,15 @@ test("personas include the global and workspace guidance chain", () => {
 	}
 	assertTerms(workspace, [
 		/jihye-setup/i,
-		/configuration(?:(?!personas_directory)[^\n])*workspace_directory/i,
-		/guidance(?:(?!workspace_directory)[^\n])*personas_directory/i,
-		/REPO\.md[\s\S]*source of truth/i,
-		/activation command/i,
-		/read gate/i,
+		/workspace_directory\/REPO\.md[^\n]*repositories[^\n]*environment activation[^\n]*worktree locations/i,
+		/workspace_directory\/USERNAME\.md[^\n]*branch[^\n]*agent commit command/i,
+		/personas_directory\/GIT\.md[^\n]*before loading repository guidance/i,
+		/personas_directory\/DEVELOPMENT\.md[^\n]*exploring[^\n]*planning[^\n]*changing[^\n]*testing/i,
 		/first tool call/i,
+		/nature of the action[^\n]*never its size or obviousness/i,
+		/repository guidance may add[^\n]*cannot replace workspace-owned/i,
+		/branch identity[^\n]*agent attribution[^\n]*approval[^\n]*publication safeguards/i,
+		/report a conflict and ask for resolution/i,
 	], "workspace guidance topology");
 	assert.doesNotMatch(workspace, /readlink|dirname/, "path resolution belongs to the jihye-setup extension");
 	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
@@ -140,15 +143,6 @@ test("global personas preserve canonical domains, coordination gates, and parent
 });
 
 test("downstream personas invoke canonical main-agent domains", () => {
-	assertTerms(readPersona("WORKSPACE.md"), [
-		/main-agent context/i,
-		/\bFidelity\b/,
-		/\bPrinciples\b/,
-		/\bEntrypoint\b/,
-		/\bSolution Architecture\b/,
-		/\bContext and Delegation\b/,
-		/\bSafety\b/,
-	], "workspace policy domains");
 	assertTerms(readPersona("DEVELOPMENT.md"), [/\bEntrypoint\b/, /\bSolution Architecture\b/], "development policy domains");
 	assertTerms(readPersona("GIT.md"), [/\bFidelity\b/, /\bPrinciples\b/, /\bEntrypoint\b/], "Git policy domains");
 	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");

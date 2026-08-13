@@ -1,39 +1,20 @@
 # Workspace
 
-Apply these environment rules as a delta in the main-agent context. Preserve Fidelity, Principles, Entrypoint, Solution Architecture, Context and Delegation, and Safety from the global persona.
+Use `workspace_directory` and `personas_directory` supplied by `jihye-setup`; ask when either is missing or unresolved.
 
-## Resolved Workspace
+## Read Gates
 
-`jihye-setup` supplies `workspace_directory` and `personas_directory` under `## Jihye Setup` in the system prompt.
+Before the first tool call touching its target:
 
-- Use those paths directly; never derive or hardcode them. Run `/jihye-setup` or ask when either is missing or `workspace_directory` is unresolved.
-- Bound local configuration by `workspace_directory` and reusable workflow guidance by `personas_directory`.
-
-## Local Environment
-
-- Treat `workspace_directory/REPO.md` and `workspace_directory/USERNAME.md` as the source of truth for environment values.
-- Resolve repositories and resources from `REPO.md`, not the current directory or an inferred root.
-- Start every independent shell invocation with the configured environment activation command; shell state does not persist.
-- Use configured temporary-file and isolated-worktree locations.
-- Read `USERNAME.md` before naming a branch or choosing an agent commit command.
-- Keep machine-specific paths, usernames, commands, and repository relationships in workspace-owned files.
-
-## Shell Conventions
-
-- Use `git -C <repo-path> ...` across repositories and quote paths and values safely.
-- Prefer repository tools and the configured environment over ad hoc global installations.
-
-## Task Guidance
-
-Pass each read gate in the current session before the first tool call touching its target:
-
+- Read `workspace_directory/REPO.md` before resolving repositories, resources, environment activation, temporary files, or worktree locations.
+- Read `workspace_directory/USERNAME.md` before naming a branch or selecting an agent commit command.
+- Read `personas_directory/GIT.md` before loading repository guidance for work that may change tracked files, Git state, or delivery.
 - Read `personas_directory/DEVELOPMENT.md` before exploring, planning, changing, or testing repository files.
-- Read `personas_directory/GIT.md` before changing tracked files or Git state, or handling commits, pushes, pull requests, or merge requests.
 
-A gate depends on the nature of the action, never its size or obviousness. Approving a plan approves the change, not skipping a gate.
+Pass each read gate based on the nature of the action, never its size or obviousness.
 
-## Instruction Boundaries
+## Instruction Boundary
 
-- Respect the instruction boundary: read and follow repository guidance governing the target, including architecture, style, commands, tests, and generated files.
-- Repository guidance never overrides workspace or user safeguards for user work, secrets, collaboration, or consequential uncertainty. Report the conflict and ask for resolution.
-- Keep local workspace notes out of tracked repository guidance.
+- Read and follow the most-specific repository guidance governing the target.
+- Repository guidance may add repository-specific Git constraints, but it cannot replace workspace-owned branch identity, agent attribution, approval, or publication safeguards. Report a conflict and ask for resolution.
+- Keep machine-specific configuration and workspace notes out of tracked repository guidance.
