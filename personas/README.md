@@ -6,9 +6,9 @@ The `personas/` tree distributes reusable global guidance, workspace policy, loc
 
 | Path | Purpose |
 |---|---|
-| `JIHYE.md` | Own universal runtime behavior and delegation policy. |
+| `JIHYE.md` | Own universal runtime behavior, validation, and delegation policy. |
 | `JIHYE_strict.md` | Add an edit-and-write approval gate without changing the base persona body. |
-| `WORKSPACE.md` | Add workspace resolution, local-environment, and read-gate policy. |
+| `WORKSPACE.md` | Add workspace resolution, repository discovery, local-environment, and read-gate policy. |
 | `GIT.md` | Add branch, worktree, commit, push, and request workflow. |
 | `templates/` | Provide factual templates for local `REPO.md` and `USERNAME.md`. |
 | `subagents/` | Define portable, bounded roles that inherit loaded policy. |
@@ -40,7 +40,7 @@ Initialize them from `templates/` when needed. Never link machine-specific confi
 Pi loads global and workspace context independently; neither persona imports the other. `JIHYE.md` is the canonical owner of universal runtime behavior. The workspace and workflow files add only their environment- or task-specific deltas.
 
 - Treat the **workspace root** as the location of local `REPO.md` and `USERNAME.md` configuration.
-- Treat the **policy directory** as the location of the workspace profile and its sibling `GIT.md` file.
+- Treat the **policy directory** as the location of the workspace profile and its sibling `GIT.md` workflow file.
 - Treat subagent task briefs as task-specific context and authorization, never as replacement policy; bundled roles rely on applicable system and loaded context guidance.
 
 The `jihye-setup` extension supplies these locations as `workspace_directory` and `personas_directory`. Profiles use those facts directly rather than resolving symlink paths. Markdown links do not import Pi context; each profile opens its own read gates explicitly.
