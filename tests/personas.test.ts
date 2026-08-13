@@ -144,7 +144,7 @@ test("global personas preserve canonical domains, coordination gates, and parent
 });
 
 test("downstream personas invoke canonical main-agent domains", () => {
-	assertTerms(readPersona("GIT.md"), [/\bFidelity\b/, /\bPrinciples\b/, /\bEntrypoint\b/], "Git policy domains");
+	assertTerms(readPersona("GIT.md"), [/\bValidation\b/], "Git policy domains");
 	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
 });
 
@@ -152,6 +152,7 @@ test("git guidance preserves delivery and pull-request invariants", () => {
 	const git = readPersona("GIT.md");
 	assert.deepEqual(headings(git), ["Safety and Branching", "Staging, Commits, and Pushing", "Commit Messages", "Merge Requests and Pull Requests"]);
 	assertTerms(git, [
+		/approval gate/i,
 		/delivery boundar/i,
 		/implementation, tests, and supporting documentation/i,
 		/Conventional Commit/i,
@@ -161,7 +162,6 @@ test("git guidance preserves delivery and pull-request invariants", () => {
 		/never push/i,
 		/cleanup candidate/i,
 		/never infer staleness from age alone/i,
-		/2\.82\.1/,
 	], "git workflow invariants");
 	assert.match(git, /## Summary[\s\S]*## Why/, "default request description keeps only its semantic sections");
 });

@@ -49,6 +49,7 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 - Pi coding agent `0.83.0` or newer.
 - Node.js with TypeScript type stripping support for development and local-path installs.
+- GitHub CLI `2.82.1` or newer when creating or editing pull requests; earlier versions fail `gh pr edit` on deprecated Projects Classic APIs.
 
 ## Install
 
