@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -32,6 +32,7 @@ import {
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXTENSION_DIR = join(REPO_ROOT, "extensions", "jihye-setup");
+const REPO_VERSION = (JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")) as { version: string }).version;
 
 /**
  * Build a fixture that mirrors a real installation: a package checkout with
@@ -86,7 +87,7 @@ test("derives package and personas paths from the extension location", () => {
 
 	assert.equal(paths.packageRoot, REPO_ROOT);
 	assert.equal(paths.personasDirectory, join(REPO_ROOT, "personas"));
-	assert.equal(loadJihyePackageVersion(REPO_ROOT), "0.2.1");
+	assert.equal(loadJihyePackageVersion(REPO_ROOT), REPO_VERSION);
 });
 
 test("records one durable runtime marker per version, profile, and Pi runtime", () => {
@@ -151,16 +152,16 @@ test("session start records runtime provenance without UI and avoids duplicate m
 
 	assert.equal(entries.length, 1);
 	assert.equal(entries[0]?.customType, JIHYE_RUNTIME_ENTRY_TYPE);
-	assert.equal(latestJihyeRuntimeMetadata(entries)?.jihyeVersion, "0.2.1");
+	assert.equal(latestJihyeRuntimeMetadata(entries)?.jihyeVersion, REPO_VERSION);
 
 	entries.splice(0, entries.length, {
 		type: "custom",
 		customType: JIHYE_RUNTIME_ENTRY_TYPE,
-		data: createJihyeRuntimeMetadata("0.2.0", "standard", "0.83.0"),
+		data: createJihyeRuntimeMetadata("previous-version", "standard", "0.83.0"),
 	});
 	await sessionTree?.({ newLeafId: "old-branch" }, ctx);
 	assert.equal(entries.length, 2, "tree navigation behind a transition reasserts the current runtime");
-	assert.equal(latestJihyeRuntimeMetadata(entries)?.jihyeVersion, "0.2.1");
+	assert.equal(latestJihyeRuntimeMetadata(entries)?.jihyeVersion, REPO_VERSION);
 });
 
 test("treats a directory as within itself but not within a sibling", () => {
