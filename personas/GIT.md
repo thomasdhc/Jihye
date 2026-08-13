@@ -14,7 +14,7 @@
 
 ## Staging, Commits, and Pushing
 
-- Pass Validation, stage only prompt-boundary files, review the staged diff, and commit unless directed otherwise.
+- Apply Validation, stage only prompt-boundary files, review the staged diff, and commit unless directed otherwise.
 - Prefer a follow-up commit; amend only with explicit approval.
 - Use the agent commit command from workspace-root `USERNAME.md`.
 - Never push. Provide a ready-to-run push command.

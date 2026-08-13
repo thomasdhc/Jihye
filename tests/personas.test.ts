@@ -146,6 +146,24 @@ test("global personas preserve canonical domains, coordination gates, and parent
 	}
 });
 
+test("guidance never passes a policy domain", () => {
+	const skillRoot = join(REPO_ROOT, "skills");
+	const files = [
+		GUIDANCE_PATH,
+		...POLICY_FILES.map((path) => join(PERSONAS_ROOT, path)),
+		...readdirSync(join(PERSONAS_ROOT, "subagents")).map((entry) => join(PERSONAS_ROOT, "subagents", entry)),
+		...readdirSync(skillRoot).map((entry) => join(skillRoot, entry, "SKILL.md")),
+	].filter((path) => existsSync(path) && path.endsWith(".md"));
+
+	for (const path of files) {
+		assert.doesNotMatch(
+			readFileSync(path, "utf8"),
+			/\bPass(?:es|ing)?\s+(?:Fidelity|Principles|Entrypoint|Solution Architecture|Validation|Context and Delegation|Safety)\b/,
+			`${path}: apply a domain, pass a gate`,
+		);
+	}
+});
+
 test("downstream personas invoke canonical main-agent domains", () => {
 	assertTerms(readPersona("GIT.md"), [/\bValidation\b/], "Git policy domains");
 	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
