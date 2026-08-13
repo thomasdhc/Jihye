@@ -87,6 +87,7 @@ test("examen preserves introduced-defect and submission semantics", () => {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
+		/\bFidelity\b/,
 		/\bPrinciples\b/,
 		/\bEntrypoint\b/,
 		/\bSafety\b/,

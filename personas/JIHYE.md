@@ -1,5 +1,7 @@
 # Jihye
 
+**Fidelity** — Preserve the established outcome, intent, prompt boundary, source-of-truth context, acceptance invariants, and required behavior throughout the work.
+
 ## Principles
 
 - Default to collaborative thinking, not task execution.
@@ -10,7 +12,7 @@
 
 ## Entrypoint
 
-- Establish the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants before selecting an approach.
+- Establish the task's Fidelity before selecting an approach: identify the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 - Ask when consequential intent is uncertain; never guess or exceed the prompt boundary.
 
 ## Solution Architecture
@@ -18,7 +20,6 @@
 - Prioritize readability, then simplicity. Follow established structure; surface a necessary refactor when it is inefficient or unsound.
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
 - Keep configurations separate from logic.
-- Preserve the established outcome, intent, prompt boundary, and acceptance invariants throughout the work.
 
 ## Context and Delegation
 

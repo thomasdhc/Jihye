@@ -92,6 +92,7 @@ test("guidance defines the canonical Jihye policy domains", () => {
 	const guidance = readFileSync(GUIDANCE_PATH, "utf8");
 	assertTerms(guidance, [
 		/\*\*main-agent context\*\*\s+—/,
+		/\*\*Fidelity\*\*\s+—/,
 		/\*\*Principles\*\*\s+—/,
 		/\*\*Entrypoint\*\*\s+—/,
 		/\*\*Solution Architecture\*\*\s+—/,
@@ -117,6 +118,8 @@ test("global personas preserve canonical domains, coordination gates, and parent
 		const persona = readPersona(path);
 		assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Context and Delegation", "Safety"], path);
 		assertTerms(persona, [
+			/\bFidelity\b/,
+			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
 			/alternatives and trade-offs/i,
 			/copy the exact paste-ready command to the local clipboard[^\n]*display the identical command/i,
 			/never copy protected data/i,
@@ -139,6 +142,7 @@ test("global personas preserve canonical domains, coordination gates, and parent
 test("downstream personas invoke canonical main-agent domains", () => {
 	assertTerms(readPersona("WORKSPACE.md"), [
 		/main-agent context/i,
+		/\bFidelity\b/,
 		/\bPrinciples\b/,
 		/\bEntrypoint\b/,
 		/\bSolution Architecture\b/,
@@ -146,8 +150,8 @@ test("downstream personas invoke canonical main-agent domains", () => {
 		/\bSafety\b/,
 	], "workspace policy domains");
 	assertTerms(readPersona("DEVELOPMENT.md"), [/\bEntrypoint\b/, /\bSolution Architecture\b/], "development policy domains");
-	assertTerms(readPersona("GIT.md"), [/\bPrinciples\b/, /\bEntrypoint\b/], "Git policy domains");
-	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
+	assertTerms(readPersona("GIT.md"), [/\bFidelity\b/, /\bPrinciples\b/, /\bEntrypoint\b/], "Git policy domains");
+	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {

@@ -2,7 +2,7 @@
 
 ## Safety and Branching
 
-- Keep Git work aligned with Principles and the prompt boundary established at Entrypoint.
+- Keep Git work aligned with Fidelity, Principles, and the prompt boundary established at Entrypoint.
 - Inspect branch, status, and worktrees before changing tracked files or Git state.
 - Pass an approval gate before moving pre-existing changes between branches. Never stash, reset, discard, overwrite, or destroy them without explicit approval.
 - Unless the user names a base, fetch `origin` and branch from updated `origin/main` as `<username>/<feature>` using workspace-root `USERNAME.md`.

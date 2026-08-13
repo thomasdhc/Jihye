@@ -5,7 +5,7 @@ description: Review a GitHub pull request or GitLab merge request for concrete i
 
 # Examen
 
-Apply Principles and Safety while reviewing changed behavior against intent and verified evidence. Treat a GitHub pull request or GitLab merge request as the **review target**.
+Apply Fidelity, Principles, and Safety while reviewing changed behavior against intent and verified evidence. Treat a GitHub pull request or GitLab merge request as the **review target**.
 
 ## Review the Target
 
