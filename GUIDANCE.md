@@ -30,7 +30,7 @@ Complete every step before handing off a base-persona change:
 3. Update the pinned headings and term assertions in `tests/personas.test.ts`.
 4. Give a new domain at least one downstream invoker; a domain no file invokes has not earned its place.
 5. Refresh the `personas/README.md` layout row when a file's ownership changes.
-6. Size the version bump as the root `AGENTS.md` version rule directs.
+6. Bump the package version as the root `AGENTS.md` version rule directs.
 
 ## Glossary
 

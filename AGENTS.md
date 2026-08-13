@@ -23,7 +23,7 @@ Run `/reload` in any existing Pi session after installing or changing extensions
   - `docs: <summary>` for documentation-only changes
   - `ci: <summary>` for CI, release, or automation changes
   - Scoped forms are allowed when useful, e.g. `fix(ci): <summary>` or `feat(subagent): <summary>`
-- Bump the `package.json` version once per branch, before opening the pull request, sized to the branch's aggregate change against `origin/main` rather than to any single commit. Use `patch` for wording, clarification, and fixes; use `minor` for adding, removing, or renaming a domain, gate, invariant, extension, or skill. Raise an existing unlanded bump when later commits widen the change set.
+- Bump the `package.json` version once in any branch that changes `personas/JIHYE.md`, before opening the pull request. Prefer `patch` for wording and clarification and `minor` for adding, removing, or renaming a domain, gate, or invariant.
 - Keep each extension focused and independently testable.
 - Keep policy configuration separate from interception logic.
 - Prefer narrow, explicit safety rules over broad command classification.
