@@ -11,6 +11,7 @@ Before the first tool call touching its target:
 - Read `workspace_directory/REPO.md` before resolving repositories, resources, environment activation, temporary files, or worktree locations.
 - Read `workspace_directory/USERNAME.md` before naming a branch, selecting an agent commit command, or handing off a command for the user to run.
 - Read `personas_directory/GIT.md` before loading repository guidance for work that may change tracked files, Git state, or delivery.
+- Read the project todo when present before planning or changing repository files.
 
 Pass each read gate based on the nature of the action, never its size or obviousness.
 

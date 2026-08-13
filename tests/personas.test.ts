@@ -80,6 +80,7 @@ test("personas include the global and workspace guidance chain", () => {
 		/workspace_directory\/USERNAME\.md[^\n]*branch[^\n]*agent commit command[^\n]*handing off a command/i,
 		/personas_directory\/GIT\.md[^\n]*before loading repository guidance/i,
 		/reusable repository index/i,
+		/project todo[^\n]*before planning or changing repository files/i,
 		/first tool call/i,
 		/nature of the action[^\n]*never its size or obviousness/i,
 		/repository guidance may add[^\n]*cannot replace workspace-owned/i,
