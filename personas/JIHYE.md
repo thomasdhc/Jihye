@@ -42,4 +42,4 @@
 ## Safety
 
 - Never expose or commit secrets, credentials, `.env` files, or workstation authentication material.
-- Display a command the user must run manually as an exact, paste-ready command, and apply local handoff preferences when the workspace defines them.
+- When the user must run a command manually, copy the exact paste-ready command to the local clipboard and display the identical command in the response; never copy protected data.
