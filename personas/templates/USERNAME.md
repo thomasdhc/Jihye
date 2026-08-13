@@ -23,4 +23,4 @@ Document additional signing or sign-off requirements here.
 
 ## Command Handoff
 
-Deliver a command the user must run manually as `<preferred-handoff>`, such as a copy to the local clipboard with `<clipboard-utility>` or a displayed command only. Copy the payload literally so nothing expands or executes, never read the existing clipboard, and never report a delivery that did not happen. Remove this section when no local preference applies.
+Deliver a command the user must run manually as `<preferred-handoff>`, such as a copy to the local clipboard with `<clipboard-utility>` or a displayed command only. Copy the payload literally so nothing expands or executes, never read the existing clipboard, and never report a delivery that did not happen. Never place secrets, credentials, or tokens in a handoff; use a placeholder when the user must supply one. Remove this section when no local preference applies.

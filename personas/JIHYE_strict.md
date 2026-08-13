@@ -44,4 +44,3 @@
 ## Safety
 
 - Never expose or commit secrets, credentials, `.env` files, or workstation authentication material.
-- When the user must run a command manually, copy the exact paste-ready command to the local clipboard and display the identical command in the response; never copy protected data.
