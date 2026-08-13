@@ -1,7 +1,14 @@
 import type { SessionEntry } from "@earendil-works/pi-coding-agent";
 
+import {
+	JIHYE_RUNTIME_ENTRY_TYPE,
+	parseJihyeRuntimeMetadata,
+	type JihyeRuntimeMetadata,
+} from "../jihye-setup/provenance.ts";
 import type {
 	AnalyzeSessionOptions,
+	JihyeRuntimeSummary,
+	JihyeTurnObservation,
 	ModelUsageSummary,
 	OperationalSignal,
 	SessionObservation,
@@ -14,6 +21,7 @@ interface ToolCallRecord {
 	id: string;
 	name: string;
 	args: unknown;
+	runtime?: JihyeRuntimeMetadata;
 }
 
 interface ToolResultRecord {
@@ -23,6 +31,16 @@ interface ToolResultRecord {
 	isTruncated: boolean;
 	usage?: unknown;
 	details?: unknown;
+	runtime?: JihyeRuntimeMetadata;
+}
+
+interface TurnRecord {
+	entryId: string;
+	runtime?: JihyeRuntimeMetadata;
+	provider: string;
+	model: string;
+	usage: UsageSummary;
+	toolCallIds: string[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -68,6 +86,47 @@ function combinedUsage(...summaries: UsageSummary[]): UsageSummary {
 	const total = createUsageSummary();
 	for (const summary of summaries) addUsage(total, summary);
 	return total;
+}
+
+function runtimeKey(runtime: JihyeRuntimeMetadata | undefined): string {
+	return runtime
+		? `${runtime.schemaVersion}\u0000${runtime.jihyeVersion}\u0000${runtime.profile}\u0000${runtime.piVersion}`
+		: "unknown";
+}
+
+function getOrCreateRuntime(
+	runtimes: Map<string, JihyeRuntimeSummary>,
+	runtime: JihyeRuntimeMetadata | undefined,
+): JihyeRuntimeSummary {
+	const key = runtimeKey(runtime);
+	let summary = runtimes.get(key);
+	if (!summary) {
+		summary = {
+			runtime,
+			userPrompts: 0,
+			assistantTurns: 0,
+			toolCalls: 0,
+			toolResults: 0,
+			toolErrors: 0,
+			usage: {
+				assistant: createUsageSummary(),
+				tools: createUsageSummary(),
+				summaries: createUsageSummary(),
+				observedTotal: createUsageSummary(),
+			},
+		};
+		runtimes.set(key, summary);
+	}
+	return summary;
+}
+
+function addRuntimeUsage(
+	summary: JihyeRuntimeSummary,
+	kind: "assistant" | "tools" | "summaries",
+	usage: UsageSummary,
+): void {
+	addUsage(summary.usage[kind], usage);
+	addUsage(summary.usage.observedTotal, usage);
 }
 
 function contentText(content: unknown): string {
@@ -164,6 +223,14 @@ function sumSubagentUsage(results: unknown[]): UsageSummary {
 	return total;
 }
 
+function toolResultUsage(result: ToolResultRecord): UsageSummary {
+	const declaredUsage = usageSummary(result.usage);
+	if (declaredUsage.totalTokens > 0 || declaredUsage.cost > 0) return declaredUsage;
+	return result.name === "subagent"
+		? sumSubagentUsage(getSubagentResults(result.details))
+		: declaredUsage;
+}
+
 function getOrCreateTool(tools: Map<string, ToolSummary>, name: string): ToolSummary {
 	let summary = tools.get(name);
 	if (!summary) {
@@ -199,8 +266,11 @@ export function analyzeSession(
 	const summaryUsage = createUsageSummary();
 	const models = new Map<string, ModelUsageSummary>();
 	const tools = new Map<string, ToolSummary>();
+	const runtimes = new Map<string, JihyeRuntimeSummary>();
 	const toolCalls: ToolCallRecord[] = [];
 	const toolResults: ToolResultRecord[] = [];
+	const turnRecords: TurnRecord[] = [];
+	let currentRuntime: JihyeRuntimeMetadata | undefined;
 	let userPrompts = 0;
 	let assistantTurns = 0;
 	let compactions = 0;
@@ -208,9 +278,16 @@ export function analyzeSession(
 	let thinkingLevelChanges = 0;
 
 	for (const entry of entries) {
+		if (entry.type === "custom" && entry.customType === JIHYE_RUNTIME_ENTRY_TYPE) {
+			const runtime = parseJihyeRuntimeMetadata(entry.data);
+			if (runtime) currentRuntime = runtime;
+			continue;
+		}
 		if (entry.type === "compaction" || entry.type === "branch_summary") {
 			if (entry.type === "compaction") compactions += 1;
-			addUsage(summaryUsage, usageSummary(entry.usage));
+			const usage = usageSummary(entry.usage);
+			addUsage(summaryUsage, usage);
+			addRuntimeUsage(getOrCreateRuntime(runtimes, currentRuntime), "summaries", usage);
 			continue;
 		}
 		if (entry.type === "model_change") {
@@ -227,12 +304,16 @@ export function analyzeSession(
 		if (!isRecord(message)) continue;
 		if (message.role === "user") {
 			userPrompts += 1;
+			getOrCreateRuntime(runtimes, currentRuntime).userPrompts += 1;
 			continue;
 		}
 		if (message.role === "assistant") {
 			assistantTurns += 1;
 			const usage = usageSummary(message.usage);
 			addUsage(assistantUsage, usage);
+			const runtimeSummary = getOrCreateRuntime(runtimes, currentRuntime);
+			runtimeSummary.assistantTurns += 1;
+			addRuntimeUsage(runtimeSummary, "assistant", usage);
 			const provider = typeof message.provider === "string" && message.provider ? message.provider : "unknown";
 			const model = typeof message.model === "string" && message.model ? message.model : "unknown";
 			const key = `${provider}\u0000${model}`;
@@ -244,13 +325,26 @@ export function analyzeSession(
 			modelSummary.turns += 1;
 			addUsage(modelSummary.usage, usage);
 
-			if (!Array.isArray(message.content)) continue;
-			for (const item of message.content) {
-				if (!isRecord(item) || item.type !== "toolCall") continue;
-				const id = typeof item.id === "string" && item.id ? item.id : `missing-id-${toolCalls.length + 1}`;
-				const name = typeof item.name === "string" && item.name ? item.name : "unknown";
-				toolCalls.push({ id, name, args: item.arguments });
+			const turnEntryId = entry.id;
+			const turnToolCallIds: string[] = [];
+			if (Array.isArray(message.content)) {
+				for (const item of message.content) {
+					if (!isRecord(item) || item.type !== "toolCall") continue;
+					const id = typeof item.id === "string" && item.id ? item.id : `missing-id-${toolCalls.length + 1}`;
+					const name = typeof item.name === "string" && item.name ? item.name : "unknown";
+					toolCalls.push({ id, name, args: item.arguments, runtime: currentRuntime });
+					turnToolCallIds.push(id);
+				}
 			}
+			runtimeSummary.toolCalls += turnToolCallIds.length;
+			turnRecords.push({
+				entryId: turnEntryId,
+				runtime: currentRuntime,
+				provider,
+				model,
+				usage,
+				toolCallIds: turnToolCallIds,
+			});
 			continue;
 		}
 		if (message.role !== "toolResult") continue;
@@ -266,19 +360,23 @@ export function analyzeSession(
 			isTruncated: resultIsTruncated(message),
 			usage: message.usage,
 			details: message.details,
+			runtime: currentRuntime,
 		};
 		toolResults.push(result);
-
-		const declaredUsage = usageSummary(result.usage);
-		if (declaredUsage.totalTokens > 0 || declaredUsage.cost > 0) {
-			addUsage(toolUsage, declaredUsage);
-		} else if (name === "subagent") {
-			addUsage(toolUsage, sumSubagentUsage(getSubagentResults(result.details)));
-		}
 	}
 
 	const resultById = new Map(toolResults.map((result) => [result.id, result]));
 	const callById = new Map(toolCalls.map((call) => [call.id, call]));
+	const usageByResultId = new Map<string, UsageSummary>();
+	for (const result of toolResults) {
+		const usage = toolResultUsage(result);
+		usageByResultId.set(result.id, usage);
+		addUsage(toolUsage, usage);
+		const runtimeSummary = getOrCreateRuntime(runtimes, callById.get(result.id)?.runtime ?? result.runtime);
+		runtimeSummary.toolResults += 1;
+		if (result.isError) runtimeSummary.toolErrors += 1;
+		addRuntimeUsage(runtimeSummary, "tools", usage);
+	}
 	const signals: OperationalSignal[] = [];
 
 	for (const call of toolCalls) {
@@ -331,9 +429,29 @@ export function analyzeSession(
 		...summary,
 		models: [...modelSet].sort(),
 	}));
+	const turns: JihyeTurnObservation[] = turnRecords.map((turn) => {
+		const results = turn.toolCallIds
+			.map((id) => resultById.get(id))
+			.filter((result): result is ToolResultRecord => !!result);
+		const tools = combinedUsage(...results.map((result) => usageByResultId.get(result.id) ?? createUsageSummary()));
+		return {
+			entryId: turn.entryId,
+			runtime: turn.runtime,
+			provider: turn.provider,
+			model: turn.model,
+			toolCalls: turn.toolCallIds.length,
+			toolResults: results.length,
+			toolErrors: results.filter((result) => result.isError).length,
+			usage: {
+				assistant: turn.usage,
+				tools,
+				observedTotal: combinedUsage(turn.usage, tools),
+			},
+		};
+	});
 
 	return {
-		schemaVersion: 1,
+		schemaVersion: 2,
 		session: {
 			id: options.sessionId,
 			name: options.sessionName,
@@ -353,6 +471,8 @@ export function analyzeSession(
 				observedTotal: combinedUsage(assistantUsage, toolUsage, summaryUsage),
 			},
 		},
+		runtimes: [...runtimes.values()],
+		turns,
 		models: [...models.values()].sort((a, b) => b.turns - a.turns || `${a.provider}/${a.model}`.localeCompare(`${b.provider}/${b.model}`)),
 		tools: [...tools.values()].sort((a, b) => b.calls - a.calls || a.name.localeCompare(b.name)),
 		subagents: subagents.sort((a, b) => b.calls - a.calls || a.agent.localeCompare(b.agent)),
@@ -360,6 +480,7 @@ export function analyzeSession(
 		signals,
 		coverage: {
 			branch: "active",
+			runtimeAttribution: "jihye-runtime-markers",
 			parentToolTiming: "unavailable",
 			subagentTrace: "final-results-only",
 		},

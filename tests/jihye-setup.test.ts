@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import jihyeSetupExtension from "../extensions/jihye-setup/index.ts";
 import {
 	createDefaultJihyeSetupConfig,
 	getJihyeSetupConfigPath,
@@ -20,6 +21,14 @@ import {
 	resolvePackagePaths,
 	resolveProfile,
 } from "../extensions/jihye-setup/paths.ts";
+import {
+	JIHYE_RUNTIME_ENTRY_TYPE,
+	createJihyeRuntimeMetadata,
+	ensureJihyeRuntimeMarker,
+	latestJihyeRuntimeMetadata,
+	loadJihyePackageVersion,
+	type JihyeRuntimeMetadata,
+} from "../extensions/jihye-setup/provenance.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXTENSION_DIR = join(REPO_ROOT, "extensions", "jihye-setup");
@@ -42,6 +51,7 @@ function createFixture(options: { profile?: "strict" | "standard" | "unmanaged";
 	mkdirSync(agentDirectory, { recursive: true });
 	mkdirSync(repositoryDirectory, { recursive: true });
 
+	writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: "jihye-fixture", version: "9.8.7" }));
 	writeFileSync(join(personasDirectory, "JIHYE.md"), "# Jihye\n");
 	writeFileSync(join(personasDirectory, "JIHYE_strict.md"), "# Jihye strict\n");
 	writeFileSync(join(personasDirectory, "WORKSPACE.md"), "# Workspace\n");
@@ -76,6 +86,81 @@ test("derives package and personas paths from the extension location", () => {
 
 	assert.equal(paths.packageRoot, REPO_ROOT);
 	assert.equal(paths.personasDirectory, join(REPO_ROOT, "personas"));
+	assert.equal(loadJihyePackageVersion(REPO_ROOT), "0.2.1");
+});
+
+test("records one durable runtime marker per version, profile, and Pi runtime", () => {
+	const entries: Array<{ type: string; customType?: string; data?: unknown }> = [];
+	const appended: JihyeRuntimeMetadata[] = [];
+	const append = (customType: string, data: JihyeRuntimeMetadata) => {
+		entries.push({ type: "custom", customType, data });
+		appended.push(data);
+	};
+	const first = createJihyeRuntimeMetadata("0.2.1", "standard", "0.83.0");
+
+	assert.equal(ensureJihyeRuntimeMarker(entries, first, append), true);
+	assert.equal(ensureJihyeRuntimeMarker(entries, first, append), false, "an unchanged runtime does not duplicate its marker");
+	assert.equal(ensureJihyeRuntimeMarker(
+		entries,
+		createJihyeRuntimeMetadata("0.2.2", "standard", "0.83.0"),
+		append,
+	), true);
+	assert.equal(ensureJihyeRuntimeMarker(
+		entries,
+		createJihyeRuntimeMetadata("0.2.2", "strict", "0.83.0"),
+		append,
+	), true);
+	assert.equal(ensureJihyeRuntimeMarker(
+		entries,
+		createJihyeRuntimeMetadata("0.2.2", "strict", "0.84.0"),
+		append,
+	), true);
+	assert.equal(appended.length, 4);
+	assert.equal(entries[0]?.customType, JIHYE_RUNTIME_ENTRY_TYPE);
+	assert.deepEqual(latestJihyeRuntimeMetadata(entries), createJihyeRuntimeMetadata("0.2.2", "strict", "0.84.0"));
+
+	const future = { ...createJihyeRuntimeMetadata("0.3.0", "standard", "0.84.0"), schemaVersion: 2 };
+	entries.push({ type: "custom", customType: JIHYE_RUNTIME_ENTRY_TYPE, data: future });
+	assert.deepEqual(latestJihyeRuntimeMetadata(entries), future, "additive future marker schemas remain attributable");
+});
+
+test("session start records runtime provenance without UI and avoids duplicate markers", async () => {
+	type SessionStartHandler = (event: unknown, ctx: any) => Promise<void>;
+	let sessionStart: SessionStartHandler | undefined;
+	let sessionTree: SessionStartHandler | undefined;
+	const entries: Array<{ type: string; customType?: string; data?: unknown }> = [];
+	jihyeSetupExtension({
+		registerEntryRenderer() {},
+		registerCommand() {},
+		on(name: string, handler: SessionStartHandler) {
+			if (name === "session_start") sessionStart = handler;
+			if (name === "session_tree") sessionTree = handler;
+		},
+		appendEntry(customType: string, data: unknown) {
+			entries.push({ type: "custom", customType, data });
+		},
+	} as never);
+	const ctx = {
+		cwd: REPO_ROOT,
+		hasUI: false,
+		sessionManager: { getBranch: () => entries },
+	};
+
+	await sessionStart?.({ reason: "startup" }, ctx);
+	await sessionStart?.({ reason: "reload" }, ctx);
+
+	assert.equal(entries.length, 1);
+	assert.equal(entries[0]?.customType, JIHYE_RUNTIME_ENTRY_TYPE);
+	assert.equal(latestJihyeRuntimeMetadata(entries)?.jihyeVersion, "0.2.1");
+
+	entries.splice(0, entries.length, {
+		type: "custom",
+		customType: JIHYE_RUNTIME_ENTRY_TYPE,
+		data: createJihyeRuntimeMetadata("0.2.0", "standard", "0.83.0"),
+	});
+	await sessionTree?.({ newLeafId: "old-branch" }, ctx);
+	assert.equal(entries.length, 2, "tree navigation behind a transition reasserts the current runtime");
+	assert.equal(latestJihyeRuntimeMetadata(entries)?.jihyeVersion, "0.2.1");
 });
 
 test("treats a directory as within itself but not within a sibling", () => {
@@ -246,6 +331,7 @@ test("formats facts as declarative system prompt lines", () => {
 		assert.match(block, /\[loaded\]/);
 		assert.match(block, /\[not loaded\]/);
 		assert.doesNotMatch(block, /readlink|dirname/);
+		assert.doesNotMatch(block, /jihye[_ ]version/i, "runtime version stays out of the system prompt");
 	} finally {
 		fixture.cleanup();
 	}

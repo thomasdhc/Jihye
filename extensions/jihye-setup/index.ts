@@ -7,13 +7,14 @@
  * which is deterministic work an extension can do once and get right.
  *
  * - `before_agent_start`: appends resolved paths to the system prompt.
- * - `session_start`: shows a TUI-only summary card, never sent to the LLM.
+ * - `session_start`: records runtime provenance and shows a TUI-only summary card, neither sent to the LLM.
+ * - `session_tree`: reasserts provenance after navigating behind a runtime transition.
  * - `/jihye-setup`: reports resolution, guidance health, and legacy leftovers.
  */
 
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getAgentDir, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { VERSION, getAgentDir, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Container, Text } from "@earendil-works/pi-tui";
 
 import { getJihyeSetupConfigPath, loadJihyeSetupConfig, type JihyeSetupConfig } from "./config.ts";
@@ -22,7 +23,14 @@ import {
 	formatFactBlock,
 	type JihyeSetupFacts,
 	resolveJihyeSetupFacts,
+	resolvePackagePaths,
 } from "./paths.ts";
+import {
+	createJihyeRuntimeMetadata,
+	ensureJihyeRuntimeMarker,
+	loadJihyePackageVersion,
+	type JihyeRuntimeMetadata,
+} from "./provenance.ts";
 
 const EXTENSION_DIR = path.dirname(fileURLToPath(import.meta.url));
 const CARD_ENTRY_TYPE = "jihye-setup-card";
@@ -30,6 +38,8 @@ const USAGE = "Usage: /jihye-setup [status]";
 
 interface CardData {
 	profile: string;
+	jihyeVersion?: string;
+	piVersion?: string;
 	packageRoot: string;
 	workspaceDirectory?: string;
 	guidance: string[];
@@ -84,9 +94,16 @@ function factsFor(ctx: ExtensionContext, config: JihyeSetupConfig, loadedContext
 	});
 }
 
-function formatStatus(facts: JihyeSetupFacts, legacyExtensions: string[], configPath: string): string {
+function formatStatus(
+	facts: JihyeSetupFacts,
+	legacyExtensions: string[],
+	configPath: string,
+	jihyeVersion?: string,
+): string {
 	const lines = [
 		`Profile: ${facts.profile}`,
+		`Jihye version: ${jihyeVersion ?? "unresolved"}`,
+		`Pi version: ${VERSION}`,
 		`Package: ${facts.packageRoot}`,
 		`Personas: ${facts.personasDirectory}`,
 		`Workspace: ${facts.workspaceDirectory ?? "unresolved"}`,
@@ -101,7 +118,10 @@ function formatStatus(facts: JihyeSetupFacts, legacyExtensions: string[], config
 
 export default function (pi: ExtensionAPI) {
 	const configPath = getJihyeSetupConfigPath();
+	const packageRoot = resolvePackagePaths(EXTENSION_DIR).packageRoot;
 	let configWarning: string | undefined;
+	let versionWarning: string | undefined;
+	let jihyeVersion: string | undefined;
 	let config: JihyeSetupConfig;
 	try {
 		config = loadJihyeSetupConfig(configPath);
@@ -109,12 +129,21 @@ export default function (pi: ExtensionAPI) {
 		configWarning = error instanceof Error ? error.message : String(error);
 		config = { card: true };
 	}
+	try {
+		jihyeVersion = loadJihyePackageVersion(packageRoot);
+	} catch (error) {
+		versionWarning = error instanceof Error ? error.message : String(error);
+	}
 
 	pi.registerEntryRenderer(CARD_ENTRY_TYPE, (entry, { expanded }, theme) => {
 		const data = entry.data as CardData;
 		const container = new Container();
 		container.addChild(new Text(theme.fg("accent", theme.bold("Jihye setup")), 1, 0));
-		container.addChild(new Text(theme.fg("dim", `profile ${data.profile}`), 1, 0));
+		container.addChild(new Text(
+			theme.fg("dim", `Jihye ${data.jihyeVersion ?? "unresolved"} · Pi ${data.piVersion ?? "unresolved"} · profile ${data.profile}`),
+			1,
+			0,
+		));
 		container.addChild(new Text(`workspace ${data.workspaceDirectory ?? "unresolved"}`, 1, 0));
 		for (const warning of data.warnings) {
 			container.addChild(new Text(theme.fg("warning", `! ${warning}`), 1, 0));
@@ -128,19 +157,38 @@ export default function (pi: ExtensionAPI) {
 		return container;
 	});
 
-	pi.on("session_start", async (_event, ctx) => {
-		if (!config.card || !ctx.hasUI) return;
+	const recordRuntime = (ctx: ExtensionContext): { facts: JihyeSetupFacts; runtime?: JihyeRuntimeMetadata } => {
 		const facts = factsFor(ctx, config);
+		if (!jihyeVersion) return { facts };
+		const runtime = createJihyeRuntimeMetadata(jihyeVersion, facts.profile, VERSION);
+		ensureJihyeRuntimeMarker(
+			ctx.sessionManager.getBranch(),
+			runtime,
+			(customType, data) => pi.appendEntry(customType, data),
+		);
+		return { facts, runtime };
+	};
+
+	pi.on("session_start", async (_event, ctx) => {
+		const { facts, runtime } = recordRuntime(ctx);
+		if (!config.card || !ctx.hasUI) return;
 		const warnings = collectWarnings(facts, findLegacyExtensionCopies(facts.agentDirectory, facts.packageRoot));
+		if (versionWarning) warnings.unshift(versionWarning);
 		if (configWarning) warnings.unshift(configWarning);
 		const data: CardData = {
 			profile: facts.profile,
+			jihyeVersion: runtime?.jihyeVersion,
+			piVersion: VERSION,
 			packageRoot: facts.packageRoot,
 			workspaceDirectory: facts.workspaceDirectory,
 			guidance: describeGuidance(facts, false),
 			warnings,
 		};
 		pi.appendEntry(CARD_ENTRY_TYPE, data);
+	});
+
+	pi.on("session_tree", async (_event, ctx) => {
+		recordRuntime(ctx);
 	});
 
 	pi.on("before_agent_start", async (event, ctx) => {
@@ -158,8 +206,9 @@ export default function (pi: ExtensionAPI) {
 			}
 			const facts = factsFor(ctx, config, ctx.getSystemPromptOptions().contextFiles?.map((file) => file.path));
 			const legacyExtensions = findLegacyExtensionCopies(facts.agentDirectory, facts.packageRoot);
-			const report = formatStatus(facts, legacyExtensions, configPath);
-			ctx.ui.notify(configWarning ? `${configWarning}\n\n${report}` : report, configWarning ? "warning" : "info");
+			const report = formatStatus(facts, legacyExtensions, configPath, jihyeVersion);
+			const warnings = [configWarning, versionWarning].filter((warning): warning is string => !!warning);
+			ctx.ui.notify(warnings.length > 0 ? `${warnings.join("\n")}\n\n${report}` : report, warnings.length > 0 ? "warning" : "info");
 		},
 	});
 }
