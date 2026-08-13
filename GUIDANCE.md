@@ -28,7 +28,7 @@ Complete every step before handing off a base-persona change:
 
 1. Mirror the edited body into `JIHYE_strict.md`; the strict body stays identical to the base plus its approval header.
 2. Add, revise, or remove the glossary entry when the edit adds, renames, or redefines a domain.
-3. Update the pinned headings and term assertions in `tests/personas.test.ts`.
+3. Update the pinned headings and term assertions in `tests/personas.test.ts` when the edit changes structure or asserted semantics.
 4. Give a new domain at least one downstream invoker; a domain no file invokes has not earned its place.
 5. Refresh the `personas/README.md` layout row when a file's ownership changes.
 6. Bump the package version as the root `AGENTS.md` version rule directs.
