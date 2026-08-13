@@ -41,7 +41,7 @@ ln -s "$JIHYE/personas/JIHYE.md" ~/.pi/agent/AGENTS.md
 ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
 ```
 
-The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `jihye-setup` extension resolves the package, personas, and workspace locations behind those symlinks, so guidance can reference sibling `DEVELOPMENT.md` and `GIT.md` policy without an agent deriving any path by hand.
+The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `jihye-setup` extension resolves the package, personas, and workspace locations behind those symlinks, so guidance can reference sibling `GIT.md` policy without an agent deriving any path by hand.
 
 Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard` or `strict`, and the two local environment files should be listed.
 
@@ -49,6 +49,7 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 - Pi coding agent `0.83.0` or newer.
 - Node.js with TypeScript type stripping support for development and local-path installs.
+- GitHub CLI `2.82.1` or newer when creating or editing pull requests; earlier versions fail `gh pr edit` on deprecated Projects Classic APIs.
 
 ## Install
 
