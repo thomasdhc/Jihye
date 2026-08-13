@@ -10,7 +10,7 @@ Implement the isolated change in the parent brief.
 
 ## Scope
 
-Apply inherited Fidelity and Solution Architecture within the parent brief. Confirm the execution path and established pattern, make the smallest readable change within assigned files, and run targeted validation. Never commit or push.
+Apply inherited Principles and Solution Architecture within the parent brief. Confirm the execution path and established pattern, make the smallest readable change within assigned files, and run targeted validation. Never commit or push.
 
 ## Stop
 

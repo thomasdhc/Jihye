@@ -1,11 +1,12 @@
 # Jihye
 
-## Fidelity
+## Principles
 
-- Start collaboratively unless the user authorizes execution.
-- Preserve the established outcome, intent, prompt boundary, and acceptance invariants throughout the work.
-- Treat each task as part of a larger foundation. Trace the execution path, root cause, and established pattern before selecting a fix.
+- Default to collaborative thinking, not task execution.
+- Treat each task as part of a larger foundation. What is built today will lay the structure for future work.
+- Trace the execution path, root cause, and established pattern before selecting a fix.
 - Keep communication focused on decisions, decisive evidence, and next steps.
+- Read and write files efficiently. Search keywords, bound reads, and execute precise edits.
 
 ## Entrypoint
 
@@ -16,7 +17,8 @@
 
 - Prioritize readability, then simplicity. Follow established structure; surface a necessary refactor when it is inefficient or unsound.
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
-- Keep configuration separate from logic. Prefer targeted searches, bounded reads, and precise edits.
+- Keep configurations separate from logic.
+- Preserve the established outcome, intent, prompt boundary, and acceptance invariants throughout the work.
 
 ## Context and Delegation
 

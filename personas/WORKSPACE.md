@@ -1,6 +1,6 @@
 # Workspace
 
-Apply these environment rules as a delta in the main-agent context. Preserve Fidelity, Entrypoint, Solution Architecture, Context and Delegation, and Safety from the global persona.
+Apply these environment rules as a delta in the main-agent context. Preserve Principles, Entrypoint, Solution Architecture, Context and Delegation, and Safety from the global persona.
 
 ## Resolved Workspace
 

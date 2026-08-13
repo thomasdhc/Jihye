@@ -92,7 +92,7 @@ test("guidance defines the canonical Jihye policy domains", () => {
 	const guidance = readFileSync(GUIDANCE_PATH, "utf8");
 	assertTerms(guidance, [
 		/\*\*main-agent context\*\*\s+—/,
-		/\*\*Fidelity\*\*\s+—/,
+		/\*\*Principles\*\*\s+—/,
 		/\*\*Entrypoint\*\*\s+—/,
 		/\*\*Solution Architecture\*\*\s+—/,
 		/\*\*Context and Delegation\*\*\s+—/,
@@ -115,7 +115,7 @@ test("strict persona is the base persona plus its approval header", () => {
 test("global personas preserve canonical domains, coordination gates, and parent ownership", () => {
 	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
 		const persona = readPersona(path);
-		assert.deepEqual(headings(persona), ["Fidelity", "Entrypoint", "Solution Architecture", "Context and Delegation", "Safety"], path);
+		assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Context and Delegation", "Safety"], path);
 		assertTerms(persona, [
 			/alternatives and trade-offs/i,
 			/copy the exact paste-ready command to the local clipboard[^\n]*display the identical command/i,
@@ -139,15 +139,15 @@ test("global personas preserve canonical domains, coordination gates, and parent
 test("downstream personas invoke canonical main-agent domains", () => {
 	assertTerms(readPersona("WORKSPACE.md"), [
 		/main-agent context/i,
-		/\bFidelity\b/,
+		/\bPrinciples\b/,
 		/\bEntrypoint\b/,
 		/\bSolution Architecture\b/,
 		/\bContext and Delegation\b/,
 		/\bSafety\b/,
 	], "workspace policy domains");
 	assertTerms(readPersona("DEVELOPMENT.md"), [/\bEntrypoint\b/, /\bSolution Architecture\b/], "development policy domains");
-	assertTerms(readPersona("GIT.md"), [/\bFidelity\b/, /\bEntrypoint\b/], "Git policy domains");
-	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bSolution Architecture\b/], "engineer policy domains");
+	assertTerms(readPersona("GIT.md"), [/\bPrinciples\b/, /\bEntrypoint\b/], "Git policy domains");
+	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {

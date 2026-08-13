@@ -23,7 +23,7 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 
 **main-agent context** — the primary agent's loaded runtime context and working memory. It holds universal Jihye policy, source-of-truth task state, decisions, decisive evidence, and final synthesis; a subagent receives independently loaded policy and its bounded brief, not this context.
 
-**Fidelity** — the continuous main-agent discipline of preserving the established outcome, intent, prompt boundary, and acceptance invariants while tracing root causes and maintaining a larger foundation.
+**Principles** — the main-agent's standing posture: collaborate by default, treat each task as part of a larger foundation, trace execution paths, root causes, and established patterns, keep communication focused, and handle files efficiently.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
