@@ -31,6 +31,8 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 
 **Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, established structure, necessary refactors, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
+**Validation** — the main-agent policy for verifying work: repository-native commands run from the correct working directory, the narrowest relevant check while iterating, every required broader check before handoff, and honest reporting of results and checks that could not run.
+
 **Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, deciding whether and how to delegate, briefing subagents, verifying their output, and retaining ownership.
 
 **Safety** — the standing main-agent protections against exposing or committing secrets, credentials, environment files, workstation authentication material, or other protected data.

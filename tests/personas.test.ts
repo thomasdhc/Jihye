@@ -23,7 +23,6 @@ const POLICY_FILES = [
 	"JIHYE.md",
 	"JIHYE_strict.md",
 	"WORKSPACE.md",
-	"DEVELOPMENT.md",
 	"GIT.md",
 	"README.md",
 	"templates/REPO.md",
@@ -60,7 +59,7 @@ test("the two-link installation resolves the complete policy topology", () => {
 		assert.equal(realpathSync(workspaceContext), join(PERSONAS_ROOT, "WORKSPACE.md"));
 
 		const policyRoot = dirname(realpathSync(workspaceContext));
-		for (const path of ["DEVELOPMENT.md", "GIT.md"]) {
+		for (const path of ["GIT.md"]) {
 			assert.ok(existsSync(join(policyRoot, path)), path);
 		}
 	} finally {
@@ -72,7 +71,7 @@ test("personas include the global and workspace guidance chain", () => {
 	for (const path of POLICY_FILES) assert.ok(existsSync(join(PERSONAS_ROOT, path)), path);
 
 	const workspace = readPersona("WORKSPACE.md");
-	for (const path of ["REPO.md", "USERNAME.md", "DEVELOPMENT.md", "GIT.md"]) {
+	for (const path of ["REPO.md", "USERNAME.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
 	assertTerms(workspace, [
@@ -80,7 +79,7 @@ test("personas include the global and workspace guidance chain", () => {
 		/workspace_directory\/REPO\.md[^\n]*repositories[^\n]*environment activation[^\n]*worktree locations/i,
 		/workspace_directory\/USERNAME\.md[^\n]*branch[^\n]*agent commit command/i,
 		/personas_directory\/GIT\.md[^\n]*before loading repository guidance/i,
-		/personas_directory\/DEVELOPMENT\.md[^\n]*exploring[^\n]*planning[^\n]*changing[^\n]*testing/i,
+		/reusable repository index/i,
 		/first tool call/i,
 		/nature of the action[^\n]*never its size or obviousness/i,
 		/repository guidance may add[^\n]*cannot replace workspace-owned/i,
@@ -88,7 +87,6 @@ test("personas include the global and workspace guidance chain", () => {
 		/report a conflict and ask for resolution/i,
 	], "workspace guidance topology");
 	assert.doesNotMatch(workspace, /readlink|dirname/, "path resolution belongs to the jihye-setup extension");
-	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
 });
 
 test("guidance defines the canonical Jihye policy domains", () => {
@@ -99,6 +97,7 @@ test("guidance defines the canonical Jihye policy domains", () => {
 		/\*\*Principles\*\*\s+—/,
 		/\*\*Entrypoint\*\*\s+—/,
 		/\*\*Solution Architecture\*\*\s+—/,
+		/\*\*Validation\*\*\s+—/,
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
 		/downstream personas and skills[^\n]*exact capitalized term/i,
@@ -119,11 +118,13 @@ test("strict persona is the base persona plus its approval header", () => {
 test("global personas preserve canonical domains, coordination gates, and parent ownership", () => {
 	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
 		const persona = readPersona(path);
-		assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Context and Delegation", "Safety"], path);
+		assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Validation", "Context and Delegation", "Safety"], path);
 		assertTerms(persona, [
 			/\bFidelity\b/,
 			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
 			/alternatives and trade-offs/i,
+			/narrowest relevant check/i,
+			/checks that could not run/i,
 			/copy the exact paste-ready command to the local clipboard[^\n]*display the identical command/i,
 			/never copy protected data/i,
 			/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
@@ -143,7 +144,6 @@ test("global personas preserve canonical domains, coordination gates, and parent
 });
 
 test("downstream personas invoke canonical main-agent domains", () => {
-	assertTerms(readPersona("DEVELOPMENT.md"), [/\bEntrypoint\b/, /\bSolution Architecture\b/], "development policy domains");
 	assertTerms(readPersona("GIT.md"), [/\bFidelity\b/, /\bPrinciples\b/, /\bEntrypoint\b/], "Git policy domains");
 	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
 });

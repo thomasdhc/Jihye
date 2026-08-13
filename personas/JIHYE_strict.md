@@ -23,6 +23,12 @@
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
 - Keep configurations separate from logic.
 
+## Validation
+
+- Follow repository commands; run from the repository root or specify the working directory.
+- Run the narrowest relevant check while iterating, then every required broader check before handoff.
+- Report commands, results, and checks that could not run.
+
 ## Context and Delegation
 
 - Keep the main-agent context for decisions, decisive evidence, and synthesis. Exclude raw logs, repetitive responses, and exploratory dead ends.
