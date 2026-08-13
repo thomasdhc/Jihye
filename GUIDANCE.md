@@ -19,6 +19,19 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 - Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
 - Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
 
+## Changing the Base Persona
+
+`JIHYE.md` is the canonical owner of universal runtime behavior. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
+
+Complete every step before handing off a base-persona change:
+
+1. Mirror the edited body into `JIHYE_strict.md`; the strict body stays identical to the base plus its approval header.
+2. Add, revise, or remove the glossary entry when the edit adds, renames, or redefines a domain.
+3. Update the pinned headings and term assertions in `tests/personas.test.ts`.
+4. Give a new domain at least one downstream invoker; a domain no file invokes has not earned its place.
+5. Refresh the `personas/README.md` layout row when a file's ownership changes.
+6. Size the version bump as the root `AGENTS.md` version rule directs.
+
 ## Glossary
 
 **main-agent context** — the primary agent's loaded runtime context and working memory. It holds universal Jihye policy, source-of-truth task state, decisions, decisive evidence, and final synthesis; a subagent receives independently loaded policy and its bounded brief, not this context.

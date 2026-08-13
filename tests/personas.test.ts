@@ -101,6 +101,9 @@ test("guidance defines the canonical Jihye policy domains", () => {
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
 		/downstream personas and skills[^\n]*exact capitalized term/i,
+		/## Changing the Base Persona/,
+		/JIHYE_strict\.md/,
+		/tests\/personas\.test\.ts/,
 	], "canonical Jihye vocabulary");
 });
 
