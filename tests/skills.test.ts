@@ -37,7 +37,6 @@ test("skills have valid identifying frontmatter", () => {
 		names.push(frontmatter.match(/^name: ([a-z0-9-]+)$/m)?.[1] ?? "");
 	}
 	assert.deepEqual(names.sort(), [
-		"clipboard-command",
 		"coordinate",
 		"examen",
 		"review-guidance",
@@ -45,23 +44,6 @@ test("skills have valid identifying frontmatter", () => {
 		"todo",
 		"vicara",
 	]);
-});
-
-test("clipboard-command preserves literal, safe, and visible handoff semantics", () => {
-	const content = readFileSync(join(SKILLS_ROOT, "clipboard-command", "SKILL.md"), "utf8");
-	assert.deepEqual(headings(content), ["Prepare the Command", "Copy Without Executing", "Return the Command"]);
-	assertTerms(content, [
-		/approval gate/i,
-		/\bSafety\b/,
-		/one paste-ready command on one line/i,
-		/copy only the command payload/i,
-		/never execute it/i,
-		/quoted heredoc/i,
-		/never install/i,
-		/never.*read the existing clipboard/i,
-		/exact copied payload/i,
-		/fenced code block/i,
-	], "clipboard command semantics");
 });
 
 test("coordinate preserves its execution-skeleton algorithm", () => {
