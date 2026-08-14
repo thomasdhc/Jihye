@@ -7,6 +7,7 @@
 import {
 	DANGEROUS_GITHUB_CLI_COMMANDS,
 	DANGEROUS_GITLAB_CLI_COMMANDS,
+	HEADLESS_GIT_BLOCKED,
 	RISKY_LOCAL_COMMANDS,
 	SAFE_DEV_PATHS,
 	SYSTEM_PATH_PREFIXES,
@@ -15,6 +16,7 @@ import {
 	type CliRulePolicy,
 	type CliRuleTable,
 	type CommandToken,
+	type HeadlessGitRule,
 	type LocalCommandRule,
 	type Severity,
 } from "./policy.ts";
@@ -238,6 +240,61 @@ function matchesArgCondition(args: string[], condition: ArgCondition): boolean {
 	if ("argStartsWith" in condition) return anyArgStartsWith(args, condition.argStartsWith);
 	if ("anyOf" in condition) return condition.anyOf.some((nested) => matchesArgCondition(args, nested));
 	return condition.allOf.every((nested) => matchesArgCondition(args, nested));
+}
+
+const HEADLESS_GIT_WRAPPERS = new Set(["nohup", "time", "xargs"]);
+
+function headlessGitCandidates(args: string[]): string[][] {
+	const unwrapped = unwrapShellCommand(args);
+	const candidates = gitCommandCandidates(unwrapped);
+	const wrapper = unwrapped[0]?.split("/").at(-1);
+	if (!wrapper || !HEADLESS_GIT_WRAPPERS.has(wrapper)) return candidates;
+
+	const wrappedArgs = unwrapped.slice(1);
+	const executable = wrappedArgs[0];
+	if (executable === "git" || executable?.endsWith("/git")) {
+		candidates.push(...gitCommandCandidates(wrappedArgs));
+	}
+	return candidates;
+}
+
+function headlessGitCommandCandidates(tokens: Token[]): string[][] {
+	const candidates: string[][] = [];
+	for (const segment of splitOnOps(tokens, ["&&", "||", ";"])) {
+		for (const commandTokens of splitOnOps(segment, ["|", "|&", "&", "(", ")"])) {
+			const args = tokensToStrings(commandTokens);
+			candidates.push(...headlessGitCandidates(args));
+
+			const nested = nestedShellCommand(args);
+			if (!nested || isDynamicShellToken(nested)) continue;
+			try {
+				candidates.push(...headlessGitCommandCandidates(parseShellCommand(nested)));
+			} catch {
+				// An invalid nested command cannot execute and has no parsed candidate.
+			}
+		}
+	}
+	return candidates;
+}
+
+function matchesHeadlessGitRule(args: string[], rule: HeadlessGitRule): boolean {
+	if (!rule.command.every((token, index) => matchesCommandToken(args[index], token))) return false;
+	return !rule.when || matchesArgCondition(args.slice(rule.command.length), rule.when);
+}
+
+export function analyzeHeadlessGitCommand(command: string): string | null {
+	let candidates: string[][] = [];
+	try {
+		candidates = headlessGitCommandCandidates(parseShellCommand(command));
+	} catch {
+		// Raw matching still preserves the former coverage for unparseable commands.
+	}
+	for (const rule of HEADLESS_GIT_BLOCKED) {
+		if (rule.pattern.test(command) || candidates.some((args) => matchesHeadlessGitRule(args, rule))) {
+			return rule.reason;
+		}
+	}
+	return null;
 }
 
 // Conditions apply to the arguments that follow the matched command pattern.

@@ -2,7 +2,12 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { isToolCallEventType } from "@earendil-works/pi-coding-agent";
 
 import { TERMINAL_NOTIFY_EVENT, type TerminalNotificationRequest } from "../terminal-notify.ts";
-import { analyzeBashCommand, analyzeGitHubCliCommand, analyzeGitLabCliCommand } from "./analysis.ts";
+import {
+	analyzeBashCommand,
+	analyzeGitHubCliCommand,
+	analyzeGitLabCliCommand,
+	analyzeHeadlessGitCommand,
+} from "./analysis.ts";
 import { HEADLESS_BLOCKED } from "./policy.ts";
 import { promptRunOrAbort } from "./prompt.ts";
 
@@ -55,6 +60,16 @@ export default function (pi: ExtensionAPI) {
 							"Propose a safer alternative or ask the parent agent to confirm with the user.",
 					};
 				}
+			}
+			const headlessGitReason = analyzeHeadlessGitCommand(command);
+			if (headlessGitReason) {
+				return {
+					block: true,
+					reason:
+						`Blocked by bash-guard: ${headlessGitReason}. ` +
+						"This is a non-interactive subagent session — catastrophic operations are not permitted. " +
+						"Propose a safer alternative or ask the parent agent to confirm with the user.",
+				};
 			}
 		});
 		return;
