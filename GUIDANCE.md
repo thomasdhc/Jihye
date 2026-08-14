@@ -16,18 +16,36 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 
 - Use the glossary below as a controlled vocabulary. When a glossary term applies, use it; do not coin a synonym.
 - Where a term lists qualified kinds, use the qualified form ("approval gate", "delivery boundary"). Use the bare term only for the general concept.
+- Match the verb to the term's kind. Apply a domain; never pass one. Pass a gate you must satisfy, and apply a gate to the work you are evaluating. State an invariant as a condition that holds rather than a step to complete.
 - Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
 - Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
+
+## Changing the Base Persona
+
+`JIHYE.md` is the canonical owner of universal runtime behavior. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
+
+Complete every step before handing off a base-persona change:
+
+1. Mirror the edited body into `JIHYE_strict.md`; the strict body stays identical to the base plus its approval header.
+2. Add, revise, or remove the glossary entry when the edit adds, renames, or redefines a domain.
+3. Update the pinned headings and term assertions in `tests/personas.test.ts` when the edit changes structure or asserted semantics.
+4. Give a new domain at least one downstream invoker; a domain no file invokes has not earned its place.
+5. Refresh the `personas/README.md` layout row when a file's ownership changes.
+6. Bump the package version as the root `AGENTS.md` version rule directs.
 
 ## Glossary
 
 **main-agent context** — the primary agent's loaded runtime context and working memory. It holds universal Jihye policy, source-of-truth task state, decisions, decisive evidence, and final synthesis; a subagent receives independently loaded policy and its bounded brief, not this context.
 
-**Fidelity** — the continuous main-agent discipline of preserving the established outcome, intent, prompt boundary, and acceptance invariants while tracing root causes and maintaining a larger foundation.
+**Fidelity** — the project-wide invariant: preserve the established outcome, intent, prompt boundary, source-of-truth context, acceptance invariants, and required behavior throughout the work.
 
-**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
+**Principles** — the main-agent's standing posture: collaborate by default, treat each task as part of a larger foundation, trace execution paths, root causes, and established patterns, keep communication focused, and handle files efficiently.
+
+**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
 **Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, established structure, necessary refactors, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+
+**Validation** — the main-agent policy for verifying work: repository-native commands run from the correct working directory, the narrowest relevant check while iterating, every required broader check before handoff, and honest reporting of results and checks that could not run.
 
 **Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, deciding whether and how to delegate, briefing subagents, verifying their output, and retaining ownership.
 

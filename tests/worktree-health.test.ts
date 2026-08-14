@@ -261,6 +261,49 @@ test("classifies an upstream-gone worktree only while it remains clean", async (
 	}
 });
 
+test("protects an upstream-gone worktree whose HEAD has a unique commit", async () => {
+	const fixture = createGitFixture();
+	try {
+		writeFileSync(join(fixture.featureWorktree, "feature.txt"), "unique feature work\n");
+		git(fixture.featureWorktree, "add", "feature.txt");
+		git(fixture.featureWorktree, "commit", "--no-gpg-sign", "-m", "unique feature commit");
+		git(fixture.repository, "update-ref", "-d", "refs/remotes/origin/feature");
+
+		const report = await scanWorktreeHealth({
+			cwd: fixture.repository,
+			runner,
+			worktreeRoot: fixture.worktreeRoot,
+		});
+		assert.equal(report.items[0]?.state, "unknown");
+		assert.equal(report.items[0]?.candidate, false);
+		assert.match(report.items[0]?.detail ?? "", /HEAD is not contained in local origin\/main; retained/);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("protects an upstream-gone worktree when the local base cannot be resolved", async () => {
+	const fixture = createGitFixture();
+	try {
+		git(fixture.repository, "update-ref", "-d", "refs/remotes/origin/feature");
+		git(fixture.repository, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD");
+		git(fixture.repository, "update-ref", "-d", "refs/remotes/origin/main");
+		git(fixture.repository, "branch", "-m", "trunk");
+
+		const report = await scanWorktreeHealth({
+			cwd: fixture.repository,
+			runner,
+			worktreeRoot: fixture.worktreeRoot,
+		});
+		assert.equal(report.baseRef, undefined);
+		assert.equal(report.items[0]?.state, "unknown");
+		assert.equal(report.items[0]?.candidate, false);
+		assert.match(report.items[0]?.detail ?? "", /HEAD or local base could not be resolved; retained/);
+	} finally {
+		fixture.cleanup();
+	}
+});
+
 test("protects locked worktrees even when their branch is merged", async () => {
 	const fixture = createGitFixture();
 	try {

@@ -321,12 +321,33 @@ async function inspectRegisteredWorktree(input: {
 
 	const upstream = await branchUpstream(runner, repositoryRoot, worktree.branchRef);
 	if (upstream.gone) {
+		if (!baseRef || !worktree.head) {
+			return {
+				path: worktree.path,
+				state: "unknown",
+				candidate: false,
+				branch,
+				detail: "clean worktree whose configured upstream is gone, but HEAD or local base could not be resolved; retained",
+			};
+		}
+		const ancestry = await run(runner, ["merge-base", "--is-ancestor", worktree.head, baseRef], repositoryRoot);
+		if (ancestry?.code === 0) {
+			return {
+				path: worktree.path,
+				state: "upstream-gone",
+				candidate: true,
+				branch,
+				detail: "clean worktree whose configured upstream is gone",
+			};
+		}
 		return {
 			path: worktree.path,
-			state: "upstream-gone",
-			candidate: true,
+			state: "unknown",
+			candidate: false,
 			branch,
-			detail: "clean worktree whose configured upstream is gone",
+			detail: ancestry?.code === 1
+				? `clean worktree whose configured upstream is gone, but HEAD is not contained in local ${baseRef}; retained`
+				: `clean worktree whose configured upstream is gone, but containment in local ${baseRef} could not be resolved; retained`,
 		};
 	}
 	if (!upstream.upstream) {

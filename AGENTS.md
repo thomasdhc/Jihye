@@ -23,6 +23,8 @@ Run `/reload` in any existing Pi session after installing or changing extensions
   - `docs: <summary>` for documentation-only changes
   - `ci: <summary>` for CI, release, or automation changes
   - Scoped forms are allowed when useful, e.g. `fix(ci): <summary>` or `feat(subagent): <summary>`
+- Bump the `package.json` version once in any branch that changes `personas/JIHYE.md`, before opening the pull request. Prefer `patch` for wording and clarification and `minor` for adding, removing, or renaming a domain, gate, or invariant.
+- Tag each version that lands on `main` with an annotated tag named `v<version>` matching `package.json`, with the message `Jihye v<version>`, placed on the merge commit. Tag only the version `main` ends on, never an intermediate bump. Publishing a tag follows the same push handoff as a branch.
 - Keep each extension focused and independently testable.
 - Keep policy configuration separate from interception logic.
 - Prefer narrow, explicit safety rules over broad command classification.

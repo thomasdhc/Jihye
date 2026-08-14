@@ -320,12 +320,23 @@ export const HEADLESS_BLOCKED: Array<{ pattern: RegExp; reason: string }> = [
 	{ pattern: /\bterraform\s+destroy\b/, reason: "infrastructure teardown (terraform destroy)" },
 	{ pattern: /\bkubectl\s+delete\b/, reason: "Kubernetes resource deletion" },
 	{ pattern: /\baws\s+s3\s+rm\b[^#\n]*--recursive/, reason: "bulk S3 deletion (aws s3 rm --recursive)" },
-	// Destructive git operations
-	{ pattern: /\bgit\s+commit\b/, reason: "git commit (commits are main-session operations)" },
-	{ pattern: /\bgit\s+pull\b/, reason: "git pull (pulls are main-session operations)" },
-	{ pattern: /\bgit\s+push\b/, reason: "git push (pushes are main-session operations)" },
-	{ pattern: /\bgit\s+reset\b[^#\n]*--hard\b/, reason: "discard all uncommitted changes (git reset --hard)" },
-	{ pattern: /\bgit\s+clean\b[^#\n]*-[a-zA-Z]*f/, reason: "delete untracked files (git clean -f)" },
-	{ pattern: /\bgit\s+reflog\s+expire\b/, reason: "expire reflog (removes recovery history)" },
-	{ pattern: /\bgit\s+gc\b[^#\n]*--prune\b/, reason: "prune unreachable objects (git gc --prune)" },
+];
+
+export type HeadlessGitRule = {
+	readonly pattern: RegExp;
+	readonly command: readonly CommandToken[];
+	readonly when?: ArgCondition;
+	readonly reason: string;
+};
+
+// Preserve the former raw-string coverage for wrappers and quoted invocations,
+// while parsed command matching prevents Git global options from hiding a rule.
+export const HEADLESS_GIT_BLOCKED: readonly HeadlessGitRule[] = [
+	{ pattern: /\bgit\s+commit\b/, command: ["git", "commit"], reason: "git commit (commits are main-session operations)" },
+	{ pattern: /\bgit\s+pull\b/, command: ["git", "pull"], reason: "git pull (pulls are main-session operations)" },
+	{ pattern: /\bgit\s+push\b/, command: ["git", "push"], reason: "git push (pushes are main-session operations)" },
+	{ pattern: /\bgit\s+reset\b[^#\n]*--hard\b/, command: ["git", "reset"], when: { hasArg: "--hard" }, reason: "discard all uncommitted changes (git reset --hard)" },
+	{ pattern: /\bgit\s+clean\b[^#\n]*-[a-zA-Z]*f/, command: ["git", "clean"], when: { argContains: "-f" }, reason: "delete untracked files (git clean -f)" },
+	{ pattern: /\bgit\s+reflog\s+expire\b/, command: ["git", "reflog", "expire"], reason: "expire reflog (removes recovery history)" },
+	{ pattern: /\bgit\s+gc\b[^#\n]*--prune\b/, command: ["git", "gc"], when: { argStartsWith: "--prune" }, reason: "prune unreachable objects (git gc --prune)" },
 ];

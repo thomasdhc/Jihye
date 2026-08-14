@@ -7,6 +7,8 @@ import bashGuard, {
 	analyzeGitHubCliCommand,
 	analyzeGitLabCliCommand,
 } from "../extensions/bash-guard/index.ts";
+import { analyzeHeadlessGitCommand } from "../extensions/bash-guard/analysis.ts";
+import { HEADLESS_GIT_BLOCKED } from "../extensions/bash-guard/policy.ts";
 import { TERMINAL_NOTIFY_EVENT } from "../extensions/terminal-notify.ts";
 
 test("detects destructive filesystem commands", () => {
@@ -548,6 +550,121 @@ test("hard-blocks publication commands in headless subagents", () => {
 		const block = JSON.parse(result.stdout) as { block?: boolean; reason?: string };
 		assert.equal(block.block, true, command);
 		assert.match(block.reason ?? "", expectedReason, command);
+	}
+});
+
+function rawHeadlessGitReason(command: string): string | null {
+	return HEADLESS_GIT_BLOCKED.find(({ pattern }) => pattern.test(command))?.reason ?? null;
+}
+
+test("preserves representative raw Git headless coverage", () => {
+	const cases = [
+		["nohup git commit -m x", "git commit (commits are main-session operations)"],
+		["git pull", "git pull (pulls are main-session operations)"],
+		["eval 'git push'", "git push (pushes are main-session operations)"],
+		["git reset --hard HEAD~1", "discard all uncommitted changes (git reset --hard)"],
+		["git clean -fd", "delete untracked files (git clean -f)"],
+		["git reflog expire --all", "expire reflog (removes recovery history)"],
+		["git gc --prune=now", "prune unreachable objects (git gc --prune)"],
+	] as const;
+
+	for (const [command, expectedReason] of cases) {
+		assert.equal(rawHeadlessGitReason(command), expectedReason, `raw policy: ${command}`);
+		assert.equal(analyzeHeadlessGitCommand(command), expectedReason, `raw OR parsed: ${command}`);
+	}
+});
+
+test("adds parsed Git headless coverage without relying on raw patterns", () => {
+	const cases = [
+		["git -C /tmp/repo commit -m x", "git commit (commits are main-session operations)"],
+		["git --no-pager pull", "git pull (pulls are main-session operations)"],
+		["git -C /tmp/repo reset --hard HEAD~1", "discard all uncommitted changes (git reset --hard)"],
+		["git --no-pager clean -fd", "delete untracked files (git clean -f)"],
+		["git --no-pager reflog expire --all", "expire reflog (removes recovery history)"],
+		["git -C /tmp/repo gc --prune=now", "prune unreachable objects (git gc --prune)"],
+		["nohup git -C /tmp commit -m x", "git commit (commits are main-session operations)"],
+		["time git --no-pager push origin main", "git push (pushes are main-session operations)"],
+		["xargs git -C /tmp reset --hard", "discard all uncommitted changes (git reset --hard)"],
+	] as const;
+
+	for (const [command, expectedReason] of cases) {
+		assert.equal(rawHeadlessGitReason(command), null, `intentional parsed addition: ${command}`);
+		assert.equal(analyzeHeadlessGitCommand(command), expectedReason, command);
+	}
+});
+
+test("hard-blocks composed Git headless rules through the actual handler", () => {
+	const extensionUrl = new URL("../extensions/bash-guard/index.ts", import.meta.url).href;
+	const blockedCases = [
+		// Parsed matches cover Git global options, including after headless wrappers.
+		["git -C /tmp/repo commit -m x", /git commit \(commits are main-session operations\)/],
+		["git --no-pager pull", /git pull \(pulls are main-session operations\)/],
+		["git -C /tmp/repo reset --hard HEAD~1", /discard all uncommitted changes \(git reset --hard\)/],
+		["git --no-pager clean -fd", /delete untracked files \(git clean -f\)/],
+		["git --no-pager reflog expire --all", /expire reflog \(removes recovery history\)/],
+		["git -C /tmp/repo gc --prune=now", /prune unreachable objects \(git gc --prune\)/],
+		["nohup git -C /tmp commit -m x", /git commit \(commits are main-session operations\)/],
+		["time git --no-pager push origin main", /git push \(pushes are main-session operations\)/],
+		["xargs git -C /tmp reset --hard", /discard all uncommitted changes \(git reset --hard\)/],
+		["bash -lc 'git --no-pager pull'", /git pull \(pulls are main-session operations\)/],
+		[
+			"git --no-pager status && git -C /tmp/repo commit -m x",
+			/git commit \(commits are main-session operations\)/,
+		],
+		// Raw matches preserve the former wrapper and quoted-invocation coverage.
+		["nohup git push origin main", /git push \(pushes are main-session operations\)/],
+		["time git commit -m x", /git commit \(commits are main-session operations\)/],
+		["xargs git commit -m x", /git commit \(commits are main-session operations\)/],
+		["eval 'git push'", /git push \(pushes are main-session operations\)/],
+		["ssh host 'git push'", /git push \(pushes are main-session operations\)/],
+		["git submodule foreach 'git clean -fd'", /delete untracked files \(git clean -f\)/],
+		["find . -exec git clean -fd \\;", /delete untracked files \(git clean -f\)/],
+	] as const;
+	const allowedCommands = [
+		"git -C /tmp/repo status --short",
+		"git --no-pager log -1",
+		"git -C /tmp/repo reset --soft HEAD~1",
+		"git --no-pager clean -nd",
+		"nohup git -C /tmp status --short",
+		"time git --no-pager log -1",
+		"xargs git -C /tmp status --short",
+	] as const;
+	const commands = [...blockedCases.map(([command]) => command), ...allowedCommands];
+	const script = `
+		import bashGuard from ${JSON.stringify(extensionUrl)};
+		let handler;
+		bashGuard({
+			on(event, callback) {
+				if (event === "tool_call") handler = callback;
+			},
+		});
+		const results = [];
+		for (const command of JSON.parse(process.argv[1])) {
+			results.push((await handler(
+				{ type: "tool_call", toolCallId: command, toolName: "bash", input: { command } },
+				{ hasUI: false },
+			)) ?? null);
+		}
+		process.stdout.write(JSON.stringify(results));
+	`;
+	const result = spawnSync(
+		process.execPath,
+		["--import", "tsx", "--input-type=module", "-e", script, JSON.stringify(commands)],
+		{
+			encoding: "utf8",
+			env: { ...process.env, PI_SUBAGENT_DEPTH: "1" },
+		},
+	);
+
+	assert.equal(result.status, 0, result.stderr);
+	const results = JSON.parse(result.stdout) as Array<{ block?: boolean; reason?: string } | null>;
+	for (let index = 0; index < blockedCases.length; index++) {
+		const [command, expectedReason] = blockedCases[index];
+		assert.equal(results[index]?.block, true, command);
+		assert.match(results[index]?.reason ?? "", expectedReason, command);
+	}
+	for (let index = 0; index < allowedCommands.length; index++) {
+		assert.equal(results[blockedCases.length + index], null, allowedCommands[index]);
 	}
 });
 

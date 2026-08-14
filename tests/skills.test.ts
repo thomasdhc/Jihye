@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { DefaultPackageManager } from "@earendil-works/pi-coding-agent";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS_ROOT = join(REPO_ROOT, "skills");
@@ -26,6 +27,23 @@ function assertTerms(content: string, terms: RegExp[], subject: string): void {
 	for (const term of terms) assert.match(content, term, `${subject}: ${term}`);
 }
 
+test("skill documentation is excluded from package skill discovery", async () => {
+	const packageJson = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8"));
+	assert.ok(existsSync(join(SKILLS_ROOT, "README.md")));
+	assert.deepEqual(packageJson.pi?.skills, ["./skills", "!skills/README.md"]);
+
+	const packageManager = new DefaultPackageManager({
+		cwd: REPO_ROOT,
+		agentDir: join(REPO_ROOT, "tmp", "test-agent"),
+		settingsManager: {} as never,
+	});
+	const resources = await packageManager.resolveExtensionSources([REPO_ROOT], { temporary: true });
+	assert.deepEqual(
+		resources.skills.map(({ path }) => relative(SKILLS_ROOT, path)).sort(),
+		skillFiles().map((path) => relative(SKILLS_ROOT, path)).sort(),
+	);
+});
+
 test("skills have valid identifying frontmatter", () => {
 	const names: string[] = [];
 	for (const path of skillFiles()) {
@@ -37,7 +55,6 @@ test("skills have valid identifying frontmatter", () => {
 		names.push(frontmatter.match(/^name: ([a-z0-9-]+)$/m)?.[1] ?? "");
 	}
 	assert.deepEqual(names.sort(), [
-		"clipboard-command",
 		"coordinate",
 		"examen",
 		"review-guidance",
@@ -45,23 +62,6 @@ test("skills have valid identifying frontmatter", () => {
 		"todo",
 		"vicara",
 	]);
-});
-
-test("clipboard-command preserves literal, safe, and visible handoff semantics", () => {
-	const content = readFileSync(join(SKILLS_ROOT, "clipboard-command", "SKILL.md"), "utf8");
-	assert.deepEqual(headings(content), ["Prepare the Command", "Copy Without Executing", "Return the Command"]);
-	assertTerms(content, [
-		/approval gate/i,
-		/\bSafety\b/,
-		/one paste-ready command on one line/i,
-		/copy only the command payload/i,
-		/never execute it/i,
-		/quoted heredoc/i,
-		/never install/i,
-		/never.*read the existing clipboard/i,
-		/exact copied payload/i,
-		/fenced code block/i,
-	], "clipboard command semantics");
 });
 
 test("coordinate preserves its execution-skeleton algorithm", () => {
@@ -88,6 +88,7 @@ test("examen preserves introduced-defect and submission semantics", () => {
 	}
 	assertTerms(content, [
 		/\bFidelity\b/,
+		/\bPrinciples\b/,
 		/\bEntrypoint\b/,
 		/\bSafety\b/,
 		/introduced regression/i,

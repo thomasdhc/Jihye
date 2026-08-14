@@ -23,7 +23,6 @@ const POLICY_FILES = [
 	"JIHYE.md",
 	"JIHYE_strict.md",
 	"WORKSPACE.md",
-	"DEVELOPMENT.md",
 	"GIT.md",
 	"README.md",
 	"templates/REPO.md",
@@ -60,7 +59,7 @@ test("the two-link installation resolves the complete policy topology", () => {
 		assert.equal(realpathSync(workspaceContext), join(PERSONAS_ROOT, "WORKSPACE.md"));
 
 		const policyRoot = dirname(realpathSync(workspaceContext));
-		for (const path of ["DEVELOPMENT.md", "GIT.md"]) {
+		for (const path of ["GIT.md"]) {
 			assert.ok(existsSync(join(policyRoot, path)), path);
 		}
 	} finally {
@@ -72,20 +71,23 @@ test("personas include the global and workspace guidance chain", () => {
 	for (const path of POLICY_FILES) assert.ok(existsSync(join(PERSONAS_ROOT, path)), path);
 
 	const workspace = readPersona("WORKSPACE.md");
-	for (const path of ["REPO.md", "USERNAME.md", "DEVELOPMENT.md", "GIT.md"]) {
+	for (const path of ["REPO.md", "USERNAME.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
 	assertTerms(workspace, [
 		/jihye-setup/i,
-		/configuration(?:(?!personas_directory)[^\n])*workspace_directory/i,
-		/guidance(?:(?!workspace_directory)[^\n])*personas_directory/i,
-		/REPO\.md[\s\S]*source of truth/i,
-		/activation command/i,
-		/read gate/i,
+		/workspace_directory\/REPO\.md[^\n]*repositories[^\n]*environment activation[^\n]*worktree locations/i,
+		/workspace_directory\/USERNAME\.md[^\n]*branch[^\n]*agent commit command[^\n]*handing off a command/i,
+		/personas_directory\/GIT\.md[^\n]*before loading repository guidance/i,
+		/reusable repository index/i,
+		/project todo[^\n]*before planning or changing repository files/i,
 		/first tool call/i,
+		/nature of the action[^\n]*never its size or obviousness/i,
+		/repository guidance may add[^\n]*cannot replace workspace-owned/i,
+		/branch identity[^\n]*agent attribution[^\n]*approval[^\n]*publication safeguards/i,
+		/report a conflict and ask for resolution/i,
 	], "workspace guidance topology");
 	assert.doesNotMatch(workspace, /readlink|dirname/, "path resolution belongs to the jihye-setup extension");
-	assert.doesNotMatch(workspace, /planning repository code/, "the development gate covers every repository file, not only code");
 });
 
 test("guidance defines the canonical Jihye policy domains", () => {
@@ -93,11 +95,16 @@ test("guidance defines the canonical Jihye policy domains", () => {
 	assertTerms(guidance, [
 		/\*\*main-agent context\*\*\s+—/,
 		/\*\*Fidelity\*\*\s+—/,
+		/\*\*Principles\*\*\s+—/,
 		/\*\*Entrypoint\*\*\s+—/,
 		/\*\*Solution Architecture\*\*\s+—/,
+		/\*\*Validation\*\*\s+—/,
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
 		/downstream personas and skills[^\n]*exact capitalized term/i,
+		/## Changing the Base Persona/,
+		/JIHYE_strict\.md/,
+		/tests\/personas\.test\.ts/,
 	], "canonical Jihye vocabulary");
 });
 
@@ -115,11 +122,14 @@ test("strict persona is the base persona plus its approval header", () => {
 test("global personas preserve canonical domains, coordination gates, and parent ownership", () => {
 	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
 		const persona = readPersona(path);
-		assert.deepEqual(headings(persona), ["Fidelity", "Entrypoint", "Solution Architecture", "Context and Delegation", "Safety"], path);
+		assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Validation", "Context and Delegation", "Safety"], path);
 		assertTerms(persona, [
+			/\bFidelity\b/,
+			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
 			/alternatives and trade-offs/i,
-			/copy the exact paste-ready command to the local clipboard[^\n]*display the identical command/i,
-			/never copy protected data/i,
+			/narrowest relevant check/i,
+			/checks that could not run/i,
+			/never expose or commit secrets, credentials/i,
 			/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
 			/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
 			/coordinate.*skill/is,
@@ -136,24 +146,34 @@ test("global personas preserve canonical domains, coordination gates, and parent
 	}
 });
 
+test("guidance never passes a policy domain", () => {
+	const skillRoot = join(REPO_ROOT, "skills");
+	const files = [
+		GUIDANCE_PATH,
+		...POLICY_FILES.map((path) => join(PERSONAS_ROOT, path)),
+		...readdirSync(join(PERSONAS_ROOT, "subagents")).map((entry) => join(PERSONAS_ROOT, "subagents", entry)),
+		...readdirSync(skillRoot).map((entry) => join(skillRoot, entry, "SKILL.md")),
+	].filter((path) => existsSync(path) && path.endsWith(".md"));
+
+	for (const path of files) {
+		assert.doesNotMatch(
+			readFileSync(path, "utf8"),
+			/\bPass(?:es|ing)?\s+(?:Fidelity|Principles|Entrypoint|Solution Architecture|Validation|Context and Delegation|Safety)\b/,
+			`${path}: apply a domain, pass a gate`,
+		);
+	}
+});
+
 test("downstream personas invoke canonical main-agent domains", () => {
-	assertTerms(readPersona("WORKSPACE.md"), [
-		/main-agent context/i,
-		/\bFidelity\b/,
-		/\bEntrypoint\b/,
-		/\bSolution Architecture\b/,
-		/\bContext and Delegation\b/,
-		/\bSafety\b/,
-	], "workspace policy domains");
-	assertTerms(readPersona("DEVELOPMENT.md"), [/\bEntrypoint\b/, /\bSolution Architecture\b/], "development policy domains");
-	assertTerms(readPersona("GIT.md"), [/\bFidelity\b/, /\bEntrypoint\b/], "Git policy domains");
-	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bSolution Architecture\b/], "engineer policy domains");
+	assertTerms(readPersona("GIT.md"), [/\bValidation\b/], "Git policy domains");
+	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {
 	const git = readPersona("GIT.md");
 	assert.deepEqual(headings(git), ["Safety and Branching", "Staging, Commits, and Pushing", "Commit Messages", "Merge Requests and Pull Requests"]);
 	assertTerms(git, [
+		/approval gate/i,
 		/delivery boundar/i,
 		/implementation, tests, and supporting documentation/i,
 		/Conventional Commit/i,
@@ -163,7 +183,6 @@ test("git guidance preserves delivery and pull-request invariants", () => {
 		/never push/i,
 		/cleanup candidate/i,
 		/never infer staleness from age alone/i,
-		/2\.82\.1/,
 	], "git workflow invariants");
 	assert.match(git, /## Summary[\s\S]*## Why/, "default request description keeps only its semantic sections");
 });
