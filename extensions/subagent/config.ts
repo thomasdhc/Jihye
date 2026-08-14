@@ -50,6 +50,14 @@ export function loadConfig(configPath: string = CONFIG_PATH): ExtensionConfig {
 		throw new Error(`Invalid subagent config at ${configPath}: expected a JSON object`);
 	}
 	const config = parsed as ExtensionConfig;
+	if (
+		config.maxConcurrency !== undefined
+		&& (!Number.isSafeInteger(config.maxConcurrency) || config.maxConcurrency <= 0)
+	) {
+		throw new Error(
+			`Invalid subagent config at ${configPath}: maxConcurrency must be a positive integer within JavaScript's safe range`,
+		);
+	}
 	if (config.enableAlternateProviders !== undefined && typeof config.enableAlternateProviders !== "boolean") {
 		throw new Error(`Invalid subagent config at ${configPath}: enableAlternateProviders must be a boolean`);
 	}
