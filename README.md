@@ -63,6 +63,10 @@ The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `j
 
 Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard` or `strict`, and the two local environment files should be listed. See the [personas guide](personas/README.md) for strict-profile setup and local-configuration templates.
 
+## Utility Scripts
+
+- [Pi session metric plots](scripts/pi-session-metrics/) regenerate content-free context-epoch, daily aggregate, and cache-adjusted token-distribution graphs from derived usage CSVs.
+
 ## Development
 
 Requires a Node.js version that supports type stripping.

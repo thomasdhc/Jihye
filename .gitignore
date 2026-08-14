@@ -1,8 +1,10 @@
 # npm dependencies
 **/node_modules/
 
-# Python virtual envs
+# Python artifacts
 **/.venv/
+**/__pycache__/
+*.py[cod]
 
 # Real API keys
 **/auth.json
