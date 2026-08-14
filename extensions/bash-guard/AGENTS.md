@@ -27,7 +27,11 @@ This asymmetry is intentional. A subagent is more restricted in what it can dest
 
 ### Policy versus detector
 
-Most rules belong in `policy.ts` as declarative rows. A rule stays as logic in `analysis.ts` only when it is a pattern over the token stream rather than a lookup on the command name:
+Most rules belong in `policy.ts` as declarative rows. A rule stays as logic in `analysis.ts` only when it is a pattern over the token stream rather than a lookup on the command name.
+
+Treat `HEADLESS_GIT_BLOCKED` as the single Git headless policy table. Keep each row's raw pattern and parsed command form aligned, and block when either form matches. Preserve raw wrapper and quoted-invocation coverage while parsed matching handles executable Git tokens, Git global options, and static nested shell commands. Add every future Git headless rule to `HEADLESS_GIT_BLOCKED`; never add one to `HEADLESS_BLOCKED` or analyzer control flow.
+
+Keep these token-stream patterns in `analysis.ts`:
 
 - `rm`/`rmdir`/`unlink` — a base reason plus accumulated sub-reasons for `-r`, `-f`, and glob expansion.
 - `diskutil` — a base reason plus an additive reason for `eraseDisk`/`eraseVolume`.
