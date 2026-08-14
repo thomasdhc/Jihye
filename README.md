@@ -47,7 +47,7 @@ pi install .
 
 A local-path installation loads changes directly from the checkout; run `/reload` after editing. Run `npm install` in the checkout before loading the package.
 
-## Configure Guidance
+## Configure Persona
 
 Pi packages do not install context files automatically, so configure two symlinks after installing Jihye. The commands below expect both destinations not to exist; inspect and remove obsolete symlinks first, and never overwrite a regular context file.
 

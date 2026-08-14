@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { DefaultPackageManager } from "@earendil-works/pi-coding-agent";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS_ROOT = join(REPO_ROOT, "skills");
@@ -26,10 +27,21 @@ function assertTerms(content: string, terms: RegExp[], subject: string): void {
 	for (const term of terms) assert.match(content, term, `${subject}: ${term}`);
 }
 
-test("skill documentation is excluded from package skill discovery", () => {
+test("skill documentation is excluded from package skill discovery", async () => {
 	const packageJson = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8"));
 	assert.ok(existsSync(join(SKILLS_ROOT, "README.md")));
-	assert.deepEqual(packageJson.pi?.skills, ["./skills", "!./skills/README.md"]);
+	assert.deepEqual(packageJson.pi?.skills, ["./skills", "!skills/README.md"]);
+
+	const packageManager = new DefaultPackageManager({
+		cwd: REPO_ROOT,
+		agentDir: join(REPO_ROOT, "tmp", "test-agent"),
+		settingsManager: {} as never,
+	});
+	const resources = await packageManager.resolveExtensionSources([REPO_ROOT], { temporary: true });
+	assert.deepEqual(
+		resources.skills.map(({ path }) => relative(SKILLS_ROOT, path)).sort(),
+		skillFiles().map((path) => relative(SKILLS_ROOT, path)).sort(),
+	);
 });
 
 test("skills have valid identifying frontmatter", () => {
