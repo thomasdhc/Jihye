@@ -26,6 +26,12 @@ function assertTerms(content: string, terms: RegExp[], subject: string): void {
 	for (const term of terms) assert.match(content, term, `${subject}: ${term}`);
 }
 
+test("skill documentation is excluded from package skill discovery", () => {
+	const packageJson = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8"));
+	assert.ok(existsSync(join(SKILLS_ROOT, "README.md")));
+	assert.deepEqual(packageJson.pi?.skills, ["./skills", "!./skills/README.md"]);
+});
+
 test("skills have valid identifying frontmatter", () => {
 	const names: string[] = [];
 	for (const path of skillFiles()) {

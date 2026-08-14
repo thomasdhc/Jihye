@@ -29,7 +29,8 @@
       "./extensions"
     ],
     "skills": [
-      "./skills"
+      "./skills",
+      "!./skills/README.md"
     ]
   },
   "devDependencies": {
