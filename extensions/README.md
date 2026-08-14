@@ -9,7 +9,6 @@ Jihye packages focused Pi extensions that register tools and commands, enforce s
 | [`bash-guard`](bash-guard/) | Interactive prompt for destructive commands and Git publication boundaries; headless hard-block in subagents. |
 | [`custom-header`](custom-header.ts) | Custom Pi startup header. |
 | [`jihye-setup`](jihye-setup/) | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts. |
-| [`project-info`](project-info.ts) | Footer status showing the current Git project and branch. |
 | [`session-observability`](session-observability/) | Read-only active-branch report for model, tool, usage, and subagent activity. |
 | [`subagent`](subagent/) | Run Pi subagents as tools with portable bundled definitions and per-user overrides. |
 | [`terminal-notify`](terminal-notify.ts) | Send a native desktop alert when Pi is ready for input. |
