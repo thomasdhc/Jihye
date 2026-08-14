@@ -1,3 +1,5 @@
+import type { JihyeRuntimeMetadata } from "../jihye-setup/provenance.ts";
+
 export interface UsageSummary {
 	input: number;
 	output: number;
@@ -35,6 +37,36 @@ export interface SubagentSummary {
 	usage: UsageSummary;
 }
 
+export interface JihyeTurnObservation {
+	entryId: string;
+	runtime?: JihyeRuntimeMetadata;
+	provider: string;
+	model: string;
+	toolCalls: number;
+	toolResults: number;
+	toolErrors: number;
+	usage: {
+		assistant: UsageSummary;
+		tools: UsageSummary;
+		observedTotal: UsageSummary;
+	};
+}
+
+export interface JihyeRuntimeSummary {
+	runtime?: JihyeRuntimeMetadata;
+	userPrompts: number;
+	assistantTurns: number;
+	toolCalls: number;
+	toolResults: number;
+	toolErrors: number;
+	usage: {
+		assistant: UsageSummary;
+		tools: UsageSummary;
+		summaries: UsageSummary;
+		observedTotal: UsageSummary;
+	};
+}
+
 export type OperationalSignalKind =
 	| "tool-error"
 	| "missing-tool-result"
@@ -50,7 +82,7 @@ export interface OperationalSignal {
 }
 
 export interface SessionObservation {
-	schemaVersion: 1;
+	schemaVersion: 2;
 	session: {
 		id?: string;
 		name?: string;
@@ -70,6 +102,8 @@ export interface SessionObservation {
 			observedTotal: UsageSummary;
 		};
 	};
+	runtimes: JihyeRuntimeSummary[];
+	turns: JihyeTurnObservation[];
 	models: ModelUsageSummary[];
 	tools: ToolSummary[];
 	subagents: SubagentSummary[];
@@ -77,6 +111,7 @@ export interface SessionObservation {
 	signals: OperationalSignal[];
 	coverage: {
 		branch: "active";
+		runtimeAttribution: "jihye-runtime-markers";
 		parentToolTiming: "unavailable";
 		subagentTrace: "final-results-only";
 	};

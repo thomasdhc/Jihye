@@ -30,7 +30,7 @@ test("analyzes models, tools, usage, and recursive subagents on one branch", () 
 		sessionName: "Fixture",
 	});
 
-	assert.equal(report.schemaVersion, 1);
+	assert.equal(report.schemaVersion, 2);
 	assert.deepEqual(
 		{
 			prompts: report.session.userPrompts,
@@ -47,6 +47,29 @@ test("analyzes models, tools, usage, and recursive subagents on one branch", () 
 	assert.equal(report.session.usage.summaries.totalTokens, 12);
 	assert.equal(report.session.usage.observedTotal.totalTokens, 352);
 	closeEnough(report.session.usage.observedTotal.cost, 0.081);
+
+	assert.deepEqual(report.runtimes.map((runtime) => ({
+		version: runtime.runtime?.jihyeVersion,
+		profile: runtime.runtime?.profile,
+		turns: runtime.assistantTurns,
+		toolCalls: runtime.toolCalls,
+		toolErrors: runtime.toolErrors,
+		tokens: runtime.usage.observedTotal.totalTokens,
+	})), [
+		{ version: "0.2.0", profile: "standard", turns: 2, toolCalls: 5, toolErrors: 1, tokens: 317 },
+		{ version: "0.2.1", profile: "standard", turns: 1, toolCalls: 0, toolErrors: 0, tokens: 35 },
+	]);
+	assert.deepEqual(report.turns.map((turn) => ({
+		entryId: turn.entryId,
+		version: turn.runtime?.jihyeVersion,
+		toolCalls: turn.toolCalls,
+		toolResults: turn.toolResults,
+		toolErrors: turn.toolErrors,
+	})), [
+		{ entryId: "a1", version: "0.2.0", toolCalls: 3, toolResults: 3, toolErrors: 1 },
+		{ entryId: "a2", version: "0.2.0", toolCalls: 2, toolResults: 2, toolErrors: 0 },
+		{ entryId: "a3", version: "0.2.1", toolCalls: 0, toolResults: 0, toolErrors: 0 },
+	]);
 
 	assert.deepEqual(report.models.map(({ provider, model, turns }) => ({ provider, model, turns })), [
 		{ provider: "openai-codex", model: "gpt-test", turns: 3 },
@@ -115,6 +138,36 @@ test("keeps prompts, arguments, tasks, and outputs out of normalized observation
 	}
 });
 
+test("keeps turns before the first runtime marker unattributed", () => {
+	const entries = fixtureEntries().filter((entry) => entry.type !== "custom");
+	const report = analyzeSession(entries);
+
+	assert.equal(report.runtimes.length, 1);
+	assert.equal(report.runtimes[0]?.runtime, undefined);
+	assert.ok(report.turns.every((turn) => turn.runtime === undefined));
+});
+
+test("ignores malformed runtime markers and accepts additive future marker schemas", () => {
+	const entries = fixtureEntries();
+	const firstMarker = entries.findIndex((entry) => entry.type === "custom");
+	entries.splice(firstMarker + 1, 0, {
+		type: "custom",
+		id: "malformed-runtime",
+		parentId: "j1",
+		timestamp: "2026-01-01T00:00:00.750Z",
+		customType: "jihye-runtime",
+		data: { schemaVersion: 1 },
+	} as unknown as SessionEntry);
+	const futureMarker = entries.find((entry) => entry.type === "custom" && entry.id === "j2");
+	if (futureMarker?.type === "custom") {
+		futureMarker.data = { ...(futureMarker.data as Record<string, unknown>), schemaVersion: 2 };
+	}
+
+	const report = analyzeSession(entries);
+	assert.deepEqual(report.turns.map((turn) => turn.runtime?.jihyeVersion), ["0.2.0", "0.2.0", "0.2.1"]);
+	assert.equal(report.turns[2]?.runtime?.schemaVersion, 2);
+});
+
 test("reports missing and orphan tool results without guessing at intent", () => {
 	const entries = [
 		{
@@ -161,9 +214,12 @@ test("formats a concise report with evidence labels and coverage limits", () => 
 	assert.match(text, /1 prompt · 3 assistant turns · 5 tool calls/);
 	assert.match(text, /1 compaction · 0 model changes · 0 thinking-level changes/);
 	assert.match(text, /352 tokens · \$0\.0810 observed/);
+	assert.match(text, /Jihye 0\.2\.0 · Pi 0\.83\.0 · standard · 2 assistant turns/);
+	assert.match(text, /Jihye 0\.2\.1 · Pi 0\.83\.0 · standard · 1 assistant turn/);
 	assert.match(text, /Subagents · max depth 2/);
 	assert.match(text, /FACT · 1 tool error · bash \(bash-1\)/);
 	assert.match(text, /HEURISTIC · 1 repeated after error · bash \(bash-1, bash-2\)/);
+	assert.match(text, /runtime attribution from Jihye markers/);
 	assert.match(text, /parent tool timing unavailable/);
 });
 

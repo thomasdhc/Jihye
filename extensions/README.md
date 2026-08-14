@@ -100,7 +100,7 @@ Package-local overrides in untracked `.pi/agents/` replace the portable bundled 
 
 ### `jihye-setup` facts
 
-The `jihye-setup` extension resolves the installed package root, its `personas/` directory, the active global persona, and the nearest workspace root, then appends them to the system prompt each turn. Guidance files can therefore name `workspace_directory` and `personas_directory` without asking an agent to run `readlink` and `dirname` first. A session-start card repeats the summary in the terminal only; it never enters the conversation.
+The `jihye-setup` extension resolves the installed package root, its `personas/` directory, the active global persona, and the nearest workspace root, then appends those paths to the system prompt each turn. Guidance files can therefore name `workspace_directory` and `personas_directory` without asking an agent to run `readlink` and `dirname` first. The package version stays out of the prompt. Instead, setup records an invisible `jihye-runtime` session entry when the Jihye version, persona profile, or Pi version changes, and a session-start card repeats the current summary in the terminal only. Neither entry enters the conversation.
 
 ```text
 /jihye-setup            # resolved paths, guidance health, legacy leftovers
@@ -130,6 +130,8 @@ The extension reads the repository-checkout and isolated-worktree roots from wor
 Use `/jihye-observe` in an interactive session to inspect the current active branch. The command waits for Pi to become idle, then opens a centered, keyboard-scrollable overlay showing assistant and nested-tool usage, model turns, tool outcomes, recursive subagent activity, and operational signals such as errors, truncation, missing results, and repeated calls after an error. Press Escape or Ctrl+C to close it without reflowing the underlying session.
 
 The report is computed in memory from Pi's existing session entries. It does not add a message or custom entry, write another file, or send anything to the model. Normalized observations exclude prompts, tool arguments, subagent task briefs, and outputs. Facts and heuristics remain labeled separately; an unused tool is not classified as a miss.
+
+Runtime markers written by `jihye-setup` associate each subsequent assistant turn and its tool results with the active Jihye version, persona profile, and Pi version. The report keeps per-turn normalized records and summarizes every runtime represented on the active branch, so a session that spans an upgrade remains segmented. Turns created before the first marker remain explicitly unattributed.
 
 Pi persists normal interactive sessions continuously, so the command can be used at any point and does not need to run before exit. Parent tool timing is not reconstructable from current session entries, and subagent traces contain final returned results rather than durable partial child activity.
 

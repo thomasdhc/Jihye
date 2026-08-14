@@ -26,6 +26,12 @@ function formatUsage(usage: UsageSummary): string {
 	return `${formatTokens(usage.totalTokens)} tokens · ${formatCost(usage.cost)}`;
 }
 
+function runtimeLabel(runtime: SessionObservation["runtimes"][number]["runtime"]): string {
+	return runtime
+		? `Jihye ${runtime.jihyeVersion} · Pi ${runtime.piVersion} · ${runtime.profile}`
+		: "Unknown Jihye runtime";
+}
+
 function signalLabel(signal: OperationalSignal): string {
 	switch (signal.kind) {
 		case "tool-error": return "tool error";
@@ -74,6 +80,15 @@ export function formatObservationReport(report: SessionObservation): string {
 			+ `(assistant ${formatTokens(report.session.usage.assistant.totalTokens)} · tools ${formatTokens(report.session.usage.tools.totalTokens)} · summaries ${formatTokens(report.session.usage.summaries.totalTokens)})`,
 	);
 
+	lines.push("", "Jihye runtimes");
+	if (report.runtimes.length === 0) lines.push("  None observed");
+	for (const runtime of report.runtimes) {
+		lines.push(
+			`  ${runtimeLabel(runtime.runtime)} · ${plural(runtime.assistantTurns, "assistant turn")} · `
+			+ `${plural(runtime.toolCalls, "tool call")} · ${runtime.toolErrors} errors · ${formatUsage(runtime.usage.observedTotal)}`,
+		);
+	}
+
 	lines.push("", "Models");
 	if (report.models.length === 0) lines.push("  None observed");
 	for (const model of report.models) {
@@ -111,7 +126,7 @@ export function formatObservationReport(report: SessionObservation): string {
 	lines.push(
 		"",
 		"Coverage",
-		"  Active branch only · parent tool timing unavailable · subagent traces contain final results only",
+		"  Active branch only · runtime attribution from Jihye markers · parent tool timing unavailable · subagent traces contain final results only",
 	);
 	return lines.join("\n");
 }
