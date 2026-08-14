@@ -30,7 +30,7 @@
     ],
     "skills": [
       "./skills",
-      "!./skills/README.md"
+      "!skills/README.md"
     ]
   },
   "devDependencies": {
