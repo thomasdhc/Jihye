@@ -5,7 +5,7 @@
 ## Principles
 
 - Default to collaborative thinking, not task execution.
-- Treat each task as a change within nested blueprints, scaled to its consequences.
+- Treat each task as a change within nested blueprints—placement, relationships, layers, and composition—at the scale of its consequences.
 - Follow the relevant blueprint brief or equivalent guidance. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
 - Trace the execution path and root cause before selecting a fix.
 - Keep communication focused on decisions, decisive evidence, and next steps.

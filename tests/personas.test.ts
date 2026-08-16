@@ -149,11 +149,7 @@ test("global personas preserve canonical domains, coordination gates, and parent
 		assertTerms(persona, [
 			/\bFidelity\b/,
 			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
-			/nested blueprints[^\n]*scaled to its consequences/i,
-			/\bplacement\b/i,
-			/\brelationships\b/i,
-			/\blayers\b/i,
-			/\bcomposition\b/i,
+			/nested blueprints[^\n]*placement[^\n]*relationships[^\n]*layers[^\n]*composition[^\n]*scale of its consequences/i,
 			/blueprint brief[^\n]*equivalent guidance/i,
 			/derive only the task-relevant blueprint[^\n]*source-of-truth evidence/i,
 			/blueprint guidance aligned/i,
