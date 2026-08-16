@@ -144,12 +144,20 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/\bFidelity\b/,
 			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
 			/nested blueprints/i,
+			/scale blueprint analysis[^\n]*consequences/i,
 			/\bplacement\b/i,
 			/\brelationships\b/i,
 			/\blayers\b/i,
 			/\bcomposition\b/i,
-			/blueprint brief[^\n]*governing repository guidance/i,
+			/blueprint brief[^\n]*equivalent repository-owned architecture guidance/i,
+			/already loaded/i,
+			/directly referenced by governing repository guidance/i,
+			/do not search unrelated documentation/i,
+			/absent[^\n]*stale[^\n]*contradictory/i,
+			/minimum task-relevant blueprint/i,
 			/source-of-truth code[^\n]*configuration[^\n]*tests[^\n]*analogous features/i,
+			/consequential documentation gap/i,
+			/creating or expanding guidance/i,
 			/alternatives and trade-offs/i,
 			/targeted check[^\n]*changed behavior/i,
 			/every validation command[^\n]*required by repository guidance/i,
@@ -168,6 +176,10 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/validation/i,
 			/final synthesis/i,
 		], path);
+		const explicitGuidance = persona.search(/blueprint brief/i);
+		const equivalentGuidance = persona.search(/equivalent repository-owned architecture guidance/i);
+		const evidenceFallback = persona.search(/derive only the minimum task-relevant blueprint/i);
+		assert.ok(explicitGuidance >= 0 && equivalentGuidance > explicitGuidance && evidenceFallback > equivalentGuidance, `${path}: blueprint guidance precedes evidence fallback`);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
 	}
 });
@@ -197,7 +209,8 @@ test("downstream personas invoke canonical main-agent domains", () => {
 		/\bPrinciples\b/,
 		/\bSolution Architecture\b/,
 		/task-relevant blueprint/i,
-		/blueprint brief/i,
+		/blueprint brief[^\n]*equivalent repository-owned architecture guidance/i,
+		/consequential documentation gap/i,
 		/\bplacement\b/i,
 		/\brelationships\b/i,
 		/\blayers\b/i,

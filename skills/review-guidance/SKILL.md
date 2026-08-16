@@ -21,14 +21,14 @@ Require an explicit guidance file, source file, directory, or work area. Ask whe
 
 Do not expand into unrelated Markdown, READMEs, documentation trees, or every discoverable instruction file.
 
-Respect the instruction boundary: repository guidance owns repository-specific commands, conventions, and blueprint briefs; root guidance owns the repository blueprint, while scoped guidance adds detail or states its delta. Workspace or user guidance owns broader safeguards and environment. Report conflicts rather than silently choosing an authority.
+Respect the instruction boundary: repository guidance owns repository-specific commands, conventions, and any blueprint brief; when present, root guidance owns the repository blueprint, while scoped guidance adds detail or states its delta. Equivalent repository-owned architecture guidance may serve the same role without using Jihye's terminology. Workspace or user guidance owns broader safeguards and environment. Report conflicts rather than silently choosing an authority.
 
 ## Inspect the Subject
 
 Read the subject completely and inspect only enough scoped implementation, commands, and reference guidance to evaluate:
 
 - **Accuracy and staleness** — paths, commands, blueprint briefs, workflows, or tool behavior no longer match the scoped implementation.
-- **Blueprint coverage** — the subject omits stable placement, relationships, layers, composition rules, or canonical evidence for its scope, or repeats the enclosing blueprint instead of adding detail or stating a delta.
+- **Blueprint coverage** — an existing blueprint brief or equivalent repository-owned architecture guidance omits stable placement, relationships, layers, composition rules, or canonical evidence for the claims it makes, conflicts with implementation evidence, or repeats the enclosing blueprint instead of adding detail or stating a delta.
 - **Scope and focus** — instructions are outside the selected scope, or their maintenance and context cost clearly exceeds practical value. Length alone is not a defect.
 - **Conflicts and redundancy** — instructions contradict parent guidance or repeat it without a scope-specific reason.
 - **Missing durable guidance** — repository or session evidence shows an omitted recurring decision or constraint is likely to cause future mistakes.
