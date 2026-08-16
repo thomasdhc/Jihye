@@ -199,12 +199,7 @@ test("downstream personas invoke canonical main-agent domains", () => {
 		/\bFidelity\b/,
 		/\bPrinciples\b/,
 		/\bSolution Architecture\b/,
-		/task-relevant blueprint/i,
-		/blueprint guidance/i,
-		/\bplacement\b/i,
-		/\brelationships\b/i,
-		/\blayers\b/i,
-		/\bcomposition\b/i,
+		/blueprint guidance updates[^\n]*parent/i,
 	], "engineer policy domains");
 });
 

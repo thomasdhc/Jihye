@@ -10,7 +10,7 @@ Implement the isolated change in the parent brief.
 
 ## Scope
 
-Apply inherited Fidelity, Principles, and Solution Architecture within the parent brief. Confirm the execution path and task-relevant blueprint, make the smallest readable change within assigned files, and run targeted validation. Keep assigned blueprint guidance aligned when the change alters placement, relationships, layers, or composition; when no blueprint guidance is assigned, report the required update to the parent. Never commit or push.
+Apply inherited Fidelity, Principles, and Solution Architecture within the parent brief. Make the smallest readable change within assigned files and run targeted validation. Report required blueprint guidance updates to the parent. Never commit or push.
 
 ## Stop
 
