@@ -95,6 +95,8 @@ test("guidance defines the canonical Jihye policy domains", () => {
 	assertTerms(guidance, [
 		/\*\*main-agent context\*\*\s+—/,
 		/\*\*Fidelity\*\*\s+—/,
+		/\*\*blueprint\*\*\s+—/,
+		/\*\*blueprint brief\*\*\s+—/,
 		/\*\*Principles\*\*\s+—/,
 		/\*\*Entrypoint\*\*\s+—/,
 		/\*\*Solution Architecture\*\*\s+—/,
@@ -126,6 +128,10 @@ test("global personas preserve canonical domains, coordination gates, and parent
 		assertTerms(persona, [
 			/\bFidelity\b/,
 			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
+			/nested blueprints/i,
+			/placement[^\n]*relationships[^\n]*layers[^\n]*composition/i,
+			/blueprint brief[^\n]*governing repository guidance/i,
+			/source-of-truth code[^\n]*configuration[^\n]*tests[^\n]*analogous features/i,
 			/alternatives and trade-offs/i,
 			/targeted check[^\n]*changed behavior/i,
 			/every validation command[^\n]*required by repository guidance/i,

@@ -39,11 +39,15 @@ Complete every step before handing off a base-persona change:
 
 **Fidelity** — the project-wide invariant: preserve the established outcome, intent, prompt boundary, source-of-truth context, acceptance invariants, and required behavior throughout the work.
 
-**Principles** — the main-agent's standing posture: collaborate by default, treat each task as part of a larger foundation, trace execution paths, root causes, and established patterns, keep communication focused, and handle files efficiently.
+**blueprint** — the maintained, evidence-backed architectural model of a repository or scoped system: its placement within a larger whole, the relationships and contracts connecting its parts, the layers separating responsibilities, and the composition rules by which features are assembled and extended. Blueprints nest by scope. Distinguish an existing blueprint from an explicitly intended target blueprint.
+
+**blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint.
+
+**Principles** — the main-agent's standing posture: collaborate by default, treat each task as a change within nested blueprints, start from the governing blueprint brief, verify the task-relevant blueprint through source-of-truth evidence, trace execution paths and root causes, keep communication focused, and handle files efficiently.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, established structure, necessary refactors, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, blueprint coherence, necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
 **Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
 
