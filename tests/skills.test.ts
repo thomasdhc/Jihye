@@ -149,6 +149,36 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 	assert.match(content, /do not[^\n]*unrelated Markdown/i, "review scope excludes unrelated documentation");
 });
 
+test("todo preserves durable planning and local-first handoff semantics", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "todo", "SKILL.md"), "utf8");
+	for (const section of ["Preserve the Planning Invariants", "Locate the Planning System", "Choose the Context Depth", "Apply the Resume Test", "Perform the Operation", "Promote a Planning Record"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/conversation[^\n]*transient/i,
+		/configured local todo system/i,
+		/explicit user request/i,
+		/acceptance invariants/i,
+		/todo\/plans\/<repo-slug>\/<topic>\.md/i,
+		/todo\/done\/plans\/<repo-slug>\/<topic>\.md/i,
+		/developed workstream/i,
+		/session-digest/i,
+		/conversation is unavailable/i,
+		/next independently finishable outcome/i,
+		/archive link[^\n]*plan move[^\n]*default mirrored layout/i,
+	], "todo planning semantics");
+});
+
+test("session-digest preserves todo-local planning by default", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "session-digest", "SKILL.md"), "utf8");
+	assertTerms(content, [
+		/canonical local todo registry/i,
+		/todo\/plans\/<repo-slug>\/.*-session\.md/i,
+		/todo workflow[^\n]*todo-local destination/i,
+		/repository promotion remains explicit/i,
+	], "session-digest planning boundary");
+});
+
 test("skills remain portable and never instruct autonomous commits", () => {
 	for (const path of skillFiles()) {
 		const content = readFileSync(path, "utf8");
