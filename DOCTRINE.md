@@ -1,24 +1,10 @@
-# Guidance Authoring
+# Jihye Development Doctrine
 
-How to write and revise the Markdown guidance distributed by Jihye: repository `AGENTS.md` files, personas, skills, and subagent definitions. Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This file is authoring guidance for contributors and maintaining agents; it is not runtime context and must not be loaded into sessions.
+## Purpose and Evolution
 
-## Writing Principles
+This doctrine shapes how Jihye, its personas, and its guidance system develop. It is the current source of truth for that work, not an immutable rulebook. Its purpose is improvement and consistency: evolve it deliberately when evidence reveals a better principle, vocabulary, or structure, and keep affected guidance and tests aligned.
 
-- Write for an LLM reader. Guidance is instruction, not documentation: prefer imperative sentences that prescribe behavior over prose that describes it.
-- State hard rules as imperatives ("load and follow", "never push", "do not"). Reserve "should" for design preferences that admit trade-offs.
-- Every line must either prescribe behavior or define a term. Cut lines that do neither.
-- Keep gates imperative. Advisory phrasing ("should refer to") weakens a gate into a suggestion; agents skip suggestions under pressure.
-- Echo glossary terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file. Do not paraphrase a glossary term where the term itself fits.
-- Keep configuration and environment-specific values out of reusable guidance. Local facts belong in workspace-owned files such as `REPO.md` and `USERNAME.md`.
-- Keep each file's scope singular: repository guidance defines the blueprint and local constraints for its governed tree, a persona defines identity and standing behavior, a skill defines one workflow, and a subagent definition defines one bounded role.
-
-## Vocabulary Rules
-
-- Use the glossary below as a controlled vocabulary. When a glossary term applies, use it; do not coin a synonym.
-- Where a term lists qualified kinds, use the qualified form ("approval gate", "delivery boundary"). Use the bare term only for the general concept.
-- Match the verb to the term's kind. Apply a domain; never pass one. Pass a gate you must satisfy, and apply a gate to the work you are evaluating. State an invariant as a condition that holds rather than a step to complete.
-- Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
-- Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
+Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This is maintainer context and must not be loaded into runtime sessions; express resulting behavior in its owning runtime guidance.
 
 ## Core Persona Standard
 
@@ -33,6 +19,28 @@ How to write and revise the Markdown guidance distributed by Jihye: repository `
 
 Before adding or expanding a statement, ask whether it is universal, conceptual, and irreducible. Route it to a more specific owner when any answer is no.
 
+## Guidance Architecture
+
+- Keep each file's scope singular: repository guidance defines the blueprint and local constraints for its governed tree, a persona defines identity and standing behavior, a skill defines one workflow, and a subagent definition defines one bounded role.
+- Keep configuration and environment-specific values out of reusable guidance. Local facts belong in workspace-owned files such as `REPO.md` and `USERNAME.md`.
+- Keep maintainer rationale here and runtime behavior in its owning guidance file.
+
+## Authoring Principles
+
+- Write for an LLM reader. Guidance is instruction, not documentation: prefer imperative sentences that prescribe behavior over prose that describes it.
+- State hard rules as imperatives ("load and follow", "never push", "do not"). Reserve "should" for design preferences that admit trade-offs.
+- Every line must either prescribe behavior or define a term. Cut lines that do neither.
+- Keep gates imperative. Advisory phrasing ("should refer to") weakens a gate into a suggestion; agents skip suggestions under pressure.
+- Echo glossary terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file. Do not paraphrase a glossary term where the term itself fits.
+
+## Language and Vocabulary
+
+- Use the glossary below as a controlled vocabulary. When a glossary term applies, use it; do not coin a synonym.
+- Where a term lists qualified kinds, use the qualified form ("approval gate", "delivery boundary"). Use the bare term only for the general concept.
+- Match the verb to the term's kind. Apply a domain; never pass one. Pass a gate you must satisfy, and apply a gate to the work you are evaluating. State an invariant as a condition that holds rather than a step to complete.
+- Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
+- Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
+
 ## Changing the Base Persona
 
 `JIHYE.md` is the canonical owner of universal runtime behavior. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
@@ -46,7 +54,7 @@ Complete every step before handing off a base-persona change:
 5. Refresh the `personas/README.md` layout row when a file's ownership changes.
 6. Bump the package version as the root `AGENTS.md` version rule directs.
 
-## Glossary
+## Policy Glossary
 
 **main-agent context** — the primary agent's loaded runtime context and working memory. It holds universal Jihye policy, source-of-truth task state, decisions, decisive evidence, and final synthesis; a subagent receives independently loaded policy and its bounded brief, not this context.
 
@@ -90,7 +98,7 @@ Complete every step before handing off a base-persona change:
 
 **ownership** — responsibility that stays with the main or calling agent and is never transferred to a subagent: source-of-truth context, conflict resolution, integration, validation, final synthesis, and every finding and verdict. Subagent output is input to verify, not authority.
 
-## Testing Guidance Files
+## Guidance Validation
 
-- Test structure and semantics, not phrasing: files exist, required sections are present, hard invariants hold (for example, the strict persona body matches the base persona plus its header).
-- Do not pin guidance prose word-for-word in tests. Wording changes with every revision; merge-request review is the write-protection gate for guidance wording.
+- Test structure and semantics, not phrasing: files exist, required sections are present, and hard invariants hold, such as the strict persona body matching the base persona plus its header.
+- Do not pin guidance prose word-for-word in tests. Wording changes with every revision; pull-request review is the write-protection gate for guidance wording.
