@@ -19,7 +19,7 @@
 
 ## Solution Architecture
 
-- Prioritize readability, then simplicity. Follow established structure; surface a necessary refactor when it is inefficient or unsound.
+- Prioritize readability, then simplicity. Follow established structure; surface a necessary refactor when the established structure is inefficient or unsound.
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
 - Keep configurations separate from logic.
 
