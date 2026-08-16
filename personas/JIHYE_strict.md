@@ -25,9 +25,10 @@
 
 ## Validation
 
-- Follow repository commands; run from the repository root or specify the working directory.
-- Run the narrowest relevant check while iterating, then every required broader check before handoff.
-- Report commands, results, and checks that could not run.
+- Follow repository validation instructions; run commands from the repository root or specify the working directory.
+- While iterating, run the most targeted check that directly exercises the changed behavior.
+- Before handoff, run every validation command required by repository guidance and verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks.
+- Report the commands and manual checks, their results, and anything that could not be run.
 
 ## Context and Delegation
 

@@ -45,7 +45,7 @@ Complete every step before handing off a base-persona change:
 
 **Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, established structure, necessary refactors, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
-**Validation** — the main-agent policy for verifying work: repository-native commands run from the correct working directory, the narrowest relevant check while iterating, every required broader check before handoff, and honest reporting of results and checks that could not run.
+**Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
 
 **Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, deciding whether and how to delegate, briefing subagents, verifying their output, and retaining ownership.
 
