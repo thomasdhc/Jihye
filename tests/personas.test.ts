@@ -90,11 +90,28 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.doesNotMatch(workspace, /readlink|dirname/, "path resolution belongs to the jihye-setup extension");
 });
 
+test("repository guidance supplies nested blueprint briefs", () => {
+	const guidancePaths = [
+		"AGENTS.md",
+		"extensions/bash-guard/AGENTS.md",
+		"extensions/subagent/AGENTS.md",
+		"extensions/widget/AGENTS.md",
+	];
+
+	for (const path of guidancePaths) {
+		const content = readFileSync(join(REPO_ROOT, path), "utf8");
+		assert.ok(headings(content).includes("Blueprint Brief"), path);
+		assert.match(content, /Canonical evidence:/i, path);
+	}
+});
+
 test("guidance defines the canonical Jihye policy domains", () => {
 	const guidance = readFileSync(GUIDANCE_PATH, "utf8");
 	assertTerms(guidance, [
 		/\*\*main-agent context\*\*\s+—/,
 		/\*\*Fidelity\*\*\s+—/,
+		/\*\*blueprint\*\*\s+—/,
+		/\*\*blueprint brief\*\*\s+—/,
 		/\*\*Principles\*\*\s+—/,
 		/\*\*Entrypoint\*\*\s+—/,
 		/\*\*Solution Architecture\*\*\s+—/,
@@ -102,6 +119,12 @@ test("guidance defines the canonical Jihye policy domains", () => {
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
 		/downstream personas and skills[^\n]*exact capitalized term/i,
+		/## Core Persona Standard/,
+		/constitutional layer/i,
+		/universal law/i,
+		/execution (?:methods|mechanics|procedures)/i,
+		/(?:interpretive space|execution discretion)/i,
+		/operational (?:procedures|details|mechanics)/i,
 		/## Changing the Base Persona/,
 		/JIHYE_strict\.md/,
 		/tests\/personas\.test\.ts/,
@@ -126,6 +149,10 @@ test("global personas preserve canonical domains, coordination gates, and parent
 		assertTerms(persona, [
 			/\bFidelity\b/,
 			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
+			/nested blueprints[^\n]*placement[^\n]*relationships[^\n]*layers[^\n]*composition[^\n]*scale of its consequences/i,
+			/blueprint brief[^\n]*equivalent guidance/i,
+			/derive only the task-relevant blueprint[^\n]*source-of-truth evidence/i,
+			/blueprint guidance aligned/i,
 			/alternatives and trade-offs/i,
 			/targeted check[^\n]*changed behavior/i,
 			/every validation command[^\n]*required by repository guidance/i,
@@ -168,7 +195,12 @@ test("guidance never passes a policy domain", () => {
 
 test("downstream personas invoke canonical main-agent domains", () => {
 	assertTerms(readPersona("GIT.md"), [/\bValidation\b/], "Git policy domains");
-	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
+	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [
+		/\bFidelity\b/,
+		/\bPrinciples\b/,
+		/\bSolution Architecture\b/,
+		/blueprint guidance updates[^\n]*parent/i,
+	], "engineer policy domains");
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {

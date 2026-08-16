@@ -22,7 +22,7 @@ Invoke a skill explicitly with `/skill:<name>` followed by any task arguments:
 ```text
 /skill:review-guidance extensions/widget
 /skill:review-guidance AGENTS.md
-/skill:review-guidance extensions/widget, focusing on stale architecture claims
+/skill:review-guidance extensions/widget, focusing on stale blueprint-brief claims
 ```
 
 Pi may also load a skill automatically when the request matches its frontmatter description. If a required skill is not visible, confirm that skills are enabled and run `/reload` after installing or updating Jihye.

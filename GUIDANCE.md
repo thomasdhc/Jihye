@@ -1,6 +1,6 @@
 # Guidance Authoring
 
-How to write and revise the Markdown guidance distributed by Jihye: personas, skills, and subagent definitions. Read this before editing any file under `personas/` or `skills/`. This file is authoring guidance for contributors and maintaining agents; it is not runtime context and must not be loaded into sessions.
+How to write and revise the Markdown guidance distributed by Jihye: repository `AGENTS.md` files, personas, skills, and subagent definitions. Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This file is authoring guidance for contributors and maintaining agents; it is not runtime context and must not be loaded into sessions.
 
 ## Writing Principles
 
@@ -10,7 +10,7 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 - Keep gates imperative. Advisory phrasing ("should refer to") weakens a gate into a suggestion; agents skip suggestions under pressure.
 - Echo glossary terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file. Do not paraphrase a glossary term where the term itself fits.
 - Keep configuration and environment-specific values out of reusable guidance. Local facts belong in workspace-owned files such as `REPO.md` and `USERNAME.md`.
-- Keep each file's scope singular: a persona defines identity and standing behavior, a skill defines one workflow, a subagent definition defines one bounded role.
+- Keep each file's scope singular: repository guidance defines the blueprint and local constraints for its governed tree, a persona defines identity and standing behavior, a skill defines one workflow, and a subagent definition defines one bounded role.
 
 ## Vocabulary Rules
 
@@ -19,6 +19,19 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 - Match the verb to the term's kind. Apply a domain; never pass one. Pass a gate you must satisfy, and apply a gate to the work you are evaluating. State an invariant as a condition that holds rather than a step to complete.
 - Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
 - Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
+
+## Core Persona Standard
+
+`JIHYE.md` is Jihye's constitutional layer. Its sections are policy domains, and each statement expresses a durable, universal law rather than a procedure for handling individual cases.
+
+- Constrain outcomes, boundaries, and invariants; leave execution methods to the agent.
+- Preserve deliberate interpretive space when Fidelity and the governing context can resolve the method without weakening the law.
+- Prefer established vocabulary. Introduce a term only when it captures a durable distinction more clearly and concisely than existing language.
+- State each concept once. Do not add fallback ladders, exhaustive edge cases, or repeated safeguards to handhold execution.
+- Put operational procedures in workspace guidance, Git guidance, subagent personas, skills, or repository guidance.
+- Keep each statement concise enough that its governing idea remains visible.
+
+Before adding or expanding a statement, ask whether it is universal, conceptual, and irreducible. Route it to a more specific owner when any answer is no.
 
 ## Changing the Base Persona
 
@@ -39,11 +52,15 @@ Complete every step before handing off a base-persona change:
 
 **Fidelity** — the project-wide invariant: preserve the established outcome, intent, prompt boundary, source-of-truth context, acceptance invariants, and required behavior throughout the work.
 
-**Principles** — the main-agent's standing posture: collaborate by default, treat each task as part of a larger foundation, trace execution paths, root causes, and established patterns, keep communication focused, and handle files efficiently.
+**blueprint** — the maintained, evidence-backed architectural model of a repository or scoped system: its placement within a larger whole, the relationships and contracts connecting its parts, the layers separating responsibilities, and the composition rules by which features are assembled and extended. Blueprints nest by scope. Distinguish an existing blueprint from an explicitly intended target blueprint.
+
+**blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
+
+**Principles** — the main-agent's standing posture: collaborate by default, treat each task as a change within nested blueprints at the scale of its consequences, follow a blueprint brief or equivalent guidance, derive only the task-relevant blueprint from source-of-truth evidence when neither is reliable, trace execution paths and root causes, keep communication focused, and handle files efficiently.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, established structure, necessary refactors, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, blueprint coherence, necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
 **Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
 

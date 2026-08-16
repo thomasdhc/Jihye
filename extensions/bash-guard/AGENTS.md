@@ -6,15 +6,17 @@
 
 Which commands are guarded is policy. How a command is parsed, matched, and prompted is logic. Keep them in separate modules.
 
-## Architecture
+## Blueprint Brief
 
-Dependency direction is strict and acyclic: `shell.ts` → `policy.ts` → `analysis.ts` → `index.ts`, with `prompt.ts` as a leaf consumed only by `index.ts`.
+`bash-guard` is Jihye's runtime safety boundary for `bash` tool calls. `policy.ts` and `shell.ts` are independent inputs; `analysis.ts` combines their data and syntax into the stable `Risk` contract; `prompt.ts` renders that contract; and `index.ts` composes analysis, policy, prompting, and Pi lifecycle enforcement.
 
 - `index.ts` is the sole Pi extension entrypoint. It owns the two operating modes, the recently-aborted memory, the `--bash-guard-auto-allow` flag, the terminal-notify emission, and the re-exports that form the module's public surface.
 - `policy.ts` is data only. It declares which commands are guarded, at what severity, and with which user-facing reason. It contains no matching, parsing, or control flow.
 - `analysis.ts` turns a command string into a `Risk` (`severity`, `reasons`, `flaggedCommands`, `requiresInteractiveApproval`). It interprets the policy tables and owns the token-stream detectors.
 - `shell.ts` is syntax only: tokenizing via `shell-quote`, splitting on operators, unwrapping `env`/`command`/assignment prefixes, extracting nested shell `-c` commands, and option/flag inspection. It knows nothing about risk.
 - `prompt.ts` renders the approval dialog and depends only on the `Risk` type, so analysis stays testable without a UI.
+
+Canonical evidence: `index.ts`, `policy.ts`, `shell.ts`, `analysis.ts`, `prompt.ts`, and `../../tests/bash-guard.test.ts`.
 
 ### Operating modes
 
@@ -42,6 +44,7 @@ If a new rule needs a condition the vocabulary cannot express, prefer a named de
 
 ## Invariants
 
+- Keep dependencies acyclic. `policy.ts` and `shell.ts` remain independent, `analysis.ts` consumes both, `prompt.ts` consumes only the `Risk` type from analysis, and `index.ts` is the sole composition layer.
 - `policy.ts` stays free of executable logic. Normalization of policy data into matcher shapes belongs in `analysis.ts`, done once at module load, not per command.
 - Reason strings are user-facing and asserted by tests. Treat them as part of the contract.
 - Reason **order** is part of the output. `analyzeSegment` evaluates in a fixed sequence: hosted CLI, system-path redirect, pipe-to-shell, policy table, `rm`, `diskutil`, `curl`/`wget` pipe. Preserve it when adding a rule.
