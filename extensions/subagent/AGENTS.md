@@ -6,9 +6,9 @@
 
 One tool call runs one agent. Fan-out is the model emitting several `subagent` calls in a turn, not a batch parameter.
 
-## Architecture
+## Blueprint Brief
 
-Dependency direction is strict and acyclic: `types.ts` → `{config.ts, progress-events.ts, render.ts}`, `config.ts` → `{discovery.ts, runner.ts}`, with `index.ts` on top. `models.ts` is a leaf consumed by `discovery.ts` and `index.ts`.
+`subagent` connects persona-owned agent definitions to isolated child Pi processes. Model resolution and shared types define its contracts; configuration owns paths and tool wiring; discovery owns definitions and registry state; the runner owns child execution; progress and rendering expose bounded results; and `index.ts` composes those layers into one Pi tool.
 
 - `index.ts` is the sole Pi extension entrypoint; every other module is internal. It loads configuration and model profiles, scans the agent directories once at startup, builds the concurrency semaphore, and registers the `subagent` tool with its `execute`, `renderCall`, and `renderResult` handlers. It also re-exports the registration, directory, and argv helpers that form this extension's public surface.
 - `types.ts` is shapes only: `AgentConfig`, `AgentProgress`, `ToolEvent`, `AgentResult`, `Details`, `ExtensionConfig`.
@@ -20,8 +20,11 @@ Dependency direction is strict and acyclic: `types.ts` → `{config.ts, progress
 - `models.ts` owns tier and provider-strategy resolution; `model-profiles.json` is its data, optionally overridden by the gitignored local `config.json`. Bundled agents declare a baseline `model_tier` and may declare `alternate_model_tier` plus `provider_strategy: alternate`; `enableAlternateProviders` in local config is the sole opt-in gate, so baseline capability, alternate capability, provider-diversity policy, and concrete model IDs remain separate.
 - `tools/safe-bash.ts` is not part of this graph. It is a standalone extension loaded into a child process when an agent declares the `safe_bash` tool.
 
+Canonical evidence: `index.ts`, `config.ts`, `models.ts`, `discovery.ts`, `runner.ts`, `progress-events.ts`, `render.ts`, and `../../tests/subagent*.test.ts`.
+
 ## Invariants
 
+- Keep dependencies acyclic. Configuration and shared contracts must not import discovery, runner, rendering, or entrypoint orchestration; discovery, execution, and rendering do not import one another and meet only in `index.ts`.
 - `globalThis.__pi_subagents` has exactly one owning module, `discovery.ts`. jiti gives each loading extension its own instance of these modules, so the global is the only cross-extension handle on the registry. Nothing else may assign it.
 - `agents` in `discovery.ts` is module-local. `setAgents` exists only because importers cannot reassign a module binding; it is the sole replacement path, alongside `registerAgent`/`unregisterAgent` for single entries. Do not add a second mutation path.
 - Paths in `config.ts` derive from `EXT_DIR` (this file's own directory) and are load-bearing: they locate `personas/subagents`, `.pi/agents`, the package's `jihye-setup`, `bash-guard`, `web-search`, and `web-fetch` extensions, `tools/safe-bash.ts`, and this extension's own `index.ts`. Moving that resolution or the file changes those absolute paths, and the child process fails to load extensions rather than degrading.

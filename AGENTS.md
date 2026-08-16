@@ -2,6 +2,14 @@
 
 Personal Pi extensions, skills, agents, and reusable guidance packaged for installation across workstations.
 
+## Blueprint Brief
+
+Jihye is an installable Pi toolkit. The package manifest loads runtime integrations from `extensions/` and on-demand workflows from `skills/`. `personas/` supplies standing policy through the separately installed guidance chain, while the `subagent` extension loads its bundled agent definitions directly from `personas/subagents/`. Tests pin behavioral contracts across those layers.
+
+Place each capability in its owning layer: extensions integrate with Pi runtime APIs, skills own bounded workflows, and personas own inherited policy and agent definitions. Keep cross-layer relationships explicit and compose shared behavior through defined contracts rather than bypassing layer ownership.
+
+Canonical evidence: `package.json`, `README.md`, `extensions/README.md`, `skills/README.md`, `personas/README.md`, and `tests/`.
+
 ## Install / Local Setup
 
 ```bash
@@ -15,7 +23,7 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 
 - Indent TypeScript and JavaScript with tabs, displayed at four columns. Do not replace indentation tabs with spaces; follow `.editorconfig` for formats that require spaces.
 - Read Pi's extension and package documentation before changing extension APIs or package metadata.
-- Read `GUIDANCE.md` before writing or revising any Markdown guidance under `personas/` or `skills/`; it defines the authoring principles and the shared glossary.
+- Read `GUIDANCE.md` before writing or revising any repository `AGENTS.md` or Markdown guidance under `personas/` or `skills/`; it defines the authoring principles and the shared glossary.
 - Use branch workflow for changes: create a branch named `<username>/<feature>`, push it, and open a pull request targeting `main`.
 - Use concise conventional-style commit messages:
   - `feat: <summary>` for new behavior or capabilities

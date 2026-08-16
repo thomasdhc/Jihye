@@ -1,6 +1,6 @@
 # Guidance Authoring
 
-How to write and revise the Markdown guidance distributed by Jihye: personas, skills, and subagent definitions. Read this before editing any file under `personas/` or `skills/`. This file is authoring guidance for contributors and maintaining agents; it is not runtime context and must not be loaded into sessions.
+How to write and revise the Markdown guidance distributed by Jihye: repository `AGENTS.md` files, personas, skills, and subagent definitions. Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This file is authoring guidance for contributors and maintaining agents; it is not runtime context and must not be loaded into sessions.
 
 ## Writing Principles
 
@@ -10,7 +10,7 @@ How to write and revise the Markdown guidance distributed by Jihye: personas, sk
 - Keep gates imperative. Advisory phrasing ("should refer to") weakens a gate into a suggestion; agents skip suggestions under pressure.
 - Echo glossary terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file. Do not paraphrase a glossary term where the term itself fits.
 - Keep configuration and environment-specific values out of reusable guidance. Local facts belong in workspace-owned files such as `REPO.md` and `USERNAME.md`.
-- Keep each file's scope singular: a persona defines identity and standing behavior, a skill defines one workflow, a subagent definition defines one bounded role.
+- Keep each file's scope singular: repository guidance defines the blueprint and local constraints for its governed tree, a persona defines identity and standing behavior, a skill defines one workflow, and a subagent definition defines one bounded role.
 
 ## Vocabulary Rules
 

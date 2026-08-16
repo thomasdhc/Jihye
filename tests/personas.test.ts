@@ -90,6 +90,21 @@ test("personas include the global and workspace guidance chain", () => {
 	assert.doesNotMatch(workspace, /readlink|dirname/, "path resolution belongs to the jihye-setup extension");
 });
 
+test("repository guidance supplies nested blueprint briefs", () => {
+	const guidancePaths = [
+		"AGENTS.md",
+		"extensions/bash-guard/AGENTS.md",
+		"extensions/subagent/AGENTS.md",
+		"extensions/widget/AGENTS.md",
+	];
+
+	for (const path of guidancePaths) {
+		const content = readFileSync(join(REPO_ROOT, path), "utf8");
+		assert.ok(headings(content).includes("Blueprint Brief"), path);
+		assert.match(content, /Canonical evidence:/i, path);
+	}
+});
+
 test("guidance defines the canonical Jihye policy domains", () => {
 	const guidance = readFileSync(GUIDANCE_PATH, "utf8");
 	assertTerms(guidance, [
@@ -129,7 +144,10 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/\bFidelity\b/,
 			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
 			/nested blueprints/i,
-			/placement[^\n]*relationships[^\n]*layers[^\n]*composition/i,
+			/\bplacement\b/i,
+			/\brelationships\b/i,
+			/\blayers\b/i,
+			/\bcomposition\b/i,
 			/blueprint brief[^\n]*governing repository guidance/i,
 			/source-of-truth code[^\n]*configuration[^\n]*tests[^\n]*analogous features/i,
 			/alternatives and trade-offs/i,
@@ -174,7 +192,17 @@ test("guidance never passes a policy domain", () => {
 
 test("downstream personas invoke canonical main-agent domains", () => {
 	assertTerms(readPersona("GIT.md"), [/\bValidation\b/], "Git policy domains");
-	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [/\bFidelity\b/, /\bPrinciples\b/, /\bSolution Architecture\b/], "engineer policy domains");
+	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [
+		/\bFidelity\b/,
+		/\bPrinciples\b/,
+		/\bSolution Architecture\b/,
+		/task-relevant blueprint/i,
+		/blueprint brief/i,
+		/\bplacement\b/i,
+		/\brelationships\b/i,
+		/\blayers\b/i,
+		/\bcomposition\b/i,
+	], "engineer policy domains");
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {
