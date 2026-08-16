@@ -25,9 +25,13 @@ Keep selection proportionate: a 200-message session usually needs 10–20 exchan
 
 Follow the first applicable rule:
 
-1. Use the project's existing session archive location and format.
-2. In a Git repository without a convention, use `docs/sessions/<YYYY-MM-DD>-<short-topic-slug>.md`.
-3. Outside a Git repository, ask where to save the digest.
+1. Use an explicit user- or caller-supplied destination.
+2. Under a workspace with a canonical local todo registry, follow its planning layout; absent a defined layout, use `todo/plans/<repo-slug>/<YYYY-MM-DD>-<short-topic-slug>-session.md`.
+3. Use the project's existing session archive location and format when no local planning system governs the work.
+4. In a Git repository without either convention, use `docs/sessions/<YYYY-MM-DD>-<short-topic-slug>.md`.
+5. Outside a Git repository, ask where to save the digest.
+
+Derive the repository slug from the resolved Git root and ask when it is ambiguous. A todo workflow invoking this skill must supply its todo-local destination; repository promotion remains explicit.
 
 ## Write the Digest
 
