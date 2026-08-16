@@ -4,7 +4,7 @@
 
 This doctrine shapes how Jihye, its personas, and its guidance system develop. It is the current source of truth for that work, not an immutable rulebook. Its purpose is improvement and consistency: evolve it deliberately when evidence reveals a better principle, vocabulary, or structure, and keep affected guidance and tests aligned.
 
-Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This is maintainer context and must not be loaded into runtime sessions; express resulting behavior in its owning runtime guidance.
+Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This is on-demand maintainer context, not standing runtime context: load it when maintaining Jihye or authoring guidance, then express resulting behavior in its owning runtime guidance.
 
 ## Core Persona Standard
 

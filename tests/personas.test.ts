@@ -111,7 +111,7 @@ test("doctrine defines Jihye's development principles and canonical policy domai
 	assertTerms(doctrine, [
 		/# Jihye Development Doctrine/,
 		/## Purpose and Evolution/,
-		/must not be loaded[^\n]*runtime sessions/i,
+		/on-demand maintainer context[^\n]*not standing runtime context[^\n]*maintaining Jihye[^\n]*authoring guidance/i,
 		/## Guidance Architecture/,
 		/## Authoring Principles/,
 		/## Language and Vocabulary/,
