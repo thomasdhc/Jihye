@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PERSONAS_ROOT = join(REPO_ROOT, "personas");
-const GUIDANCE_PATH = join(REPO_ROOT, "GUIDANCE.md");
+const DOCTRINE_PATH = join(REPO_ROOT, "DOCTRINE.md");
 
 const POLICY_FILES = [
 	"JIHYE.md",
@@ -83,6 +83,7 @@ test("personas include the global and workspace guidance chain", () => {
 		/project todo[^\n]*before planning or changing repository files/i,
 		/first tool call/i,
 		/nature of the action[^\n]*never its size or obviousness/i,
+		/root repository guidance[^\n]*repository blueprint[^\n]*scoped guidance[^\n]*scope-specific detail[^\n]*delta/i,
 		/repository guidance may add[^\n]*cannot replace workspace-owned/i,
 		/branch identity[^\n]*agent attribution[^\n]*approval[^\n]*publication safeguards/i,
 		/report a conflict and ask for resolution/i,
@@ -105,9 +106,16 @@ test("repository guidance supplies nested blueprint briefs", () => {
 	}
 });
 
-test("guidance defines the canonical Jihye policy domains", () => {
-	const guidance = readFileSync(GUIDANCE_PATH, "utf8");
-	assertTerms(guidance, [
+test("doctrine defines Jihye's development principles and canonical policy domains", () => {
+	const doctrine = readFileSync(DOCTRINE_PATH, "utf8");
+	assertTerms(doctrine, [
+		/# Jihye Development Doctrine/,
+		/## Purpose and Evolution/,
+		/must not be loaded[^\n]*runtime sessions/i,
+		/## Guidance Architecture/,
+		/## Authoring Principles/,
+		/## Language and Vocabulary/,
+		/## Guidance Validation/,
 		/\*\*main-agent context\*\*\s+—/,
 		/\*\*Fidelity\*\*\s+—/,
 		/\*\*blueprint\*\*\s+—/,
@@ -128,7 +136,7 @@ test("guidance defines the canonical Jihye policy domains", () => {
 		/## Changing the Base Persona/,
 		/JIHYE_strict\.md/,
 		/tests\/personas\.test\.ts/,
-	], "canonical Jihye vocabulary");
+	], "Jihye development doctrine");
 });
 
 test("strict persona is the base persona plus its approval header", () => {
@@ -178,7 +186,7 @@ test("global personas preserve canonical domains, coordination gates, and parent
 test("guidance never passes a policy domain", () => {
 	const skillRoot = join(REPO_ROOT, "skills");
 	const files = [
-		GUIDANCE_PATH,
+		DOCTRINE_PATH,
 		...POLICY_FILES.map((path) => join(PERSONAS_ROOT, path)),
 		...readdirSync(join(PERSONAS_ROOT, "subagents")).map((entry) => join(PERSONAS_ROOT, "subagents", entry)),
 		...readdirSync(skillRoot).map((entry) => join(skillRoot, entry, "SKILL.md")),

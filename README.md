@@ -69,6 +69,8 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 ## Development
 
+Read the [Jihye Development Doctrine](DOCTRINE.md) before changing repository guidance, personas, skills, or their governing vocabulary.
+
 Requires a Node.js version that supports type stripping.
 
 ```bash
