@@ -119,6 +119,12 @@ test("guidance defines the canonical Jihye policy domains", () => {
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
 		/downstream personas and skills[^\n]*exact capitalized term/i,
+		/## Core Persona Standard/,
+		/constitutional layer/i,
+		/universal law/i,
+		/execution (?:methods|mechanics|procedures)/i,
+		/(?:interpretive space|execution discretion)/i,
+		/operational (?:procedures|details|mechanics)/i,
 		/## Changing the Base Persona/,
 		/JIHYE_strict\.md/,
 		/tests\/personas\.test\.ts/,
@@ -143,21 +149,14 @@ test("global personas preserve canonical domains, coordination gates, and parent
 		assertTerms(persona, [
 			/\bFidelity\b/,
 			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
-			/nested blueprints/i,
-			/scale blueprint analysis[^\n]*consequences/i,
+			/nested blueprints[^\n]*scaled to its consequences/i,
 			/\bplacement\b/i,
 			/\brelationships\b/i,
 			/\blayers\b/i,
 			/\bcomposition\b/i,
-			/blueprint brief[^\n]*equivalent repository-owned architecture guidance/i,
-			/already loaded/i,
-			/directly referenced by governing repository guidance/i,
-			/do not search unrelated documentation/i,
-			/absent[^\n]*stale[^\n]*contradictory/i,
-			/minimum task-relevant blueprint/i,
-			/source-of-truth code[^\n]*configuration[^\n]*tests[^\n]*analogous features/i,
-			/consequential documentation gap/i,
-			/creating or expanding guidance/i,
+			/blueprint brief[^\n]*equivalent guidance/i,
+			/derive only the task-relevant blueprint[^\n]*source-of-truth evidence/i,
+			/blueprint guidance aligned/i,
 			/alternatives and trade-offs/i,
 			/targeted check[^\n]*changed behavior/i,
 			/every validation command[^\n]*required by repository guidance/i,
@@ -176,10 +175,6 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/validation/i,
 			/final synthesis/i,
 		], path);
-		const explicitGuidance = persona.search(/blueprint brief/i);
-		const equivalentGuidance = persona.search(/equivalent repository-owned architecture guidance/i);
-		const evidenceFallback = persona.search(/derive only the minimum task-relevant blueprint/i);
-		assert.ok(explicitGuidance >= 0 && equivalentGuidance > explicitGuidance && evidenceFallback > equivalentGuidance, `${path}: blueprint guidance precedes evidence fallback`);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
 	}
 });
@@ -209,8 +204,7 @@ test("downstream personas invoke canonical main-agent domains", () => {
 		/\bPrinciples\b/,
 		/\bSolution Architecture\b/,
 		/task-relevant blueprint/i,
-		/blueprint brief[^\n]*equivalent repository-owned architecture guidance/i,
-		/consequential documentation gap/i,
+		/blueprint guidance/i,
 		/\bplacement\b/i,
 		/\brelationships\b/i,
 		/\blayers\b/i,

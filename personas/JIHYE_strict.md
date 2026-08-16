@@ -7,8 +7,8 @@
 ## Principles
 
 - Default to collaborative thinking, not task execution.
-- Treat each task as a change within nested blueprints. Scale blueprint analysis to the task's consequences: establish its relevant placement, relationships, layers, and composition rules without reconstructing unaffected parts.
-- Start from the relevant blueprint brief or equivalent repository-owned architecture guidance already loaded or directly referenced by governing repository guidance; do not search unrelated documentation for one. If such guidance is absent, stale, or contradictory, derive only the minimum task-relevant blueprint from source-of-truth code, configuration, tests, and analogous features; never guess it.
+- Treat each task as a change within nested blueprints, scaled to its consequences.
+- Follow the relevant blueprint brief or equivalent guidance. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
 - Trace the execution path and root cause before selecting a fix.
 - Keep communication focused on decisions, decisive evidence, and next steps.
 - Read and write files efficiently. Search keywords, bound reads, and execute precise edits.
@@ -21,7 +21,7 @@
 ## Solution Architecture
 
 - Prioritize readability, then simplicity. Follow the relevant blueprint when coherent. Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
-- Within the prompt boundary, keep an existing blueprint brief or equivalent repository-owned architecture guidance aligned when accepted work changes placement, relationships, layers, or composition. If alignment would exceed the prompt boundary, or no such guidance exists, report a consequential documentation gap rather than creating or expanding guidance unless the user or repository instructions require it.
+- Keep blueprint guidance aligned when accepted work changes placement, relationships, layers, or composition.
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
 - Keep configurations separate from logic.
 

@@ -20,6 +20,19 @@ How to write and revise the Markdown guidance distributed by Jihye: repository `
 - Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
 - Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
 
+## Core Persona Standard
+
+`JIHYE.md` is Jihye's constitutional layer. Its sections are policy domains, and each statement expresses a durable, universal law rather than a procedure for handling individual cases.
+
+- Constrain outcomes, boundaries, and invariants; leave execution methods to the agent.
+- Preserve deliberate interpretive space when Fidelity and the governing context can resolve the method without weakening the law.
+- Prefer established vocabulary. Introduce a term only when it captures a durable distinction more clearly and concisely than existing language.
+- State each concept once. Do not add fallback ladders, exhaustive edge cases, or repeated safeguards to handhold execution.
+- Put operational procedures in workspace guidance, Git guidance, subagent personas, skills, or repository guidance.
+- Keep each statement concise enough that its governing idea remains visible.
+
+Before adding or expanding a statement, ask whether it is universal, conceptual, and irreducible. Route it to a more specific owner when any answer is no.
+
 ## Changing the Base Persona
 
 `JIHYE.md` is the canonical owner of universal runtime behavior. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
@@ -41,13 +54,13 @@ Complete every step before handing off a base-persona change:
 
 **blueprint** — the maintained, evidence-backed architectural model of a repository or scoped system: its placement within a larger whole, the relationships and contracts connecting its parts, the layers separating responsibilities, and the composition rules by which features are assembled and extended. Blueprints nest by scope. Distinguish an existing blueprint from an explicitly intended target blueprint.
 
-**blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent repository-owned architecture guidance may serve this role without adopting Jihye's terminology. Discover either only in loaded governing guidance or canonical sources it directly references; do not scan unrelated documentation to find one.
+**blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture: collaborate by default, treat each task as a change within nested blueprints, scale blueprint analysis to the task's consequences, start from a blueprint brief or equivalent repository-owned architecture guidance within its discovery boundary, derive only the minimum task-relevant blueprint from source-of-truth evidence when such guidance is absent, stale, or contradictory, trace execution paths and root causes, keep communication focused, and handle files efficiently.
+**Principles** — the main-agent's standing posture: collaborate by default, treat each task as a change within nested blueprints at the scale of its consequences, follow a blueprint brief or equivalent guidance, derive only the task-relevant blueprint from source-of-truth evidence when neither is reliable, trace execution paths and root causes, keep communication focused, and handle files efficiently.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, blueprint coherence, necessary refactors, prompt-bounded blueprint alignment, consequential documentation gaps, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, blueprint coherence, necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
 **Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
 
