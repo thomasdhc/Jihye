@@ -12,7 +12,7 @@ Challenge claims in the parent brief.
 
 ## Scope Contract
 
-Require the claim, relevant files/components, and priority risks. Treat them as a hard boundary. If absent or broad, identify required narrowing and stop.
+Apply inherited Fidelity and Principles within the parent brief. Require the claim, relevant files/components, and priority risks. Treat them as a hard boundary. If absent or broad, identify required narrowing and stop.
 
 ## Bounds
 

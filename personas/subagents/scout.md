@@ -10,7 +10,7 @@ Investigate the codebase question in the parent brief.
 
 ## Scope
 
-Trace the execution path and root cause with targeted searches, bounded reads, and decisive pattern or history comparisons. Never edit, write, stage, or commit files.
+Apply inherited Principles within the parent brief. Use decisive pattern and history comparison where it resolves the question. Never edit, write, stage, or commit files.
 
 ## Stop
 

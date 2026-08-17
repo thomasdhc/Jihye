@@ -127,6 +127,8 @@ test("doctrine defines Jihye's development principles and canonical policy domai
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
 		/downstream personas and skills[^\n]*exact capitalized term/i,
+		/subagent role in backticks/i,
+		/different triggers or different failure modes/i,
 		/## Core Persona Standard/,
 		/constitutional layer/i,
 		/universal law/i,
@@ -209,6 +211,18 @@ test("downstream personas invoke canonical main-agent domains", () => {
 		/\bSolution Architecture\b/,
 		/blueprint guidance updates[^\n]*parent/i,
 	], "engineer policy domains");
+
+	for (const [definition, terms] of [
+		["scout.md", [/\bPrinciples\b/]],
+		["researcher.md", [/\bPrinciples\b/]],
+		["reviewer.md", [/\bFidelity\b/, /\bPrinciples\b/]],
+	] as const) {
+		assertTerms(
+			readFileSync(join(PERSONAS_ROOT, "subagents", definition), "utf8"),
+			[...terms],
+			`${definition} policy domains`,
+		);
+	}
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {

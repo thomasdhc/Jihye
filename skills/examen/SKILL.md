@@ -15,7 +15,8 @@ Apply Fidelity, Principles, and Safety while reviewing changed behavior against 
 4. Compare claimed and actual behavior. Distinguish an introduced regression from a pre-existing defect or documented limitation. Use CI evidence for validation, but omit dashboard-visible CI status from submitted comments and review bodies.
 5. Run focused checks. For explicit behavioral claims and repeated changes, define finite acceptance invariants over changed files, direct runtime dependencies, and any named subsystem. Classify every residual as intentional or actionable.
 6. Consolidate manifestations with one root cause while retaining every verified trigger class and affected path needed for a fix. On a new head, rerun the original invariants and reconcile unresolved candidates before concluding the review is clean.
-7. Load and follow the `coordinate` skill when delegation is warranted. Directly verify decisive evidence and use a reviewer challenge for consequential or uncertain candidates.
+
+Brief a `reviewer` subagent to challenge any consequential or uncertain candidate, supplying the claim, its anchoring changed lines, the priority risks, and the evidence that would overturn it.
 
 ## Apply the Finding Gate
 
@@ -79,4 +80,4 @@ Before an authorized submission:
 
 Prefer one logical review submission when supported; never claim transactional atomicity. When operations are separate, publish and verify comments before formal approval, rechecking the head SHA immediately before the irreversible verdict. On partial failure, stop and report the persisted state rather than retrying blindly.
 
-Read back and verify the summary, reviewer, every inline body/path/line/URL, submitted revision coordinates, platform-visible review or approval state, and current head SHA. Return the target URL, discussion URLs, and final visible verdict; if submission is unavailable, return the complete draft and limitation.
+Read back and verify the summary, the authenticated reviewing account, every inline body/path/line/URL, submitted revision coordinates, platform-visible review or approval state, and current head SHA. Return the target URL, discussion URLs, and final visible verdict; if submission is unavailable, return the complete draft and limitation.

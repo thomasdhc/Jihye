@@ -98,6 +98,7 @@ test("examen preserves introduced-defect and submission semantics", () => {
 		/\[P2\]/,
 		/\[P3\]/,
 		/current head SHA/i,
+		/`reviewer` subagent/,
 		/references\/platforms\.md/,
 	], "examen semantics");
 	assert.match(content, /\[P2\] Findings:[^\n]*Proposal:/, "inline finding contract");
@@ -110,10 +111,10 @@ test("vicara preserves evidence gates and resumable reporting", () => {
 	}
 	assertTerms(content, [
 		/\bSolution Architecture\b/,
-		/follow the `coordinate` skill/i,
+		/`scout` or `researcher` subagent/,
 		/finding gate/i,
 		/decisive support/i,
-		/reviewer challenge/i,
+		/`reviewer` subagent/,
 		/Frontier/,
 		/Needs More Investigation/,
 		/references\/report\.md/,
