@@ -32,4 +32,4 @@ Immediately launch the first actionable parallel group, even when it holds one c
 - When a gate blocks write work, launch useful allowed read-only work.
 - Ask for user input only when no actionable group can proceed.
 - After each group, reconcile decisive evidence, update dependencies and collision risks, and launch the next actionable group.
-- Stop delegating when the parent can finish the remaining bounded work more directly.
+- Stop delegating when the main-agent context already holds the evidence the remaining work would return.
