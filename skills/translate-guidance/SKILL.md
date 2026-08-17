@@ -36,14 +36,14 @@ If the session working directory is above the repository root, Pi will not disco
 
 ## Use the Managed Format
 
-For each projection path, store provenance in an adjacent companion named by appending `.jihye.json`. For example:
+Store companion metadata under a repository-root `.jihye/` directory. Mirror the projection's repository-relative path beneath it and append `.json`, so root and scoped projections remain distinct:
 
 ```text
-AGENTS.override.md
-AGENTS.override.md.jihye.json
+AGENTS.override.md         → .jihye/AGENTS.override.md.json
+client/AGENTS.override.md  → .jihye/client/AGENTS.override.md.json
 ```
 
-The companion contains one machine-readable JSON object:
+Exclude each exact metadata file, not the whole `.jihye/` directory, and do not disturb unrelated contents there. The companion contains one machine-readable JSON object:
 
 ```json
 {"format":1,"contract":"translate-guidance/v1","state":"current","projection":"AGENTS.override.md","projectionSha256":"<sha256>","scope":".","piMin":"0.84.0","revision":"<git-revision-or-null>","ownerTopologySha256":"<sha256>","ownerSources":[{"path":"AGENTS.md","sha256":"<sha256>","gitBlob":"<blob-or-null>"}],"evidence":[{"path":"package.json","sha256":"<sha256>"}],"contractSha256":"<skill-sha256>","doctrineSha256":"<doctrine-sha256>"}
@@ -73,7 +73,7 @@ Translate owner requirements into concise imperatives without weakening them. Pu
 4. Draft a source-to-projection semantic mapping that accounts for every applicable owner instruction across the ancestor chain and labels every enrichment by evidence. Maintain a conflict register outside the proposed projection.
 5. Surface each substantive conflict to the user with its authorities, practical consequence, and viable resolutions. Obtain an explicit decision, fold it into the appropriate owner requirement or local adaptation, and regenerate the mapping. Repeat until no substantive conflict remains; if the user defers one, stop without writing.
 6. Show the reconciled mapping and complete proposed projection for manual verification, then pass an explicit approval gate before writing projections, metadata, or exclude entries.
-7. Add only the exact projection and metadata paths to the Git-resolved `info/exclude`, then write the approved guidance body and companion metadata with state `review-required`.
+7. Add only the exact projection and metadata paths to the Git-resolved `info/exclude`, create only the required `.jihye/` parent directories, then write the approved guidance body and companion metadata with state `review-required`.
 8. Verify owner sources are unchanged; projections and metadata are untracked and unstaged; `git check-ignore -v` resolves each to `info/exclude`; normal `git status` omits them; and `git status --ignored` reveals them at the expected paths. Set metadata state to `current` only after these checks pass, then revalidate the companion.
 9. Ask the user to run `/reload` from a session inside the repository. Do not claim the projection governs until reload and loaded-context verification succeed.
 

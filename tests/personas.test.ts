@@ -83,7 +83,7 @@ test("personas include the global and workspace guidance chain", () => {
 		/project todo[^\n]*before planning or changing repository files/i,
 		/first tool call/i,
 		/nature of the action[^\n]*never its size or obviousness/i,
-		/Pi's order[^\n]*AGENTS\.override\.md[^\n]*AGENTS\.md[^\n]*AGENTS\.MD[^\n]*CLAUDE\.md[^\n]*CLAUDE\.MD[^\n]*first file present/i,
+		/prefer[^\n]*AGENTS\.override\.md[^\n]*AGENTS\.md[^\n]*otherwise use whatever repository guidance is available/i,
 		/root repository guidance[^\n]*repository blueprint[^\n]*scoped guidance[^\n]*scope-specific detail[^\n]*delta/i,
 		/repository guidance may add[^\n]*cannot replace workspace-owned/i,
 		/branch identity[^\n]*agent attribution[^\n]*approval[^\n]*publication safeguards/i,
