@@ -60,6 +60,7 @@ test("skills have valid identifying frontmatter", () => {
 		"review-guidance",
 		"session-digest",
 		"todo",
+		"translate-guidance",
 		"vicara",
 	]);
 });
@@ -135,6 +136,9 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 	}
 	assertTerms(content, [
 		/most-specific governing guidance/i,
+		/Pi's same-directory precedence/i,
+		/translate-guidance` freshness check/i,
+		/stale or unsafe override/i,
 		/parent guidance files as references/i,
 		/instruction boundary/i,
 		/blueprint guidance/i,
@@ -147,6 +151,48 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 		/remains read-only/i,
 	], "review-guidance semantics");
 	assert.match(content, /do not[^\n]*unrelated Markdown/i, "review scope excludes unrelated documentation");
+});
+
+test("translate-guidance preserves projection authority, freshness, and safety", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "translate-guidance", "SKILL.md"), "utf8");
+	for (const section of [
+		"Establish the Target and Operation",
+		"Resolve the Guidance Topology",
+		"Use the Managed Format",
+		"Initialize the Projection",
+		"Check Freshness",
+		"Refresh by Semantic Rebase",
+		"Enrich or Compact",
+		"Propose Upstream",
+		"Return the Result",
+	]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/AGENTS\.override\.md/,
+		/Pi 0\.84\.0 or later/i,
+		/owner guidance is upstream/i,
+		/fidelity floor/i,
+		/submodule as a separate repository and translation boundary/i,
+		/git rev-parse --git-path info\/exclude/i,
+		/machine-readable marker/i,
+		/ownerTopologySha256/,
+		/contractSha256[^\n]*SHA-256 of this `SKILL\.md`/i,
+		/doctrineSha256[^\n]*`\.\.\/\.\.\/DOCTRINE\.md`/i,
+		/Require both installed artifacts to be readable before initialization/i,
+		/Git blob whose bytes reproduce its recorded source SHA-256/i,
+		/complete ancestor chain and explicit owner-defined precedence/i,
+		/worth its runtime context cost/i,
+		/source-to-projection semantic mapping/i,
+		/approval gate/i,
+		/added, moved, or deleted source/i,
+		/semantic rebase/i,
+		/local duplication when owners now express it canonically/i,
+		/never modify owner-authored guidance/i,
+		/untracked and unstaged/i,
+		/normal `git status` omits them/i,
+		/`\/reload`/,
+	], "translate-guidance semantics");
 });
 
 test("todo preserves durable planning and local-first handoff semantics", () => {
