@@ -1,6 +1,6 @@
 ---
 name: translate-guidance
-description: Create, check, refresh, enrich, or compact ignored AGENTS.override.md projections for external Git repositories without changing owner guidance. Use when reconciling Jihye with repository instructions that Jihye does not own.
+description: Initialize, check, refresh, enrich, or compact ignored AGENTS.override.md projections for external Git repositories without changing owner guidance. Use when reconciling Jihye with repository instructions that Jihye does not own.
 compatibility: Pi 0.84.0 or newer and Git are required to activate projections.
 ---
 
