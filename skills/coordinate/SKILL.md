@@ -1,6 +1,6 @@
 ---
 name: coordinate
-description: Build and run a compact parent-side execution skeleton for multi-stream or dependency-heavy delegation. Use before the first subagent call when sequencing, collision control, isolation, or integration is non-trivial. Skip one bounded task and obvious independent direct fan-out.
+description: Build and run a compact parent-side execution skeleton sized to the work, from a single delegated call to multi-stream, dependency-heavy delegation. Use before the first subagent call in every delegation, covering sequencing, collision control, isolation, and integration.
 ---
 
 # Coordinate
@@ -10,6 +10,8 @@ Apply Context and Delegation in the main-agent context.
 ## Build the Execution Skeleton
 
 Keep the skeleton in the parent agent's working context. Do not delegate its creation.
+
+Size the skeleton to the work. Record every item the work contains and nothing it does not; a single delegated call still fixes its outcome, acceptance invariant, brief, and validation before it launches.
 
 Record:
 
@@ -25,7 +27,7 @@ Prefer a small dependency map and ready-to-run briefs over narrative planning. R
 
 ## Run the Skeleton
 
-Immediately launch the first actionable parallel group in the same turn that establishes the skeleton. Do not return only a plan while safe work is ready.
+Immediately launch the first actionable parallel group, even when it holds one call, in the same turn that establishes the skeleton. Do not return only a plan while safe work is ready.
 
 - When a gate blocks write work, launch useful allowed read-only work.
 - Ask for user input only when no actionable group can proceed.

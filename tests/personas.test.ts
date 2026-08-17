@@ -182,6 +182,7 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/final synthesis/i,
 		], path);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
+		assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, `${path}: the coordination gate admits no delegation exemption`);
 	}
 });
 

@@ -77,8 +77,10 @@ test("coordinate preserves its execution-skeleton algorithm", () => {
 		/approval or read gate/i,
 		/integration and validation/i,
 		/first actionable parallel group/i,
+		/single delegated call/i,
 	], "coordinate semantics");
 	assert.doesNotMatch(content, /\bcoordinator\b/i);
+	assert.doesNotMatch(content, /\bskip\b/i, "coordinate must exempt no delegation from the skeleton");
 });
 
 test("examen preserves introduced-defect and submission semantics", () => {
