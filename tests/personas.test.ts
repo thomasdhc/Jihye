@@ -171,10 +171,9 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/never expose or commit secrets, credentials/i,
 			/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
 			/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
+			/delegate work[^\n]*main-agent context/i,
 			/coordinate.*skill/is,
 			/before the first subagent call/i,
-			/delivery boundar/i,
-			/safe parallel/i,
 			/first actionable parallel group/i,
 			/ownership/i,
 			/integration/i,
@@ -182,6 +181,7 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/final synthesis/i,
 		], path);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
+		assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, `${path}: the coordination gate admits no delegation exemption`);
 	}
 });
 
