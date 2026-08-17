@@ -26,7 +26,7 @@ Use the user's report path or default to `OPPORTUNITIES.md` at the repository ro
 2. Set the Destination for this pass.
 3. Map the repository's purpose, major areas, commands, validation surfaces, conventions, and low-signal areas.
 4. Update the snapshot and Frontier; exclude generated, vendored, irrelevant, and explicitly excluded areas.
-5. Investigate bounded Frontier streams. Use scoped scout or researcher work where useful, and load and follow the `coordinate` skill for non-trivial multi-stream delegation.
+5. Investigate bounded Frontier streams. Delegate scoped `scout` or `researcher` subagent work where useful.
 6. Separate observed facts from proposed work. Deduplicate shared root causes without losing distinct trigger classes. Move weak or unfinished candidates to `Frontier` or `Needs More Investigation`.
 
 Let the Destination and repository evidence control expansion; do not start an unbounded repository-wide bug search.
@@ -40,11 +40,11 @@ An opportunity passes the finding gate only when:
 3. Its repository impact, bounded scope, safe first step, and credible validation path are stated.
 4. Unresolved assumptions are separated into `Needs More Investigation`.
 
-For each proposed top-three finding, or every finding when fewer exist, record decisive support from direct verification, a local reproduction or focused validation command, or a focused reviewer verdict. Never promote an unverified delegated conclusion.
+For each proposed top-three finding, or every finding when fewer exist, record decisive support from direct verification, a local reproduction or focused validation command, or a `reviewer` subagent verdict. Never promote an unverified delegated conclusion.
 
-Use a focused reviewer challenge for any high-impact, surprising, risky, or evidence-sensitive candidate. Give the reviewer the exact claim, decisive evidence, affected files, risk questions, and evidence that would change the verdict; verify and reconcile the response.
+Brief a `reviewer` subagent to challenge any high-impact, surprising, risky, or evidence-sensitive candidate. Supply the exact claim, decisive evidence, affected files, priority risks, and the evidence that would change the verdict.
 
-After drafting the ranking, require a reviewer to challenge ordering, impact, overlap, bundled scope, existing mitigations, implementation and validation clarity, and credible higher-value alternatives. Reconcile by splitting, merging, reordering, downgrading, or returning candidates to investigation.
+After drafting the ranking, require a `reviewer` subagent to challenge ordering, impact, overlap, bundled scope, existing mitigations, implementation and validation clarity, and credible higher-value alternatives. Reconcile by splitting, merging, reordering, downgrading, or returning candidates to investigation.
 
 ## Rank and Update the Report
 

@@ -10,7 +10,7 @@ Answer the external-research question in the parent brief.
 
 ## Scope
 
-Prefer primary sources, label inferences, use focused search angles, and filter large sources before reasoning. Never edit or write project files.
+Apply inherited Principles within the parent brief. Prefer primary sources, label inferences, use focused search angles, and filter large sources before reasoning. Never edit or write project files.
 
 ## Stop
 

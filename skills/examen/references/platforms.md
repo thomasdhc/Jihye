@@ -36,7 +36,7 @@ GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}
 GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments
 ```
 
-Verify reviewer, body, state, `commit_id`, timestamp, every inline path and line, and the current `head.sha`.
+Verify the reviewing account, body, state, `commit_id`, timestamp, every inline path and line, and the current `head.sha`.
 
 Official docs: [pull requests](https://docs.github.com/en/rest/pulls/pulls#get-a-pull-request), [reviews](https://docs.github.com/en/rest/pulls/reviews), [comments](https://docs.github.com/en/rest/pulls/comments).
 
@@ -98,6 +98,6 @@ GET /projects/:id/merge_requests/:merge_request_iid/approvals
 GET /projects/:id/merge_requests/:merge_request_iid/approval_state
 ```
 
-Verify every inline body and coordinate, the authenticated reviewer, the requested platform state, and the current SHA. After any publication timeout or error, reconcile drafts, discussions, notes, and review state before retrying because bulk publication is not transactional. Tier/version support can make requested-changes readback ambiguous; report that limitation instead of inferring success from the write response.
+Verify every inline body and coordinate, the authenticated reviewing account, the requested platform state, and the current SHA. After any publication timeout or error, reconcile drafts, discussions, notes, and review state before retrying because bulk publication is not transactional. Tier/version support can make requested-changes readback ambiguous; report that limitation instead of inferring success from the write response.
 
 Official docs: [merge requests](https://docs.gitlab.com/api/merge_requests/), [draft notes](https://docs.gitlab.com/api/draft_notes/), [discussions](https://docs.gitlab.com/api/discussions/), [approvals](https://docs.gitlab.com/api/merge_request_approvals/), [reviews](https://docs.gitlab.com/user/project/merge_requests/reviews/), [`glab api`](https://docs.gitlab.com/cli/api/).
