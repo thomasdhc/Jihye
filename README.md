@@ -65,7 +65,7 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 ## Utility Scripts
 
-- [Pi session metric plots](scripts/pi-session-metrics/) regenerate content-free context-epoch, daily aggregate, and cache-adjusted token-distribution graphs from derived usage CSVs.
+- [Pi session metric plots](scripts/pi-session-metrics/) regenerate content-free context-epoch structure, per-date message/decision-round, daily aggregate, and cache-adjusted token-distribution graphs from derived usage CSVs.
 
 ## Development
 
