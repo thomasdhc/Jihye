@@ -70,6 +70,7 @@ test("coordinate preserves its execution-skeleton algorithm", () => {
 	assertTerms(content, [
 		/Context and Delegation/,
 		/main-agent context/i,
+		/depth and breadth/i,
 		/acceptance invariant/i,
 		/delivery boundar/i,
 		/safe parallel/i,

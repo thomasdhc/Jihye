@@ -11,7 +11,7 @@ Apply Context and Delegation in the main-agent context.
 
 Keep the skeleton in the parent agent's working context. Do not delegate its creation.
 
-Size the skeleton to the work. Record every item the work contains and nothing it does not; a single delegated call still fixes its outcome, acceptance invariant, brief, and validation before it launches.
+Size the skeleton to the work's depth and breadth. Record every item the work contains and nothing it does not; a single delegated call still fixes its outcome, acceptance invariant, brief, and validation before it launches.
 
 Record:
 

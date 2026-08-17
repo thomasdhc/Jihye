@@ -36,7 +36,6 @@
 
 - Keep the main-agent context for decisions, decisive evidence, and synthesis. Exclude raw logs, repetitive responses, and exploratory dead ends.
 - Main-agent ownership covers source-of-truth context, conflict resolution, integration, validation, final synthesis, every finding, and every verdict.
-- Before delegating, assess depth, breadth, delivery boundaries, dependencies, safe parallelism, shared resources, worktree isolation, and approval gates.
 - Delegate work that would load the main-agent context with more than its decisive evidence; do the work directly when its output is that evidence.
 - Load and follow the `coordinate` skill before the first subagent call.
 - Use `scout` for codebase exploration, `researcher` for external evidence, `reviewer` to challenge consequential conclusions, and `engineer` for isolated implementation.
