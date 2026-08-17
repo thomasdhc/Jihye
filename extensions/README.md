@@ -9,7 +9,6 @@ Jihye packages focused Pi extensions that register tools and commands, enforce s
 | [`bash-guard`](bash-guard/) | Interactive prompt for destructive commands and Git publication boundaries; headless hard-block in subagents. |
 | [`custom-header`](custom-header.ts) | Custom Pi startup header. |
 | [`jihye-setup`](jihye-setup/) | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts. |
-| [`session-observability`](session-observability/) | Read-only active-branch report for model, tool, usage, and subagent activity. |
 | [`subagent`](subagent/) | Run Pi subagents as tools with portable bundled definitions and per-user overrides. |
 | [`terminal-notify`](terminal-notify.ts) | Send a native desktop alert when Pi is ready for input. |
 | [`web-fetch`](web-fetch/) | Fetch a URL and extract readable content as Markdown. |
@@ -124,16 +123,6 @@ Workspace roots are discovered by walking up from the working directory, looking
 ```
 
 The extension reads the repository-checkout and isolated-worktree roots from workspace `REPO.md`. It audits registrations across canonical checkouts and repositories represented by linked worktrees, then treats clean tracked branches already contained in the local default base, clean branches whose upstream is gone and whose HEAD is contained in that local base, prunable registrations, and broken worktree `.git` pointers as candidates. Current, dirty, locked, detached, untracked, inaccessible, and unclassifiable worktrees remain protected or advisory. Bounded or unreadable discovery is reported as incomplete. The extension never fetches, prunes, removes, switches branches, or treats age alone as evidence of staleness.
-
-### `session-observability`
-
-Use `/jihye-observe` in an interactive session to inspect the current active branch. The command waits for Pi to become idle, then opens a centered, keyboard-scrollable overlay showing assistant and nested-tool usage, model turns, tool outcomes, recursive subagent activity, and operational signals such as errors, truncation, missing results, and repeated calls after an error. Press Escape or Ctrl+C to close it without reflowing the underlying session.
-
-The report is computed in memory from Pi's existing session entries. It does not add a message or custom entry, write another file, or send anything to the model. Normalized observations exclude prompts, tool arguments, subagent task briefs, and outputs. Facts and heuristics remain labeled separately; an unused tool is not classified as a miss.
-
-Runtime markers written by `jihye-setup` associate each subsequent assistant turn and its tool results with the active Jihye version, persona profile, and Pi version. The report keeps per-turn normalized records and summarizes every runtime represented on the active branch, so a session that spans an upgrade remains segmented. Turns created before the first marker remain explicitly unattributed.
-
-Pi persists normal interactive sessions continuously, so the command can be used at any point and does not need to run before exit. Parent tool timing is not reconstructable from current session entries, and subagent traces contain final returned results rather than durable partial child activity.
 
 ### `widget`
 
