@@ -176,8 +176,16 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 		/advance only when the learner says so/i,
 		/never reuse a check block the learner has already passed/i,
 		/references\/course\.md/,
+		/resolve the course home rather than assuming one/i,
+		/workspace-owned configuration/i,
+		/never hardcode a course home/i,
+		/only from code read in this session/i,
+		/per-module choice, not a course-wide setting/i,
+		/`scout` subagent/,
 	], "hakseup semantics");
 	assert.doesNotMatch(content, /\bpython\b/i, "hakseup must stay subject-agnostic");
+	assert.doesNotMatch(content, /\bEtude\b/i, "hakseup must not name a configured course home");
+	assert.doesNotMatch(content, /\blearnings\/\B/i, "hakseup must not hardcode a course directory");
 
 	const coursePath = join(SKILLS_ROOT, "hakseup", "references", "course.md");
 	assert.ok(existsSync(coursePath));

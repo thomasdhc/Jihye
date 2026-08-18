@@ -15,19 +15,23 @@ disable-model-invocation: true
 - Treat the check block as the task's acceptance invariants, expressed as executable assertions the learner runs unchanged.
 - Apply the finding gate to every claim about language or system behavior: run it and report the observed output.
 - Treat learner questions and detours as curriculum, not interruption.
+- Derive a task from a source repository only from code read in this session. Cite the file and the construct, and never surface a sourced task from recall.
 - Advance only on the learner's explicit signal.
 - Treat the conversation as transient. Capture notes before advancing.
 - Preserve the agreed subject, outcome, module order, and session shape as the course's prompt boundary. Revise them with the learner, never unilaterally.
 
 ## Locate the Course
 
-Follow an explicit target, then the first applicable:
+Resolve the course home rather than assuming one. Follow an explicit target, then the first applicable:
 
 1. Follow explicit user or project instructions.
-2. Under a workspace whose guidance claims a directory for reusable learning artifacts, use `<that directory>/<course-slug>/`.
-3. Propose a location and confirm it before creating one.
+2. Use the course home named by workspace-owned configuration, such as a workspace `REPO.md` that designates a repository or directory for courses.
+3. Under a workspace whose guidance claims a directory for reusable learning artifacts, use that directory.
+4. Propose a location and confirm it before creating one.
 
-Derive the slug from the subject in lowercase kebab-case; ask when ambiguous. Read `references/course.md` for the file layout and templates.
+Place the course at `<course home>/<course-slug>/`. Derive the slug from the subject in lowercase kebab-case; ask when ambiguous. Never hardcode a course home into this workflow; a resolved home is configuration, and configuration changes without changing the workflow.
+
+Read `references/course.md` for the file layout and templates, and follow the course home's own guidance when it adds constraints.
 
 Pass this read gate: read `CURRICULUM.md` and `learner.md` before surfacing a task, authoring a problem, or generating a review test.
 
@@ -40,11 +44,14 @@ Run this once per course, before authoring any task. Establish through dialogue:
 - the target level and the observable outcome that ends the course,
 - the ordered modules and the task titles within each,
 - the starting difficulty and how many tasks a sitting holds,
-- the learner's working environment, language, and file layout.
+- the learner's working environment, language, and file layout,
+- whether any module draws its material from a source repository, and which.
 
 Adopt already-completed work as a completed module instead of re-teaching it. Confirm the scope with the learner, then write `CURRICULUM.md` once.
 
 Author each task's problem statement immediately before surfacing it, never in advance, so difficulty follows the calibration record.
+
+Treat a source repository as a per-module choice, not a course-wide setting. Prefer it where the repository's own conventions are the lesson, and prefer generic material where real code would add noise instead of signal. When a module names a source repository, use a `scout` subagent to locate its real patterns before authoring, and record the cited evidence in `notes.md`.
 
 ## Run the Task Loop
 

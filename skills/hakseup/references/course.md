@@ -2,8 +2,11 @@
 
 ## Layout
 
+The course home is resolved, never assumed. Read the workflow's location ladder, then treat the
+resolved home as `<course-root>`'s parent.
+
 ```text
-<course-root>/
+<course home>/<course-slug>/
   CURRICULUM.md        agreed scope, module arc, status, resume pointer
   problems.md          every surfaced problem statement, in order
   notes.md             durable concept and internals write-ups
@@ -42,6 +45,8 @@ level: <current difficulty>
 ### 1. <module title> — <planned | active | complete>
 
 <one line on the capability this module establishes>
+
+<Source: repository and paths, only when this module draws from one. Omit the line otherwise.>
 
 - [x] <task title>
 - [ ] <task title>
