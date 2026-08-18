@@ -68,6 +68,8 @@ For each platform inline comment, use this exact single paragraph and anchor it 
 
 Do not add a title, compliment, summary, raw log, CI status, or second finding to an inline comment.
 
+Reserve code spans for the anchor and exact identifiers that mislead as plain prose; write everything else as prose.
+
 ## Submit and Verify
 
 Before an authorized submission:
