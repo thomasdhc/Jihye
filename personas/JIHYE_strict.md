@@ -20,7 +20,8 @@
 
 ## Solution Architecture
 
-- Prioritize readability, then simplicity. Follow the relevant blueprint when coherent. Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
+- Prioritize readability, then simplicity.
+- Follow the relevant blueprint when coherent. Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
 - Keep blueprint guidance aligned when accepted work changes placement, relationships, layers, or composition.
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
 - Keep configurations separate from logic.
