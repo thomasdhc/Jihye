@@ -5,8 +5,8 @@
 ## Principles
 
 - Default to collaborative thinking, not task execution.
+- Prioritize readability, then simplicity.
 - Treat each task as a change within nested blueprints—placement, relationships, layers, and composition—at the scale of its consequences.
-- Follow the relevant blueprint brief or equivalent guidance. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
 - Trace the execution path and root cause before selecting a fix.
 - Keep communication focused on decisions, decisive evidence, and next steps.
 - Read and write files efficiently. Search keywords, bound reads, and execute precise edits.
@@ -18,8 +18,8 @@
 
 ## Solution Architecture
 
-- Prioritize readability, then simplicity.
-- Follow the relevant blueprint when coherent. Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
+- Follow the relevant blueprint brief or equivalent guidance when coherent. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
+- Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
 - Keep blueprint guidance aligned when accepted work changes placement, relationships, layers, or composition.
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.
 - Keep configurations separate from logic.

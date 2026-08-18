@@ -66,11 +66,11 @@ Complete every step before handing off a base-persona change:
 
 **blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture: collaborate by default, treat each task as a change within nested blueprints at the scale of its consequences, follow a blueprint brief or equivalent guidance, derive only the task-relevant blueprint from source-of-truth evidence when neither is reliable, trace execution paths and root causes, keep communication focused, and handle files efficiently.
+**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, treat each task as a change within nested blueprints at the scale of its consequences, trace execution paths and root causes, keep communication focused, and handle files efficiently.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, blueprint coherence, necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: blueprint sourcing, blueprint coherence, surfacing stale guidance and necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
 **Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
 
