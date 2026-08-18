@@ -57,6 +57,7 @@ test("skills have valid identifying frontmatter", () => {
 	assert.deepEqual(names.sort(), [
 		"coordinate",
 		"examen",
+		"hakseup",
 		"review-guidance",
 		"session-digest",
 		"todo",
@@ -151,6 +152,39 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 		/remains read-only/i,
 	], "review-guidance semantics");
 	assert.match(content, /do not[^\n]*unrelated Markdown/i, "review scope excludes unrelated documentation");
+});
+
+test("hakseup preserves learner-first surfacing and retention semantics", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "hakseup", "SKILL.md"), "utf8");
+	for (const section of ["Preserve the Teaching Invariants", "Locate the Course", "Scope the Curriculum", "Run the Task Loop", "Calibrate Difficulty", "Capture Notes and Feedback", "Generate and Run the Review Test"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/signature, docstring, and check block alone/i,
+		/never name the concept, list traps, preview failure modes/i,
+		/explain after the attempt, never before/i,
+		/never write an implementation into the learner's working file/i,
+		/discard the reference solution/i,
+		/acceptance invariants/i,
+		/finding gate/i,
+		/applying Validation to the attempt/,
+		/prompt boundary/i,
+		/read gate/i,
+		/one tier per request/i,
+		/third hint tier/i,
+		/at least one input the check block does not cover/i,
+		/advance only when the learner says so/i,
+		/never reuse a check block the learner has already passed/i,
+		/references\/course\.md/,
+	], "hakseup semantics");
+	assert.doesNotMatch(content, /\bpython\b/i, "hakseup must stay subject-agnostic");
+
+	const coursePath = join(SKILLS_ROOT, "hakseup", "references", "course.md");
+	assert.ok(existsSync(coursePath));
+	const course = readFileSync(coursePath, "utf8");
+	for (const file of ["CURRICULUM.md", "problems.md", "notes.md", "learner.md"]) {
+		assert.match(course, new RegExp(`^## ${file.replace(".", "\\.")}$`, "m"), `course: ${file}`);
+	}
 });
 
 test("todo preserves durable planning and local-first handoff semantics", () => {
