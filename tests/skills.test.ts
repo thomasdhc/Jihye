@@ -156,7 +156,7 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 
 test("hakseup preserves learner-first surfacing and retention semantics", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "hakseup", "SKILL.md"), "utf8");
-	for (const section of ["Preserve the Teaching Invariants", "Locate the Course", "Scope the Curriculum", "Run the Task Loop", "Calibrate Difficulty", "Capture Notes and Feedback", "Generate and Run the Review Test"]) {
+	for (const section of ["Preserve the Teaching Invariants", "Locate the Course", "Scope the Curriculum", "Run the Task Loop", "Calibrate Difficulty", "Capture Notes and Feedback", "Generate and Run the Review Test", "Deliver the Course Record"]) {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
@@ -182,7 +182,12 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 		/only from code read in this session/i,
 		/per-module choice, not a course-wide setting/i,
 		/`scout` subagent/,
+		/a module completes and its review test exists/i,
+		/the learner pauses, ends a sitting, or asks to stop/i,
+		/delivery boundary in the course home's repository/i,
+		/apply the workspace Git workflow/i,
 	], "hakseup semantics");
+	assert.doesNotMatch(content, /git (checkout|commit|push) |<username>\//i, "hakseup must not restate workspace-owned Git mechanics");
 	assert.doesNotMatch(content, /\bpython\b/i, "hakseup must stay subject-agnostic");
 	assert.doesNotMatch(content, /\bEtude\b/i, "hakseup must not name a configured course home");
 	assert.doesNotMatch(content, /\blearnings\/\B/i, "hakseup must not hardcode a course directory");
