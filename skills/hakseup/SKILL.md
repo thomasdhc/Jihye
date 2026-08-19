@@ -97,8 +97,11 @@ On a later run, report each failure against the `notes.md` section covering it, 
 Commit the course record and open a pull request at each checkpoint:
 
 - the curriculum is scoped, or a module's task arc is agreed and written,
+- a module is initialized and its first task is surfaced,
 - a module completes and its review test exists,
 - the learner pauses, ends a sitting, or asks to stop.
+
+Carry every checkpoint through to the pull request. A commit alone does not satisfy one, and no checkpoint waits for a later checkpoint to deliver it.
 
 Treat each checkpoint as a delivery boundary in the course home's repository. Pass the read gate for Git guidance, then apply the workspace Git workflow for branching, staging, the agent commit command, the push handoff, and the pull request.
 
