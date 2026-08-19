@@ -91,3 +91,17 @@ Generate a runnable review test at module completion, built from `learner.md`.
 - Keep it runnable standalone, depending on no other course file.
 
 On a later run, report each failure against the `notes.md` section covering it, and record new misses in `learner.md`.
+
+## Deliver the Course Record
+
+Commit the course record and open a pull request at each checkpoint:
+
+- the curriculum is scoped, or a module's task arc is agreed and written,
+- a module completes and its review test exists,
+- the learner pauses, ends a sitting, or asks to stop.
+
+Treat each checkpoint as a delivery boundary in the course home's repository. Pass the read gate for Git guidance, then apply the workspace Git workflow for branching, staging, the agent commit command, the push handoff, and the pull request.
+
+Stage the artifacts the checkpoint produced. Include the learner's working file when its attempts belong to that checkpoint, and never edit it to make a commit or a validation run clean.
+
+Report the checkpoint reached and what was committed, then resume the loop where the learner left it.
