@@ -182,8 +182,11 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 		/only from code read in this session/i,
 		/per-module choice, not a course-wide setting/i,
 		/`scout` subagent/,
+		/a module is initialized and its first task is surfaced/i,
 		/a module completes and its review test exists/i,
 		/the learner pauses, ends a sitting, or asks to stop/i,
+		/carry every checkpoint through to the pull request/i,
+		/no checkpoint waits for a later checkpoint to deliver it/i,
 		/delivery boundary in the course home's repository/i,
 		/apply the workspace Git workflow/i,
 	], "hakseup semantics");
