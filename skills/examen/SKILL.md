@@ -52,21 +52,26 @@ Checks inform but do not override a verified defect. A non-blocking inline findi
 Present findings first by priority using exactly:
 
 ```markdown
-### [P2] <short actionable title>
+### [P2] <short title naming the error>
 **`path/to/file:line`**
 
-Findings: <one concise sentence describing the trigger and concrete impact> Proposal: <one concise imperative sentence describing the minimal correction>
+Findings: <concise sentences describing the trigger and concrete impact>
+Proposal: <concise imperative sentences describing the minimal correction>
 ```
 
 Then give the verdict recommendation, at most three high-signal notes, local validation, unresolved evidence limits, and whether anything was posted.
 
-For each platform inline comment, use this exact single paragraph and anchor it to the changed line causing the behavior:
+For each platform inline comment, use this exact three-line format. Anchor it to the changed line causing the behavior:
 
 ```markdown
-[P2] Findings: <one concise sentence describing the trigger and concrete impact> Proposal: <one concise imperative sentence describing the minimal correction>
+[P2] <short title naming the error>
+Findings: <concise sentences describing the trigger and concrete impact>
+Proposal: <concise imperative sentences describing the minimal correction>
 ```
 
-Do not add a title, compliment, summary, raw log, CI status, or second finding to an inline comment.
+Use no more than two clauses in each sentence. Split extra conditions or effects into separate sentences. Never write a run-on sentence.
+
+Use the title only to name the error. Do not add a compliment, summary, raw log, CI status, or second finding to an inline comment.
 
 Reserve code spans for the anchor and exact identifiers that mislead as plain prose; write everything else as prose.
 
