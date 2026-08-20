@@ -56,18 +56,23 @@ Present findings first by priority using exactly:
 **`path/to/file:line`**
 
 Findings: <concise sentences describing the trigger and concrete impact>
+
 Proposal: <concise imperative sentences describing the minimal correction>
 ```
 
 Then give the verdict recommendation, at most three high-signal notes, local validation, unresolved evidence limits, and whether anything was posted.
 
-For each platform inline comment, use this exact three-line format. Anchor it to the changed line causing the behavior:
+For each platform inline comment, use this exact three-block format. Anchor it to the changed line causing the behavior:
 
 ```markdown
 [P2] <short title naming the error>
+
 Findings: <concise sentences describing the trigger and concrete impact>
+
 Proposal: <concise imperative sentences describing the minimal correction>
 ```
+
+Separate the title, findings, and proposal with a blank line in the submitted body. A single newline renders as one joined paragraph on both hosts.
 
 Use no more than two clauses in each sentence. Split extra conditions or effects into separate sentences. Never write a run-on sentence.
 

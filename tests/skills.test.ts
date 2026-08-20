@@ -105,7 +105,9 @@ test("examen preserves introduced-defect and submission semantics", () => {
 		/`reviewer` subagent/,
 		/references\/platforms\.md/,
 	], "examen semantics");
-	assert.match(content, /```markdown\n\[P2\] <[^>\n]*title[^>\n]*>\nFindings: <[^\n]+>\nProposal: <[^\n]+>\n```/, "inline finding contract");
+	assert.match(content, /```markdown\n\[P2\] <[^>\n]*title[^>\n]*>\n\nFindings: <[^\n]+>\n\nProposal: <[^\n]+>\n```/, "inline finding contract");
+	assert.match(content, /```markdown\n### \[P2\] <[^>\n]*title[^>\n]*>\n\*\*`path\/to\/file:line`\*\*\n\nFindings: <[^\n]+>\n\nProposal: <[^\n]+>\n```/, "draft finding contract");
+	assert.match(content, /blank line/i, "inline block separation");
 	assert.match(content, /no more than two clauses/i, "inline sentence clause limit");
 	assert.match(content, /run-on sentence/i, "inline sentence readability");
 	assert.doesNotMatch(content, /\[P2\] Findings:[^\n]*Proposal:/, "legacy single-line inline format");
