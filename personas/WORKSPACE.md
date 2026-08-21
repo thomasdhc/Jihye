@@ -17,7 +17,7 @@ Pass each read gate based on the nature of the action, never its size or obvious
 
 ## Instruction Boundary
 
-- Read and follow the most-specific repository guidance governing the target.
+- Read and follow the most-specific repository guidance governing the target. In each directory, prefer `AGENTS.override.md` → `AGENTS.md`; otherwise use whatever repository guidance is available.
 - Root repository guidance owns the repository blueprint; scoped guidance adds only scope-specific detail or a delta.
 - Repository guidance may add repository-specific Git constraints, but it cannot replace workspace-owned branch identity, agent attribution, approval, or publication safeguards. Report a conflict and ask for resolution.
 - Keep machine-specific configuration and workspace notes out of tracked repository guidance.

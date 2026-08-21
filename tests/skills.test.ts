@@ -62,6 +62,7 @@ test("skills have valid identifying frontmatter", () => {
 		"review-guidance",
 		"session-digest",
 		"todo",
+		"translate-guidance",
 		"vicara",
 	]);
 });
@@ -146,6 +147,10 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 	}
 	assertTerms(content, [
 		/most-specific governing guidance/i,
+		/Pi's same-directory precedence/i,
+		/translate-guidance` freshness check/i,
+		/companion metadata/i,
+		/local delta/i,
 		/parent guidance files as references/i,
 		/instruction boundary/i,
 		/blueprint guidance/i,
@@ -255,6 +260,46 @@ test("dokhae preserves source-first critical-reading and lineage semantics", () 
 	for (const file of ["TRACK.md", "notes.md", "queue.md"]) {
 		assert.match(track, new RegExp(`^## ${file.replace(".", "\\.")}$`, "m"), `track: ${file}`);
 	}
+});
+
+test("translate-guidance keeps the projection a pointer plus a local delta", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "translate-guidance", "SKILL.md"), "utf8");
+	for (const section of [
+		"Establish the Target and Operation",
+		"Resolve the Guidance Topology",
+		"Use the Managed Format",
+		"Initialize the Projection",
+		"Check Freshness",
+		"Refresh the Delta",
+		"Enrich or Compact",
+		"Propose Upstream",
+		"Return the Result",
+	]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/AGENTS\.override\.md/,
+		/linked worktree/i,
+		/instruction boundary/i,
+		/fidelity floor/i,
+		/precedence/i,
+		/git rev-parse --git-path info\/exclude/,
+		/git check-ignore -v/,
+		/\.jihye\/AGENTS\.override\.md\.json/,
+		/translate-guidance\/v1/,
+		/"state":"current"/,
+		/`review-required`/,
+		/approval gate/i,
+		/`\/reload`/,
+		/no projection is warranted/i,
+		/ancestors/i,
+		/cannot reach/i,
+		/inside the target repository/i,
+	], "translate-guidance semantics");
+	assert.match(content, /^## Owner Guidance$/m, "the projection body leads with a pointer to owner guidance");
+	assert.doesNotMatch(content, /^## Owner Requirements$/m, "the projection points at owner guidance instead of restating it");
+	assert.doesNotMatch(content, /contractSha256|doctrineSha256|ownerTopologySha256/, "the companion drops self-referential and topology fingerprints");
+	assert.doesNotMatch(content, /\d+\.\d+\.\d+|piMin/, "the workflow pins no configured version");
 });
 
 test("todo preserves durable planning and local-first handoff semantics", () => {

@@ -13,6 +13,7 @@ Jihye packages reusable workflows as Pi skills. Pi discovers each skill from its
 | [`review-guidance`](review-guidance/SKILL.md) | Review the most-specific agent guidance governing a selected path. |
 | [`session-digest`](session-digest/SKILL.md) | Extract and save important session exchanges to Markdown. |
 | [`todo`](todo/SKILL.md) | Maintain durable future work through a lean index and local planning records. |
+| [`translate-guidance`](translate-guidance/SKILL.md) | Maintain ignored local guidance deltas that point at owner guidance in external repositories. |
 | [`vicara`](vicara/SKILL.md) | Explore repositories and rank evidence-backed opportunities. |
 
 Each linked `SKILL.md` is the canonical runtime workflow. Keep usage summaries here concise rather than duplicating its instructions.
