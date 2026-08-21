@@ -272,7 +272,6 @@ test("translate-guidance keeps the projection a pointer plus a local delta", () 
 	}
 	assertTerms(content, [
 		/AGENTS\.override\.md/,
-		/Pi 0\.84\.0 or later/i,
 		/linked worktree/i,
 		/instruction boundary/i,
 		/fidelity floor/i,
@@ -289,6 +288,7 @@ test("translate-guidance keeps the projection a pointer plus a local delta", () 
 	assert.match(content, /^## Owner Guidance$/m, "the projection body leads with a pointer to owner guidance");
 	assert.doesNotMatch(content, /^## Owner Requirements$/m, "the projection points at owner guidance instead of restating it");
 	assert.doesNotMatch(content, /contractSha256|doctrineSha256|ownerTopologySha256/, "the companion drops self-referential and topology fingerprints");
+	assert.doesNotMatch(content, /\d+\.\d+\.\d+|piMin/, "the workflow pins no configured version");
 });
 
 test("todo preserves durable planning and local-first handoff semantics", () => {

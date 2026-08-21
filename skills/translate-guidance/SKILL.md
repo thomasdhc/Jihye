@@ -1,7 +1,7 @@
 ---
 name: translate-guidance
 description: Initialize, check, refresh, enrich, or compact ignored AGENTS.override.md guidance deltas for external Git repositories without changing or restating owner guidance. Use when reconciling Jihye with repository instructions that Jihye does not own.
-compatibility: Pi 0.84.0 or newer and Git are required to activate projections.
+compatibility: Requires Git and a Pi version that loads AGENTS.override.md context files.
 ---
 
 # Translate Guidance
@@ -12,12 +12,11 @@ Maintain each local `AGENTS.override.md` as an ignored **projection**: a pointer
 
 Require one Git repository and one operation: **initialize**, **check**, **refresh**, **enrich**, **compact**, or **propose upstream**. Infer initialize when no projection exists and check when one does; ask when any other operation is ambiguous.
 
-1. Resolve the target with `git rev-parse --show-toplevel`. Treat a submodule as a separate repository and translation boundary; do not traverse into nested repositories.
+1. Treat one repository as one translation boundary. A submodule is a separate repository; never traverse into a nested one.
 2. Treat each linked worktree as a separate projection target. Git shares `info/exclude` through the common directory, but an untracked projection never propagates, so a projection created elsewhere does not govern the current worktree.
-3. Apply the governing read gates before touching the target. Inspect branch, worktree, and status without moving, staging, or discarding pre-existing changes.
-4. Run `pi --version` and require Pi 0.84.0 or later. On an older version, create or activate nothing. Report any existing projection as unsupported and do not rely on it.
-5. Establish the instruction boundary. Owner-authored guidance controls owner intent and conventions; implementation, configuration, tests, CI, and documentation control repository facts; Jihye controls its operating method; verified local discoveries and explicit user decisions control only the local delta.
-6. Apply Fidelity to every owner requirement, boundary, command, and invariant. Owner guidance is the fidelity floor, not a ceiling on useful evidence-backed context.
+3. Apply the governing read gates and Git workflow before touching the target.
+4. Establish the instruction boundary. Owner-authored guidance controls owner intent and conventions; implementation, configuration, tests, CI, and documentation control repository facts; Jihye controls its operating method; verified local discoveries and explicit user decisions control only the local delta.
+5. Apply Fidelity to every owner requirement, boundary, command, and invariant. Owner guidance is the fidelity floor, not a ceiling on useful evidence-backed context.
 
 Never modify owner-authored guidance during this workflow. Never copy an owner requirement into a projection; point at it instead. Never make a projection or its metadata tracked, staged, or publishable.
 
@@ -33,7 +32,7 @@ Discover the complete repository guidance topology before trusting an existing p
 - Resolve the local exclude file with `git rev-parse --git-path info/exclude`; never assume `.git` is a directory. Record the exact root-relative projection and metadata paths as anchored exclude entries and verify each with `git check-ignore -v`.
 - Select only canonical evidence needed to verify the blueprint, paths, commands, validation, generated-file boundaries, and architectural claims. Record its paths and content SHA-256.
 
-If the session working directory is above the repository root, Pi will not discover repository context automatically. Resolve and check the projection manually before the displaced owner file, and require a session inside the repository before claiming automatic activation.
+Resolve and check a projection manually whenever the session runs outside the repository, and claim automatic activation only for a session running inside it.
 
 ## Use the Managed Format
 
@@ -47,7 +46,7 @@ client/AGENTS.override.md  → .jihye/client/AGENTS.override.md.json
 Exclude each exact metadata file, not the whole `.jihye/` directory, and do not disturb unrelated contents there. The companion contains one machine-readable JSON object:
 
 ```json
-{"format":1,"contract":"translate-guidance/v1","state":"current","projection":"AGENTS.override.md","projectionSha256":"<sha256>","scope":".","piMin":"0.84.0","pointer":"AGENTS.md","ownerSources":[{"path":"AGENTS.md","sha256":"<sha256>"}],"evidence":[{"path":"package.json","sha256":"<sha256>"}]}
+{"format":1,"contract":"translate-guidance/v1","state":"current","projection":"AGENTS.override.md","projectionSha256":"<sha256>","scope":".","pointer":"AGENTS.md","ownerSources":[{"path":"AGENTS.md","sha256":"<sha256>"}],"evidence":[{"path":"package.json","sha256":"<sha256>"}]}
 ```
 
 Keep provenance out of the projection itself. Pi loads the `AGENTS.override.md` guidance body but not the companion, and only lifecycle operations parse metadata. Treat the projection and companion as one ownership unit. Use repository-root-relative POSIX paths throughout and write deterministic valid JSON. Set `projectionSha256` to the SHA-256 of the exact guidance-file bytes so a stale companion cannot claim a replaced or manually altered override. Record `ownerSources` as the files whose content the delta was written against, so an added, moved, deleted, or edited source is detectable without storing owner text. Set `state` to `current` only after approval, writing, and verification all succeed. A missing, invalid, mismatched, tracked, staged, or unexcluded companion makes the projection unsafe. Change the format or contract identifier only when the metadata or lifecycle semantics change.
@@ -75,21 +74,20 @@ Name the exact displaced owner file in the pointer, and omit the pointer only wh
 5. Surface each substantive conflict between owner authority and Jihye's operating method with its authorities, practical consequence, and viable resolutions. Obtain an explicit decision, fold it into local adaptations, and redraft. Repeat until no substantive conflict remains; if the user defers one, stop without writing.
 6. Show the complete proposed projection for manual verification, then pass an explicit approval gate before writing projections, metadata, or exclude entries.
 7. Add only the exact projection and metadata paths to the Git-resolved `info/exclude`, create only the required `.jihye/` parent directories, write companion metadata with state `review-required`, then write the approved guidance body.
-8. Verify owner sources are unchanged; projections and metadata are untracked and unstaged; `git check-ignore -v` resolves each to `info/exclude`; normal `git status` omits them; and `git status --ignored` reveals them at the expected paths. Set metadata state to `current` only after these checks pass, then revalidate the companion.
+8. Verify that owner sources are unchanged and that each projection and companion is untracked, unstaged, and resolved to `info/exclude` by `git check-ignore -v`. Set metadata state to `current` only after these checks pass, then revalidate the companion.
 9. Ask the user to run `/reload` from a session inside the repository. Do not claim the projection governs until reload and loaded-context verification succeed.
 
 ## Check Freshness
 
 Keep check deterministic and cheap; do not redraft the delta.
 
-1. Re-run the version, ownership, topology, exclusion, and Git-state checks.
+1. Re-run the ownership, topology, exclusion, and Git-state checks.
 2. Parse every managed companion and recompute the projection fingerprint, owner-source fingerprints, and selected evidence fingerprints.
 3. Return one state per projection:
    - **current** — metadata state is `current`, ownership and exclusion are safe, the pointer names an existing owner file, and all fingerprints match.
    - **reconciliation required** — metadata state is `review-required`, so a mutating operation wrote but never completed verification.
    - **refresh required** — owner guidance, its topology, or selected evidence changed, including an added, moved, or deleted source.
    - **unsafe** — companion metadata is invalid or mismatched, either managed file became tracked or staged, exclusion is missing, or ownership is ambiguous.
-   - **unsupported** — active Pi is older than 0.84.0.
 4. Report the exact mismatches whenever a state is not current. A stale delta never hides an owner requirement, because the pointer keeps owner guidance in force. Continue repository work under owner guidance and treat only the local adaptations as unverified. Stop and repair before relying on the projection when the state is unsafe or the pointer target is missing.
 
 ## Refresh the Delta
@@ -117,4 +115,4 @@ Prepare a narrowly scoped owner-facing proposal only for a local adaptation that
 
 ## Return the Result
 
-Report the repository and worktree, operation, Pi compatibility, discovered topology, pointer target, projection and metadata state and paths, delta changes or mismatch details, reconciled decisions or conflicts still blocking a write, exact exclude file, safety verification, and reload status. Distinguish completed activation from files that are merely drafted or written.
+Report the repository and worktree, operation, discovered topology, pointer target, projection and metadata state and paths, delta changes or mismatch details, reconciled decisions or conflicts still blocking a write, exact exclude file, safety verification, and reload status. Distinguish completed activation from files that are merely drafted or written.
