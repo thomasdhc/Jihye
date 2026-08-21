@@ -149,8 +149,7 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 		/Pi's same-directory precedence/i,
 		/translate-guidance` freshness check/i,
 		/companion metadata/i,
-		/lifecycle data, not guidance/i,
-		/stale or unsafe override/i,
+		/local delta/i,
 		/parent guidance files as references/i,
 		/instruction boundary/i,
 		/blueprint guidance/i,
@@ -214,7 +213,7 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 	}
 });
 
-test("translate-guidance preserves projection authority, freshness, and safety", () => {
+test("translate-guidance keeps the projection a pointer plus a local delta", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "translate-guidance", "SKILL.md"), "utf8");
 	for (const section of [
 		"Establish the Target and Operation",
@@ -222,7 +221,7 @@ test("translate-guidance preserves projection authority, freshness, and safety",
 		"Use the Managed Format",
 		"Initialize the Projection",
 		"Check Freshness",
-		"Refresh by Semantic Rebase",
+		"Refresh the Delta",
 		"Enrich or Compact",
 		"Propose Upstream",
 		"Return the Result",
@@ -232,42 +231,22 @@ test("translate-guidance preserves projection authority, freshness, and safety",
 	assertTerms(content, [
 		/AGENTS\.override\.md/,
 		/Pi 0\.84\.0 or later/i,
-		/owner guidance is upstream/i,
+		/linked worktree/i,
+		/instruction boundary/i,
 		/fidelity floor/i,
-		/submodule as a separate repository and translation boundary/i,
-		/git rev-parse --git-path info\/exclude/i,
+		/same-directory precedence/i,
+		/git rev-parse --git-path info\/exclude/,
+		/git check-ignore -v/,
 		/\.jihye\/AGENTS\.override\.md\.json/,
-		/mirror the projection's repository-relative path/i,
-		/exclude each exact metadata file, not the whole `\.jihye\/` directory/i,
 		/translate-guidance\/v1/,
 		/"state":"current"/,
-		/state[^\n]*`review-required`/i,
-		/companion metadata/i,
-		/Pi loads[^\n]*guidance body but not the companion/i,
-		/projectionSha256[^\n]*exact guidance-file bytes/i,
-		/ownerTopologySha256/,
-		/contractSha256[^\n]*SHA-256 of this `SKILL\.md`/i,
-		/doctrineSha256[^\n]*`\.\.\/\.\.\/DOCTRINE\.md`/i,
-		/Require both installed artifacts to be readable before initialization/i,
-		/Git blob whose bytes reproduce its recorded source SHA-256/i,
-		/complete ancestor chain and explicit owner-defined precedence/i,
-		/worth its runtime context cost/i,
-		/source-to-projection semantic mapping/i,
-		/conflict register outside the proposed projection/i,
-		/surface each substantive conflict to the user/i,
-		/repeat until no substantive conflict remains/i,
-		/stop without writing/i,
-		/later checks cannot report the existing projection as current/i,
+		/`review-required`/,
 		/approval gate/i,
-		/added, moved, or deleted source/i,
-		/semantic rebase/i,
-		/local duplication when owners now express it canonically/i,
-		/never modify owner-authored guidance/i,
-		/untracked and unstaged/i,
-		/normal `git status` omits them/i,
 		/`\/reload`/,
 	], "translate-guidance semantics");
-	assert.doesNotMatch(content, /^## Unresolved Conflicts$/m, "unresolved conflicts are reconciled before writing");
+	assert.match(content, /^## Owner Guidance$/m, "the projection body leads with a pointer to owner guidance");
+	assert.doesNotMatch(content, /^## Owner Requirements$/m, "the projection points at owner guidance instead of restating it");
+	assert.doesNotMatch(content, /contractSha256|doctrineSha256|ownerTopologySha256/, "the companion drops self-referential and topology fingerprints");
 });
 
 test("todo preserves durable planning and local-first handoff semantics", () => {
