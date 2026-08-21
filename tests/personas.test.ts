@@ -128,6 +128,8 @@ test("doctrine defines Jihye's development principles and canonical policy domai
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
 		/downstream personas and skills[^\n]*exact capitalized term/i,
+		/subagent role in backticks/i,
+		/different triggers or different failure modes/i,
 		/## Core Persona Standard/,
 		/constitutional layer/i,
 		/universal law/i,
@@ -170,10 +172,9 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/never expose or commit secrets, credentials/i,
 			/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
 			/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
+			/delegate work[^\n]*main-agent context/i,
 			/coordinate.*skill/is,
 			/before the first subagent call/i,
-			/delivery boundar/i,
-			/safe parallel/i,
 			/first actionable parallel group/i,
 			/ownership/i,
 			/integration/i,
@@ -181,6 +182,7 @@ test("global personas preserve canonical domains, coordination gates, and parent
 			/final synthesis/i,
 		], path);
 		assert.doesNotMatch(persona, /\bcoordinator\b/);
+		assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, `${path}: the coordination gate admits no delegation exemption`);
 	}
 });
 
@@ -210,6 +212,18 @@ test("downstream personas invoke canonical main-agent domains", () => {
 		/\bSolution Architecture\b/,
 		/blueprint guidance updates[^\n]*parent/i,
 	], "engineer policy domains");
+
+	for (const [definition, terms] of [
+		["scout.md", [/\bPrinciples\b/]],
+		["researcher.md", [/\bPrinciples\b/]],
+		["reviewer.md", [/\bFidelity\b/, /\bPrinciples\b/]],
+	] as const) {
+		assertTerms(
+			readFileSync(join(PERSONAS_ROOT, "subagents", definition), "utf8"),
+			[...terms],
+			`${definition} policy domains`,
+		);
+	}
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {

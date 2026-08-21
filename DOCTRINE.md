@@ -30,6 +30,7 @@ Before adding or expanding a statement, ask whether it is universal, conceptual,
 - Write for an LLM reader. Guidance is instruction, not documentation: prefer imperative sentences that prescribe behavior over prose that describes it.
 - State hard rules as imperatives ("load and follow", "never push", "do not"). Reserve "should" for design preferences that admit trade-offs.
 - Every line must either prescribe behavior or define a term. Cut lines that do neither.
+- Split a statement when its clauses have different triggers or different failure modes. Keep one statement when it enumerates a single rule across cases.
 - Keep gates imperative. Advisory phrasing ("should refer to") weakens a gate into a suggestion; agents skip suggestions under pressure.
 - Echo glossary terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file. Do not paraphrase a glossary term where the term itself fits.
 
@@ -37,6 +38,7 @@ Before adding or expanding a statement, ask whether it is universal, conceptual,
 
 - Use the glossary below as a controlled vocabulary. When a glossary term applies, use it; do not coin a synonym.
 - Where a term lists qualified kinds, use the qualified form ("approval gate", "delivery boundary"). Use the bare term only for the general concept.
+- Name a bundled subagent role in backticks and qualify it as a `<role>` subagent on its first use in a file. Never leave a bare role word where a platform, human, or document sense can be read; name that sense explicitly.
 - Match the verb to the term's kind. Apply a domain; never pass one. Pass a gate you must satisfy, and apply a gate to the work you are evaluating. State an invariant as a condition that holds rather than a step to complete.
 - Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
 - Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
@@ -64,11 +66,11 @@ Complete every step before handing off a base-persona change:
 
 **blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture: collaborate by default, treat each task as a change within nested blueprints at the scale of its consequences, follow a blueprint brief or equivalent guidance, derive only the task-relevant blueprint from source-of-truth evidence when neither is reliable, trace execution paths and root causes, keep communication focused, and handle files efficiently.
+**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, treat each task as a change within nested blueprints at the scale of its consequences, trace execution paths and root causes, keep communication focused, and handle files efficiently.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: readability, simplicity, blueprint coherence, necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: blueprint sourcing, blueprint coherence, surfacing stale guidance and necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
 **Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
 
@@ -94,7 +96,7 @@ Complete every step before handing off a base-persona change:
 
 **finding** — a concrete, verified, reportable conclusion that passed its finding gate: a defect in a review, an opportunity in an investigation. Speculation, style preference, and unverified subagent conclusions are not findings.
 
-**verdict** — the proportionate conclusion drawn from findings: a review's approve or request-changes recommendation, a reviewer subagent's challenge result. A verdict follows from findings; it is never stronger than its evidence.
+**verdict** — the proportionate conclusion drawn from findings: a review's approve or request-changes recommendation, a `reviewer` subagent's challenge result. A verdict follows from findings; it is never stronger than its evidence.
 
 **ownership** — responsibility that stays with the main or calling agent and is never transferred to a subagent: source-of-truth context, conflict resolution, integration, validation, final synthesis, and every finding and verdict. Subagent output is input to verify, not authority.
 

@@ -15,7 +15,8 @@ Apply Fidelity, Principles, and Safety while reviewing changed behavior against 
 4. Compare claimed and actual behavior. Distinguish an introduced regression from a pre-existing defect or documented limitation. Use CI evidence for validation, but omit dashboard-visible CI status from submitted comments and review bodies.
 5. Run focused checks. For explicit behavioral claims and repeated changes, define finite acceptance invariants over changed files, direct runtime dependencies, and any named subsystem. Classify every residual as intentional or actionable.
 6. Consolidate manifestations with one root cause while retaining every verified trigger class and affected path needed for a fix. On a new head, rerun the original invariants and reconcile unresolved candidates before concluding the review is clean.
-7. Load and follow the `coordinate` skill when delegation is warranted. Directly verify decisive evidence and use a reviewer challenge for consequential or uncertain candidates.
+
+Brief a `reviewer` subagent to challenge any consequential or uncertain candidate, supplying the claim, its anchoring changed lines, the priority risks, and the evidence that would overturn it.
 
 ## Apply the Finding Gate
 
@@ -51,21 +52,33 @@ Checks inform but do not override a verified defect. A non-blocking inline findi
 Present findings first by priority using exactly:
 
 ```markdown
-### [P2] <short actionable title>
+### [P2] <short title naming the error>
 **`path/to/file:line`**
 
-Findings: <one concise sentence describing the trigger and concrete impact> Proposal: <one concise imperative sentence describing the minimal correction>
+Findings: <concise sentences describing the trigger and concrete impact>
+
+Proposal: <concise imperative sentences describing the minimal correction>
 ```
 
 Then give the verdict recommendation, at most three high-signal notes, local validation, unresolved evidence limits, and whether anything was posted.
 
-For each platform inline comment, use this exact single paragraph and anchor it to the changed line causing the behavior:
+For each platform inline comment, use this exact three-block format. Anchor it to the changed line causing the behavior:
 
 ```markdown
-[P2] Findings: <one concise sentence describing the trigger and concrete impact> Proposal: <one concise imperative sentence describing the minimal correction>
+[P2] <short title naming the error>
+
+Findings: <concise sentences describing the trigger and concrete impact>
+
+Proposal: <concise imperative sentences describing the minimal correction>
 ```
 
-Do not add a title, compliment, summary, raw log, CI status, or second finding to an inline comment.
+Separate the title, findings, and proposal with a blank line in the submitted body. A single newline renders as one joined paragraph on both hosts.
+
+Use no more than two clauses in each sentence. Split extra conditions or effects into separate sentences. Never write a run-on sentence.
+
+Use the title only to name the error. Do not add a compliment, summary, raw log, CI status, or second finding to an inline comment.
+
+Reserve code spans for the anchor and exact identifiers that mislead as plain prose; write everything else as prose.
 
 ## Submit and Verify
 
@@ -79,4 +92,4 @@ Before an authorized submission:
 
 Prefer one logical review submission when supported; never claim transactional atomicity. When operations are separate, publish and verify comments before formal approval, rechecking the head SHA immediately before the irreversible verdict. On partial failure, stop and report the persisted state rather than retrying blindly.
 
-Read back and verify the summary, reviewer, every inline body/path/line/URL, submitted revision coordinates, platform-visible review or approval state, and current head SHA. Return the target URL, discussion URLs, and final visible verdict; if submission is unavailable, return the complete draft and limitation.
+Read back and verify the summary, the authenticated reviewing account, every inline body/path/line/URL, submitted revision coordinates, platform-visible review or approval state, and current head SHA. Return the target URL, discussion URLs, and final visible verdict; if submission is unavailable, return the complete draft and limitation.

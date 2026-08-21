@@ -57,6 +57,7 @@ test("skills have valid identifying frontmatter", () => {
 	assert.deepEqual(names.sort(), [
 		"coordinate",
 		"examen",
+		"hakseup",
 		"review-guidance",
 		"session-digest",
 		"todo",
@@ -71,6 +72,7 @@ test("coordinate preserves its execution-skeleton algorithm", () => {
 	assertTerms(content, [
 		/Context and Delegation/,
 		/main-agent context/i,
+		/depth and breadth/i,
 		/acceptance invariant/i,
 		/delivery boundar/i,
 		/safe parallel/i,
@@ -78,8 +80,10 @@ test("coordinate preserves its execution-skeleton algorithm", () => {
 		/approval or read gate/i,
 		/integration and validation/i,
 		/first actionable parallel group/i,
+		/single delegated call/i,
 	], "coordinate semantics");
 	assert.doesNotMatch(content, /\bcoordinator\b/i);
+	assert.doesNotMatch(content, /\bskip\b/i, "coordinate must exempt no delegation from the skeleton");
 });
 
 test("examen preserves introduced-defect and submission semantics", () => {
@@ -99,9 +103,15 @@ test("examen preserves introduced-defect and submission semantics", () => {
 		/\[P2\]/,
 		/\[P3\]/,
 		/current head SHA/i,
+		/`reviewer` subagent/,
 		/references\/platforms\.md/,
 	], "examen semantics");
-	assert.match(content, /\[P2\] Findings:[^\n]*Proposal:/, "inline finding contract");
+	assert.match(content, /```markdown\n\[P2\] <[^>\n]*title[^>\n]*>\n\nFindings: <[^\n]+>\n\nProposal: <[^\n]+>\n```/, "inline finding contract");
+	assert.match(content, /```markdown\n### \[P2\] <[^>\n]*title[^>\n]*>\n\*\*`path\/to\/file:line`\*\*\n\nFindings: <[^\n]+>\n\nProposal: <[^\n]+>\n```/, "draft finding contract");
+	assert.match(content, /blank line/i, "inline block separation");
+	assert.match(content, /no more than two clauses/i, "inline sentence clause limit");
+	assert.match(content, /run-on sentence/i, "inline sentence readability");
+	assert.doesNotMatch(content, /\[P2\] Findings:[^\n]*Proposal:/, "legacy single-line inline format");
 });
 
 test("vicara preserves evidence gates and resumable reporting", () => {
@@ -111,10 +121,10 @@ test("vicara preserves evidence gates and resumable reporting", () => {
 	}
 	assertTerms(content, [
 		/\bSolution Architecture\b/,
-		/follow the `coordinate` skill/i,
+		/`scout` or `researcher` subagent/,
 		/finding gate/i,
 		/decisive support/i,
-		/reviewer challenge/i,
+		/`reviewer` subagent/,
 		/Frontier/,
 		/Needs More Investigation/,
 		/references\/report\.md/,
@@ -153,6 +163,55 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 		/remains read-only/i,
 	], "review-guidance semantics");
 	assert.match(content, /do not[^\n]*unrelated Markdown/i, "review scope excludes unrelated documentation");
+});
+
+test("hakseup preserves learner-first surfacing and retention semantics", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "hakseup", "SKILL.md"), "utf8");
+	for (const section of ["Preserve the Teaching Invariants", "Locate the Course", "Scope the Curriculum", "Run the Task Loop", "Calibrate Difficulty", "Capture Notes and Feedback", "Generate and Run the Review Test", "Deliver the Course Record"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/signature, docstring, and check block alone/i,
+		/never name the concept, list traps, preview failure modes/i,
+		/explain after the attempt, never before/i,
+		/never write an implementation into the learner's working file/i,
+		/discard the reference solution/i,
+		/acceptance invariants/i,
+		/finding gate/i,
+		/applying Validation to the attempt/,
+		/prompt boundary/i,
+		/read gate/i,
+		/one tier per request/i,
+		/third hint tier/i,
+		/at least one input the check block does not cover/i,
+		/advance only when the learner says so/i,
+		/never reuse a check block the learner has already passed/i,
+		/references\/course\.md/,
+		/resolve the course home rather than assuming one/i,
+		/workspace-owned configuration/i,
+		/never hardcode a course home/i,
+		/only from code read in this session/i,
+		/per-module choice, not a course-wide setting/i,
+		/`scout` subagent/,
+		/a module is initialized and its first task is surfaced/i,
+		/a module completes and its review test exists/i,
+		/the learner pauses, ends a sitting, or asks to stop/i,
+		/carry every checkpoint through to the pull request/i,
+		/no checkpoint waits for a later checkpoint to deliver it/i,
+		/delivery boundary in the course home's repository/i,
+		/apply the workspace Git workflow/i,
+	], "hakseup semantics");
+	assert.doesNotMatch(content, /git (checkout|commit|push) |<username>\//i, "hakseup must not restate workspace-owned Git mechanics");
+	assert.doesNotMatch(content, /\bpython\b/i, "hakseup must stay subject-agnostic");
+	assert.doesNotMatch(content, /\bEtude\b/i, "hakseup must not name a configured course home");
+	assert.doesNotMatch(content, /\blearnings\/\B/i, "hakseup must not hardcode a course directory");
+
+	const coursePath = join(SKILLS_ROOT, "hakseup", "references", "course.md");
+	assert.ok(existsSync(coursePath));
+	const course = readFileSync(coursePath, "utf8");
+	for (const file of ["CURRICULUM.md", "problems.md", "notes.md", "learner.md"]) {
+		assert.match(course, new RegExp(`^## ${file.replace(".", "\\.")}$`, "m"), `course: ${file}`);
+	}
 });
 
 test("translate-guidance preserves projection authority, freshness, and safety", () => {

@@ -11,6 +11,7 @@ const scriptsDirectory = join(repositoryRoot, "scripts/pi-session-metrics");
 const python = process.env.PYTHON ?? "python3";
 const extractorScript = "extract_local_metrics.py";
 const plotScripts = [
+	"plot_context_epoch_messages_by_date.py",
 	"plot_context_epoch_structure.py",
 	"plot_daily_aggregate.py",
 	"plot_token_distributions.py",
@@ -63,6 +64,32 @@ test("Pi session metric CSV helpers validate schemas and derive non-cache tokens
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
+});
+
+test("per-date context epoch plots retain active zero-message rows and clean stale dates", () => {
+	const program = [
+		"import shutil, tempfile",
+		"from pathlib import Path",
+		"from plot_context_epoch_messages_by_date import group_active_epochs_by_date, log_ticks, remove_stale_date_outputs",
+		"rows = [{'start_date': '2026-08-03', 'epoch_type': 'initial', 'persisted_user_messages_introduced': '2', 'main_provider_events': '5'}, {'start_date': '2026-08-03', 'epoch_type': 'post_compaction', 'persisted_user_messages_introduced': '0', 'main_provider_events': '3'}, {'start_date': '2026-08-04', 'epoch_type': 'initial', 'persisted_user_messages_introduced': '1', 'main_provider_events': '0'}]",
+		"groups, omitted = group_active_epochs_by_date(rows)",
+		"assert list(groups) == ['2026-08-03'] and len(groups['2026-08-03']) == 2 and omitted == 1",
+		"assert 2_000 in log_ticks(2_500)",
+		"directory = Path(tempfile.mkdtemp())",
+		"(directory / '2026-08-02.png').touch()",
+		"(directory / 'notes.png').touch()",
+		"remove_stale_date_outputs(directory, {'2026-08-03'})",
+		"assert not (directory / '2026-08-02.png').exists() and (directory / 'notes.png').exists()",
+		"shutil.rmtree(directory)",
+	].join("; ");
+	const result = spawnSync(python, ["-c", program], {
+		encoding: "utf8",
+		env: {
+			...process.env,
+			PYTHONPATH: scriptsDirectory,
+		},
+	});
+	assert.equal(result.status, 0, result.stderr);
 });
 
 test("daily session groups allow days without a newly-started session", () => {

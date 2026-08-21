@@ -6,8 +6,9 @@ Jihye packages reusable workflows as Pi skills. Pi discovers each skill from its
 
 | Skill | Purpose |
 |---|---|
-| [`coordinate`](coordinate/SKILL.md) | Plan and execute efficient parent-side subagent workflows. |
+| [`coordinate`](coordinate/SKILL.md) | Build and run the parent-side execution skeleton for any delegation. |
 | [`examen`](examen/SKILL.md) | Review GitHub pull requests and GitLab merge requests using introduced-defect evidence. |
+| [`hakseup`](hakseup/SKILL.md) | Teach a scoped curriculum through a learner-first task loop with durable notes and retention tests. |
 | [`review-guidance`](review-guidance/SKILL.md) | Review the most-specific agent guidance governing a selected path. |
 | [`session-digest`](session-digest/SKILL.md) | Extract and save important session exchanges to Markdown. |
 | [`todo`](todo/SKILL.md) | Maintain durable future work through a lean index and local planning records. |
