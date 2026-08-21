@@ -13,7 +13,7 @@ Require an explicit guidance file, source file, directory, or work area. Ask whe
 
 1. Resolve relative paths from the current working directory.
 2. For an explicit guidance file, use that file as the subject.
-3. For source or directory scope, locate its nearest, most-specific governing guidance and use that file as the subject. Apply Pi's same-directory precedence: `AGENTS.override.md`, `AGENTS.md`, `AGENTS.MD`, `CLAUDE.md`, then `CLAUDE.MD`.
+3. For source or directory scope, locate its nearest, most-specific governing guidance and use that file as the subject. Apply Pi's same-directory precedence, preferring `AGENTS.override.md` when that directory has one.
 4. Treat a Jihye-managed override as a local delta over the owner guidance it points to, and use that owner file as a reference rather than a second subject. Apply the `translate-guidance` freshness check before relying on the delta. The companion metadata is lifecycle data, never a review subject.
 5. Preserve the distinction between a loaded symlink and its canonical target: review maintained content at the canonical target and identify the loaded path it governs.
 6. Use parent guidance files as references for inheritance, conflicts, and duplication, never as additional subjects.

@@ -26,7 +26,7 @@ Never modify owner-authored guidance during this workflow. Never copy an owner r
 Discover the complete repository guidance topology before trusting an existing projection or drafting a new one.
 
 - Find `AGENTS.override.md`, `AGENTS.md`, `AGENTS.MD`, `CLAUDE.md`, and `CLAUDE.MD` from the repository root through relevant scopes. Exclude `.git`, generated or vendored trees, and nested Git repositories.
-- Apply Pi's same-directory precedence: `AGENTS.override.md`, then `AGENTS.md`, `AGENTS.MD`, `CLAUDE.md`, and `CLAUDE.MD`. An override replaces guidance only in its own directory; guidance from other directories continues to layer.
+- Apply Pi's same-directory precedence, which prefers `AGENTS.override.md` over every other context file in that directory. An override replaces guidance only in its own directory; guidance from other directories continues to layer.
 - Record the exact owner file each projection displaces in its own directory. That file is the projection's pointer target.
 - Classify every override as tracked owner guidance, an untracked Jihye-managed projection with valid companion metadata, or a local file without valid Jihye ownership data. Refuse to overwrite tracked or ambiguously owned files.
 - Read every applicable owner source completely before drafting a delta. Preserve symlink identity and inspect its canonical target when maintained elsewhere.
