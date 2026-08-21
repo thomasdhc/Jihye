@@ -56,6 +56,7 @@ test("skills have valid identifying frontmatter", () => {
 	}
 	assert.deepEqual(names.sort(), [
 		"coordinate",
+		"dokhae",
 		"examen",
 		"hakseup",
 		"review-guidance",
@@ -205,6 +206,47 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 	const course = readFileSync(coursePath, "utf8");
 	for (const file of ["CURRICULUM.md", "problems.md", "notes.md", "learner.md"]) {
 		assert.match(course, new RegExp(`^## ${file.replace(".", "\\.")}$`, "m"), `course: ${file}`);
+	}
+});
+
+test("dokhae preserves source-first critical-reading and lineage semantics", () => {
+	const content = readFileSync(join(SKILLS_ROOT, "dokhae", "SKILL.md"), "utf8");
+	for (const section of ["Preserve the Reading Invariants", "Locate the Track", "Scope the Track", "Run the Reading Loop", "Maintain the Queue", "Capture Notes and Lineage", "Deliver the Track Record"]) {
+		assert.ok(headings(content).includes(section), section);
+	}
+	assertTerms(content, [
+		/read the primary source directly and in full/i,
+		/never review a source from a summary, an abstract, a citation, or recall/i,
+		/before objecting to it/i,
+		/finding gate/i,
+		/decays into an assertion/i,
+		/never inherit a citation's characterization/i,
+		/name the date the score is taken/i,
+		/never resolve a queue item from recall/i,
+		/conversation[^\n]*transient/i,
+		/prompt boundary/i,
+		/read gate/i,
+		/references\/track\.md/,
+		/resolve the reading home rather than assuming one/i,
+		/workspace-owned configuration/i,
+		/never hardcode a reading home/i,
+		/numbered globally|number its sections globally/i,
+		/never delete a closed item/i,
+		/advance only on the reader's explicit signal/i,
+		/carry every checkpoint through to the pull request/i,
+		/no checkpoint waits for a later checkpoint to deliver it/i,
+		/delivery boundary in the reading home's repository/i,
+		/apply the workspace Git workflow/i,
+	], "dokhae semantics");
+	assert.doesNotMatch(content, /git (checkout|commit|push) |<username>\//i, "dokhae must not restate workspace-owned Git mechanics");
+	assert.doesNotMatch(content, /\bEtude\b/i, "dokhae must not name a configured reading home");
+	assert.doesNotMatch(content, /\blearnings\/\B/i, "dokhae must not hardcode a reading directory");
+
+	const trackPath = join(SKILLS_ROOT, "dokhae", "references", "track.md");
+	assert.ok(existsSync(trackPath));
+	const track = readFileSync(trackPath, "utf8");
+	for (const file of ["TRACK.md", "notes.md", "queue.md"]) {
+		assert.match(track, new RegExp(`^## ${file.replace(".", "\\.")}$`, "m"), `track: ${file}`);
 	}
 });
 
