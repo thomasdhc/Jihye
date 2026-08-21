@@ -193,6 +193,8 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 		/only from code read in this session/i,
 		/per-module choice, not a course-wide setting/i,
 		/`scout` subagent/,
+		/record the cited evidence in that module's `sources\.md`/,
+		/keep it out of `notes\.md`/i,
 		/a module is initialized and its first task is surfaced/i,
 		/a module completes and its review test exists/i,
 		/the learner pauses, ends a sitting, or asks to stop/i,
@@ -209,9 +211,14 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 	const coursePath = join(SKILLS_ROOT, "hakseup", "references", "course.md");
 	assert.ok(existsSync(coursePath));
 	const course = readFileSync(coursePath, "utf8");
-	for (const file of ["CURRICULUM.md", "problems.md", "notes.md", "learner.md"]) {
+	for (const file of ["CURRICULUM.md", "notes.md", "learner.md"]) {
 		assert.match(course, new RegExp(`^## ${file.replace(".", "\\.")}$`, "m"), `course: ${file}`);
 	}
+	for (const file of ["problems.md", "sources.md"]) {
+		assert.match(course, new RegExp(`^## module-\\\\<n\\\\>/${file.replace(".", "\\.")}$`, "m"), `course: module-<n>/${file}`);
+	}
+	assert.match(course, /^## module-\\<n\\>\/review-test\./m, "course: module-<n>/review-test");
+	assert.match(course, /a course adopts `module-<n>\/` when it reaches its second\s+module/i, "course: module adoption rule");
 });
 
 test("dokhae preserves source-first critical-reading and lineage semantics", () => {
