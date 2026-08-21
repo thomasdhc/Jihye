@@ -291,6 +291,8 @@ test("translate-guidance keeps the projection a pointer plus a local delta", () 
 		/`review-required`/,
 		/approval gate/i,
 		/`\/reload`/,
+		/no projection is warranted/i,
+		/inside the target repository/i,
 	], "translate-guidance semantics");
 	assert.match(content, /^## Owner Guidance$/m, "the projection body leads with a pointer to owner guidance");
 	assert.doesNotMatch(content, /^## Owner Requirements$/m, "the projection points at owner guidance instead of restating it");

@@ -18,6 +18,8 @@ Require one Git repository and one operation: **initialize**, **check**, **refre
 4. Establish the instruction boundary. Owner-authored guidance controls owner intent and conventions; implementation, configuration, tests, CI, and documentation control repository facts; Jihye controls its operating method; verified local discoveries and explicit user decisions control only the local delta.
 5. Apply Fidelity to every owner requirement, boundary, command, and invariant. Owner guidance is the fidelity floor, not a ceiling on useful evidence-backed context.
 
+Keep the whole workflow inside the target repository. A delta covers that repository's own guidance and facts, so never import, reconcile against, or restate guidance, paths, conventions, or environment facts from outside it.
+
 Never modify owner-authored guidance during this workflow. Never copy an owner requirement into a projection; point at it instead. Never make a projection or its metadata tracked, staged, or publishable.
 
 ## Resolve the Guidance Topology
@@ -32,7 +34,7 @@ Discover the complete repository guidance topology before trusting an existing p
 - Resolve the local exclude file with `git rev-parse --git-path info/exclude`; never assume `.git` is a directory. Record the exact root-relative projection and metadata paths as anchored exclude entries and verify each with `git check-ignore -v`.
 - Select only canonical evidence needed to verify the blueprint, paths, commands, validation, generated-file boundaries, and architectural claims. Record its paths and content SHA-256.
 
-Resolve and check a projection manually whenever the session runs outside the repository, and claim automatic activation only for a session running inside it.
+A session commonly runs above the repository root. Pi loads no repository context there, so the projection displaces nothing and is resolved by reading it manually alongside the owner file it points to. Claim automatic activation only for a session running inside the repository.
 
 ## Use the Managed Format
 
@@ -69,7 +71,7 @@ Name the exact displaced owner file in the pointer, and omit the pointer only wh
 
 1. Verify that no projection or metadata target is tracked, staged, or occupied by a file without valid Jihye ownership data.
 2. Derive only the evidence-backed blueprint needed for future work. Admit each enrichment only when it is durable, evidence-backed, correctly scoped, absent from governing guidance, useful to future work, and worth its runtime context cost.
-3. Create a projection only where its directory displaces owner guidance or a verified local scope needs a distinct delta. Check the complete ancestor chain and explicit owner-defined precedence; no delta may weaken an applicable requirement from another scope.
+3. Create a projection only when the surviving delta carries value beyond its runtime context and maintenance cost. Report that no projection is warranted and stop without writing when it does not; an empty or thin delta is worse than none. Check the complete ancestor chain and explicit owner-defined precedence; no delta may weaken an applicable requirement from another scope.
 4. Draft the proposed delta and label every entry with the evidence supporting it. Maintain a conflict register outside the proposed projection.
 5. Surface each substantive conflict between owner authority and Jihye's operating method with its authorities, practical consequence, and viable resolutions. Obtain an explicit decision, fold it into local adaptations, and redraft. Repeat until no substantive conflict remains; if the user defers one, stop without writing.
 6. Show the complete proposed projection for manual verification, then pass an explicit approval gate before writing projections, metadata, or exclude entries.
@@ -115,4 +117,4 @@ Prepare a narrowly scoped owner-facing proposal only for a local adaptation that
 
 ## Return the Result
 
-Report the repository and worktree, operation, discovered topology, pointer target, projection and metadata state and paths, delta changes or mismatch details, reconciled decisions or conflicts still blocking a write, exact exclude file, safety verification, and reload status. Distinguish completed activation from files that are merely drafted or written.
+Report the repository and worktree, operation, discovered topology, pointer target, projection and metadata state and paths, delta changes or mismatch details, reconciled decisions or conflicts still blocking a write, exact exclude file, safety verification, and reload status. Distinguish completed activation from files that are merely drafted or written, and from a decision that no projection is warranted.
