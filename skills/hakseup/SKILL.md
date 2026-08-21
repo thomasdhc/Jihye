@@ -51,7 +51,7 @@ Adopt already-completed work as a completed module instead of re-teaching it. Co
 
 Author each task's problem statement immediately before surfacing it, never in advance, so difficulty follows the calibration record.
 
-Treat a source repository as a per-module choice, not a course-wide setting. Prefer it where the repository's own conventions are the lesson, and prefer generic material where real code would add noise instead of signal. When a module names a source repository, use a `scout` subagent to locate its real patterns before authoring, and record the cited evidence in `notes.md`.
+Treat a source repository as a per-module choice, not a course-wide setting. Prefer it where the repository's own conventions are the lesson, and prefer generic material where real code would add noise instead of signal. When a module names a source repository, use a `scout` subagent to locate its real patterns before authoring, and record the cited evidence in that module's `sources.md`. Keep it out of `notes.md`, which is the learner's reference rather than an agent-facing record.
 
 ## Run the Task Loop
 

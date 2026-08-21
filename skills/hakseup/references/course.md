@@ -8,12 +8,18 @@ resolved home as `<course-root>`'s parent.
 ```text
 <course home>/<course-slug>/
   CURRICULUM.md        agreed scope, module arc, status, resume pointer
-  problems.md          every surfaced problem statement, in order
   notes.md             durable concept and internals write-ups
   learner.md           miss patterns, hint tiers, calibration, feedback
-  review-test.<ext>    generated retention test, one per completed module
-  <working file>       the learner's own attempts; named by the learner
+  module-<n>/
+    problems.md        every surfaced problem statement of that module, in order
+    <working file>     the learner's own attempts; named by the learner
+    review-test.<ext>  the retention test generated at that module's completion
+    sources.md         cited scouting evidence, only for a module drawing on a repository
 ```
+
+Course-root files are cumulative and cross-referenced across every module. `module-<n>/` files are
+episodic and belong to one module only. A course adopts `module-<n>/` when it reaches its second
+module; a single-module course may stay flat. Number tasks by module, `<module>.<task>`.
 
 Keep the learner's working file out of every template. The learner owns its contents.
 
@@ -62,7 +68,7 @@ level: <current difficulty>
 
 Mark a module `complete` only after its review test exists.
 
-## problems.md
+## module-\<n\>/problems.md
 
 Append each problem statement when it is surfaced, never before. Keep the statement exactly as the learner received it, so a later attempt starts from the same information.
 
@@ -80,7 +86,7 @@ Record a hint under its problem only after it is given, tagged with its tier.
 
 ## notes.md
 
-One section per concept or detour. Preserve the observed output that established the point; a claim without its evidence decays into an assertion the learner cannot re-verify.
+One section per concept or detour. Number sections globally across modules so a cross-reference survives. Preserve the observed output that established the point; a claim without its evidence decays into an assertion the learner cannot re-verify.
 
 ```markdown
 ## <concept>
@@ -118,7 +124,20 @@ Order sections by when they arose. A learner-initiated detour is a first-class s
 
 State a miss pattern as a recurring habit rather than a single wrong answer; a habit generates a review-test case, an isolated slip does not.
 
-## review-test.\<ext\>
+## module-\<n\>/sources.md
+
+Only for a module that draws its material from a source repository. Record the scouting evidence a
+task was authored from, so the task can be re-derived rather than recalled.
+
+```markdown
+# module-<n> — Sources
+
+- `<path>` — `<construct>`: <the pattern it establishes, and the task that draws on it>
+```
+
+This file is agent-facing. Keep it out of `notes.md`, which is the learner's reference.
+
+## module-\<n\>/review-test.\<ext\>
 
 Keep it standalone and runnable in the learner's environment with no other course file present. Structure it so a failure names the concept it came from.
 
