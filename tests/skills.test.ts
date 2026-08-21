@@ -282,7 +282,7 @@ test("translate-guidance keeps the projection a pointer plus a local delta", () 
 		/linked worktree/i,
 		/instruction boundary/i,
 		/fidelity floor/i,
-		/same-directory precedence/i,
+		/precedence/i,
 		/git rev-parse --git-path info\/exclude/,
 		/git check-ignore -v/,
 		/\.jihye\/AGENTS\.override\.md\.json/,
@@ -292,6 +292,8 @@ test("translate-guidance keeps the projection a pointer plus a local delta", () 
 		/approval gate/i,
 		/`\/reload`/,
 		/no projection is warranted/i,
+		/ancestors/i,
+		/cannot reach/i,
 		/inside the target repository/i,
 	], "translate-guidance semantics");
 	assert.match(content, /^## Owner Guidance$/m, "the projection body leads with a pointer to owner guidance");

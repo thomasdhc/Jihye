@@ -27,14 +27,15 @@ Never modify owner-authored guidance during this workflow. Never copy an owner r
 Discover the complete repository guidance topology before trusting an existing projection or drafting a new one.
 
 - Find every context file Pi loads, from the repository root through relevant scopes. Exclude `.git`, generated or vendored trees, and nested Git repositories.
-- Apply Pi's same-directory precedence, which prefers `AGENTS.override.md` over every other context file in that directory. An override replaces guidance only in its own directory; guidance from other directories continues to layer.
+- Apply Pi's loading rules: one context file per directory, preferring `AGENTS.override.md`, layered from the session directory upward through its ancestors. An override displaces guidance only in its own directory, and guidance below the session directory never loads.
 - Record the exact owner file each projection displaces in its own directory. That file is the projection's pointer target.
+- Record the scoped guidance that a session at the projection's directory cannot reach. Where that guidance lives and what it governs is delta no owner file supplies.
 - Classify every override as tracked owner guidance, an untracked Jihye-managed projection with valid companion metadata, or a local file without valid Jihye ownership data. Refuse to overwrite tracked or ambiguously owned files.
 - Read every applicable owner source completely before drafting a delta. Preserve symlink identity and inspect its canonical target when maintained elsewhere.
 - Resolve the local exclude file with `git rev-parse --git-path info/exclude`; never assume `.git` is a directory. Record the exact root-relative projection and metadata paths as anchored exclude entries and verify each with `git check-ignore -v`.
 - Select only canonical evidence needed to verify the blueprint, paths, commands, validation, generated-file boundaries, and architectural claims. Record its paths and content SHA-256.
 
-A session commonly runs above the repository root. Pi loads no repository context there, so the projection displaces nothing and is resolved by reading it manually alongside the owner file it points to. Claim automatic activation only for a session running inside the repository.
+A session commonly runs above the repository root, where none of the repository's guidance loads. Resolve the projection manually there by reading it alongside the owner file it points to, and claim automatic activation only for a session running inside the repository.
 
 ## Use the Managed Format
 
