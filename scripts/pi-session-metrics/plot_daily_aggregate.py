@@ -10,7 +10,7 @@ from typing import Any
 
 from _common import date_label, ensure_parent, integer, load_csv, non_cache_tokens
 
-MAIN_COLUMNS = {"date", "total_tokens", "cacheRead", "used_subagents"}
+MAIN_COLUMNS = {"date", "total_tokens", "cacheRead", "subagent_calls"}
 CHILD_COLUMNS = {"date", "total_tokens", "cacheRead"}
 SESSION_COLUMNS = {
     "session_id",
@@ -137,7 +137,7 @@ def plot(args: argparse.Namespace) -> None:
         main_tokens[day] += integer(row, "total_tokens")
         main_non_cache[day] += non_cache_tokens(row)
         parent_turns[day] += 1
-        delegated_turns[day] += int(integer(row, "used_subagents") > 0)
+        delegated_turns[day] += int(integer(row, "subagent_calls") > 0)
     for row in child_rows:
         day = row["date"]
         child_tokens[day] += integer(row, "total_tokens")
