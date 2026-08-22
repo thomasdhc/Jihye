@@ -197,7 +197,7 @@ The leased name appears below the context status in the companion widget using P
 
 ### `voice`
 
-`voice` captures speech from the microphone, transcribes it locally, and sends the transcript as a user message. It exists for spoken working sessions where typing is the bottleneck, so it sends by default rather than inserting text for review.
+`voice` captures speech from the microphone, transcribes it locally, and sends the transcript as a user message. It exists for spoken working sessions where typing is the bottleneck, so it sends by default rather than inserting text for review. While active, the companion widget shows a red `● REC` and then an accent-colored `◌ transcribing` below the session identity.
 
 ```text
 f9              # start capture; press again to stop, transcribe, and send

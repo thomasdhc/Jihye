@@ -5,6 +5,11 @@ import { constants } from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 import {
+	removeCompanionWidgetContribution,
+	updateCompanionWidget,
+	type CompanionWidgetContribution,
+} from "../widget/api.ts";
+import {
 	resolveVoiceConfig,
 	VOICE_DEFAULTS,
 	voiceConfigPath,
@@ -21,9 +26,32 @@ import {
 } from "./recorder.ts";
 
 const SHORTCUT = "f9";
-const STATUS_ID = "voice";
+const COMPANION_CONTRIBUTION_ID = "voice";
 
-type Phase = "idle" | "recording" | "transcribing";
+export type VoicePhase = "idle" | "recording" | "transcribing";
+
+export function voicePhaseContribution(phase: VoicePhase): CompanionWidgetContribution | undefined {
+	switch (phase) {
+		case "recording":
+			return {
+				id: COMPANION_CONTRIBUTION_ID,
+				region: "details",
+				order: 40,
+				lines: ["● REC"],
+				tone: "error",
+			};
+		case "transcribing":
+			return {
+				id: COMPANION_CONTRIBUTION_ID,
+				region: "details",
+				order: 40,
+				lines: ["◌ transcribing"],
+				tone: "accent",
+			};
+		default:
+			return undefined;
+	}
+}
 
 export async function loadVoiceConfig(environment = process.env): Promise<ResolvedVoiceConfig> {
 	let parsed: unknown;
@@ -63,22 +91,14 @@ export async function missingPrerequisites(config: VoiceConfig): Promise<string[
 
 export default function (pi: ExtensionAPI): void {
 	let config: VoiceConfig = VOICE_DEFAULTS;
-	let phase: Phase = "idle";
+	let phase: VoicePhase = "idle";
 	let recording: ActiveRecording | null = null;
 
-	function setPhase(ctx: ExtensionContext, next: Phase): void {
+	function setPhase(next: VoicePhase): void {
 		phase = next;
-		const theme = ctx.ui.theme;
-		switch (phase) {
-			case "recording":
-				ctx.ui.setStatus(STATUS_ID, theme ? theme.fg("error", " recording") : " recording");
-				break;
-			case "transcribing":
-				ctx.ui.setStatus(STATUS_ID, theme ? theme.fg("warning", " transcribing") : " transcribing");
-				break;
-			default:
-				ctx.ui.setStatus(STATUS_ID, undefined);
-		}
+		const contribution = voicePhaseContribution(next);
+		if (contribution) updateCompanionWidget(pi.events, contribution);
+		else removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
 	}
 
 	function report(ctx: ExtensionContext, prefix: string, error: unknown): void {
@@ -106,10 +126,10 @@ export default function (pi: ExtensionAPI): void {
 
 		try {
 			recording = startRecording(config);
-			setPhase(ctx, "recording");
+			setPhase("recording");
 		} catch (error) {
 			recording = null;
-			setPhase(ctx, "idle");
+			setPhase("idle");
 			report(ctx, "Voice capture", error);
 		}
 	}
@@ -119,7 +139,7 @@ export default function (pi: ExtensionAPI): void {
 		if (!active) return;
 
 		recording = null;
-		setPhase(ctx, "transcribing");
+		setPhase("transcribing");
 
 		try {
 			await active.stop();
@@ -140,7 +160,7 @@ export default function (pi: ExtensionAPI): void {
 			report(ctx, "Voice", error);
 		} finally {
 			await discardCapture(active.path);
-			setPhase(ctx, "idle");
+			setPhase("idle");
 		}
 	}
 
@@ -210,21 +230,21 @@ export default function (pi: ExtensionAPI): void {
 		},
 	});
 
-	pi.on("session_start", async (_event, ctx) => {
+	pi.on("session_start", async () => {
 		phase = "idle";
 		recording = null;
 		config = (await loadVoiceConfig()).config;
-		ctx.ui.setStatus(STATUS_ID, undefined);
+		removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
 	});
 
-	pi.on("session_shutdown", async (_event, ctx) => {
+	pi.on("session_shutdown", async () => {
 		const active = recording;
 		recording = null;
 		phase = "idle";
+		removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
 		if (active) {
 			await active.stop().catch(() => undefined);
 			await discardCapture(active.path);
 		}
-		ctx.ui.setStatus(STATUS_ID, undefined);
 	});
 }

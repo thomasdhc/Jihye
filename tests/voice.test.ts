@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { resolveVoiceConfig, VOICE_DEFAULTS, voiceConfigPath } from "../extensions/voice/config.ts";
+import { voicePhaseContribution } from "../extensions/voice/index.ts";
+import { renderCompanionWidgetLines } from "../extensions/widget/index.ts";
 import {
 	buildRecordCommand,
 	buildTranscribeCommand,
@@ -9,6 +11,34 @@ import {
 	cleanTranscript,
 	createCapturePath,
 } from "../extensions/voice/recorder.ts";
+
+test("publishes compact voice phases below the session identity", () => {
+	const recording = voicePhaseContribution("recording");
+	const transcribing = voicePhaseContribution("transcribing");
+
+	assert.deepEqual(recording, {
+		id: "voice",
+		region: "details",
+		order: 40,
+		lines: ["● REC"],
+		tone: "error",
+	});
+	assert.deepEqual(transcribing, {
+		id: "voice",
+		region: "details",
+		order: 40,
+		lines: ["◌ transcribing"],
+		tone: "accent",
+	});
+	assert.equal(voicePhaseContribution("idle"), undefined);
+	assert.deepEqual(
+		renderCompanionWidgetLines([
+			{ id: "session-identity", region: "details", order: 30, lines: ["Agent One"], tone: "accent" },
+			recording!,
+		], (tone, text) => `${tone}:${text}`),
+		["accent:Agent One", "error:● REC"],
+	);
+});
 
 test("resolves defaults when no file or environment settings exist", () => {
 	const { config, sources } = resolveVoiceConfig({}, {});
