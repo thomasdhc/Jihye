@@ -20,15 +20,15 @@ test("publishes compact voice phases below the session identity", () => {
 		id: "voice",
 		region: "details",
 		order: 40,
-		lines: ["● REC"],
+		lines: ["●"],
 		tone: "error",
 	});
 	assert.deepEqual(transcribing, {
 		id: "voice",
 		region: "details",
 		order: 40,
-		lines: ["○ TRANSCRIBING"],
-		tone: "accent",
+		lines: ["≡"],
+		tone: "mdLink",
 	});
 	assert.equal(voicePhaseContribution("idle"), undefined);
 	assert.deepEqual(
@@ -36,7 +36,7 @@ test("publishes compact voice phases below the session identity", () => {
 			{ id: "session-identity", region: "details", order: 30, lines: ["Agent One"], tone: "accent" },
 			recording!,
 		], (tone, text) => `${tone}:${text}`),
-		["accent:Agent One", "error:● REC"],
+		["accent:Agent One", "error:●"],
 	);
 });
 
