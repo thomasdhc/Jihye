@@ -12,7 +12,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-export const STRICT_PROFILE_FILE = "JIHYE_strict.md";
 export const STANDARD_PROFILE_FILE = "JIHYE.md";
 export const WORKSPACE_PROFILE_FILE = "WORKSPACE.md";
 export const CONTEXT_FILE_NAME = "AGENTS.md";
@@ -21,11 +20,11 @@ export const LOCAL_ENVIRONMENT_FILES = ["REPO.md", "USERNAME.md"] as const;
 /**
  * Which global persona backs `~/.pi/agent/AGENTS.md`.
  *
- * - `strict` / `standard`: a Jihye persona is installed.
+ * - `standard`: the Jihye persona is installed.
  * - `unmanaged`: a context file exists but does not come from this package.
  * - `missing`: no global context file at all.
  */
-export type WorkspaceProfile = "strict" | "standard" | "unmanaged" | "missing";
+export type WorkspaceProfile = "standard" | "unmanaged" | "missing";
 
 /** One context file location Jihye guidance can occupy. */
 export interface GuidanceLink {
@@ -182,7 +181,6 @@ export function resolveProfile(agentDirectory: string, personasDirectory: string
 	if (!resolved) return "unmanaged";
 
 	const name = path.basename(resolved);
-	if (name === STRICT_PROFILE_FILE) return "strict";
 	if (name === STANDARD_PROFILE_FILE) return "standard";
 	return "unmanaged";
 }

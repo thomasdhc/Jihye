@@ -7,7 +7,6 @@ The `personas/` tree distributes reusable global guidance, workspace policy, loc
 | Path | Purpose |
 |---|---|
 | `JIHYE.md` | Own universal runtime behavior, validation, and delegation policy. |
-| `JIHYE_strict.md` | Add an edit-and-write approval gate without changing the base persona body. |
 | `WORKSPACE.md` | Add workspace resolution, repository discovery, local-environment, and read-gate policy. |
 | `GIT.md` | Add branch, worktree, commit, push, and request workflow. |
 | `templates/` | Provide factual templates for local `REPO.md` and `USERNAME.md`. |
@@ -23,8 +22,7 @@ Pi packages do not install context files automatically. Use the two symlink comm
 
 - Verify that both destinations do not exist before linking.
 - Inspect and remove obsolete symlinks first; never overwrite a regular context file.
-- Link `JIHYE_strict.md` instead of `JIHYE.md` when every edit or write must pass an approval gate.
-- Run `/jihye-setup` after linking. Confirm that both guidance locations are managed and loaded, `workspace_profile` is `standard` or `strict`, and the two local environment files are listed.
+- Run `/jihye-setup` after linking. Confirm that both guidance locations are managed and loaded, `workspace_profile` is `standard`, and the two local environment files are listed.
 
 After both links resolve, remove obsolete workspace links to `CLAUDE.md`, `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md`, plus any separately installed personas skill link. Keep these machine-local configuration files as regular files at the workspace root:
 

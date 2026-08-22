@@ -49,12 +49,11 @@ Before adding or expanding a statement, ask whether it is universal, conceptual,
 
 Complete every step before handing off a base-persona change:
 
-1. Mirror the edited body into `JIHYE_strict.md`; the strict body stays identical to the base plus its approval header.
-2. Add, revise, or remove the glossary entry when the edit adds, renames, or redefines a domain.
-3. Update the pinned headings and term assertions in `tests/personas.test.ts` when the edit changes structure or asserted semantics.
-4. Give a new domain at least one downstream invoker; a domain no file invokes has not earned its place.
-5. Refresh the `personas/README.md` layout row when a file's ownership changes.
-6. Bump the package version as the root `AGENTS.md` version rule directs.
+1. Add, revise, or remove the glossary entry when the edit adds, renames, or redefines a domain.
+2. Update the pinned headings and term assertions in `tests/personas.test.ts` when the edit changes structure or asserted semantics.
+3. Give a new domain at least one downstream invoker; a domain no file invokes has not earned its place.
+4. Refresh the `personas/README.md` layout row when a file's ownership changes.
+5. Bump the package version as the root `AGENTS.md` version rule directs.
 
 ## Policy Glossary
 
@@ -90,7 +89,7 @@ Complete every step before handing off a base-persona change:
 - *prompt boundary* — the proposed or implied scope of the user's request.
 - *instruction boundary* — the authority split between repository-owned and workspace- or user-owned guidance.
 
-**invariant** — a condition that must hold true throughout and after the work, not merely at a checkpoint. A gate is passed once; an invariant is never violated. State standing rules as invariants when their force is continuous ("never push", "config stays separate from logic", "the strict persona body stays identical to the base plus its header").
+**invariant** — a condition that must hold true throughout and after the work, not merely at a checkpoint. A gate is passed once; an invariant is never violated. State standing rules as invariants when their force is continuous ("never push", "config stays separate from logic").
 
 - *acceptance invariant* — a finite, testable claim a change must satisfy to be accepted.
 
@@ -102,5 +101,5 @@ Complete every step before handing off a base-persona change:
 
 ## Guidance Validation
 
-- Test structure and semantics, not phrasing: files exist, required sections are present, and hard invariants hold, such as the strict persona body matching the base persona plus its header.
+- Test structure and semantics, not phrasing: files exist, required sections are present, and hard invariants hold.
 - Do not pin guidance prose word-for-word in tests. Wording changes with every revision; pull-request review is the write-protection gate for guidance wording.

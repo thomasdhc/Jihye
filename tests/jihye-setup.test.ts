@@ -38,7 +38,7 @@ const REPO_VERSION = (JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "
  * Build a fixture that mirrors a real installation: a package checkout with
  * personas, an agent directory, and a workspace root linked to the personas.
  */
-function createFixture(options: { profile?: "strict" | "standard" | "unmanaged"; localEnvironment?: boolean } = {}) {
+function createFixture(options: { profile?: "standard" | "unmanaged"; localEnvironment?: boolean } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "jihye-setup-"));
 	const packageRoot = join(root, "package");
 	const personasDirectory = join(packageRoot, "personas");
@@ -54,16 +54,12 @@ function createFixture(options: { profile?: "strict" | "standard" | "unmanaged";
 
 	writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: "jihye-fixture", version: "9.8.7" }));
 	writeFileSync(join(personasDirectory, "JIHYE.md"), "# Jihye\n");
-	writeFileSync(join(personasDirectory, "JIHYE_strict.md"), "# Jihye strict\n");
 	writeFileSync(join(personasDirectory, "WORKSPACE.md"), "# Workspace\n");
 	symlinkSync(join(personasDirectory, "WORKSPACE.md"), join(workspaceDirectory, "AGENTS.md"));
 
-	const profile = options.profile ?? "strict";
+	const profile = options.profile ?? "standard";
 	if (profile === "unmanaged") writeFileSync(join(agentDirectory, "AGENTS.md"), "# Local rules\n");
-	else {
-		const persona = profile === "strict" ? "JIHYE_strict.md" : "JIHYE.md";
-		symlinkSync(join(personasDirectory, persona), join(agentDirectory, "AGENTS.md"));
-	}
+	else symlinkSync(join(personasDirectory, "JIHYE.md"), join(agentDirectory, "AGENTS.md"));
 
 	if (options.localEnvironment !== false) {
 		writeFileSync(join(workspaceDirectory, "REPO.md"), "# Repos\n");
@@ -108,17 +104,17 @@ test("records one durable runtime marker per version, profile, and Pi runtime", 
 	), true);
 	assert.equal(ensureJihyeRuntimeMarker(
 		entries,
-		createJihyeRuntimeMetadata("0.2.2", "strict", "0.83.0"),
+		createJihyeRuntimeMetadata("0.2.2", "unmanaged", "0.83.0"),
 		append,
 	), true);
 	assert.equal(ensureJihyeRuntimeMarker(
 		entries,
-		createJihyeRuntimeMetadata("0.2.2", "strict", "0.84.0"),
+		createJihyeRuntimeMetadata("0.2.2", "unmanaged", "0.84.0"),
 		append,
 	), true);
 	assert.equal(appended.length, 4);
 	assert.equal(entries[0]?.customType, JIHYE_RUNTIME_ENTRY_TYPE);
-	assert.deepEqual(latestJihyeRuntimeMetadata(entries), createJihyeRuntimeMetadata("0.2.2", "strict", "0.84.0"));
+	assert.deepEqual(latestJihyeRuntimeMetadata(entries), createJihyeRuntimeMetadata("0.2.2", "unmanaged", "0.84.0"));
 
 	const future = { ...createJihyeRuntimeMetadata("0.3.0", "standard", "0.84.0"), schemaVersion: 2 };
 	entries.push({ type: "custom", customType: JIHYE_RUNTIME_ENTRY_TYPE, data: future });
@@ -244,7 +240,7 @@ test("prefers configured workspace roots over discovery", () => {
 });
 
 test("classifies the installed global persona", () => {
-	for (const [profile, expected] of [["strict", "strict"], ["standard", "standard"], ["unmanaged", "unmanaged"]] as const) {
+	for (const [profile, expected] of [["standard", "standard"], ["unmanaged", "unmanaged"]] as const) {
 		const fixture = createFixture({ profile });
 		try {
 			assert.equal(resolveProfile(fixture.agentDirectory, fixture.personasDirectory), expected);
@@ -275,7 +271,7 @@ test("resolves the full fact set with guidance load state", () => {
 		assert.equal(facts.packageRoot, fixture.packageRoot);
 		assert.equal(facts.personasDirectory, fixture.personasDirectory);
 		assert.equal(facts.workspaceDirectory, fixture.workspaceDirectory);
-		assert.equal(facts.profile, "strict");
+		assert.equal(facts.profile, "standard");
 		assert.deepEqual(facts.localEnvironmentFiles, [
 			join(fixture.workspaceDirectory, "REPO.md"),
 			join(fixture.workspaceDirectory, "USERNAME.md"),
@@ -284,7 +280,7 @@ test("resolves the full fact set with guidance load state", () => {
 
 		const [globalLink, workspaceLink] = facts.guidance;
 		assert.equal(globalLink?.path, join(fixture.agentDirectory, "AGENTS.md"));
-		assert.equal(globalLink?.target, join(fixture.personasDirectory, "JIHYE_strict.md"));
+		assert.equal(globalLink?.target, join(fixture.personasDirectory, "JIHYE.md"));
 		assert.equal(globalLink?.managed, true);
 		assert.equal(globalLink?.loaded, false);
 		assert.equal(workspaceLink?.target, join(fixture.personasDirectory, "WORKSPACE.md"));
@@ -328,7 +324,7 @@ test("formats facts as declarative system prompt lines", () => {
 		assert.match(block, /^## Jihye Setup \(resolved paths — use directly, do not re-derive\)$/m);
 		assert.match(block, new RegExp(`^- jihye_package: ${fixture.packageRoot}$`, "m"));
 		assert.match(block, new RegExp(`^- workspace_directory: ${fixture.workspaceDirectory}$`, "m"));
-		assert.match(block, /^- workspace_profile: strict$/m);
+		assert.match(block, /^- workspace_profile: standard$/m);
 		assert.match(block, /\[loaded\]/);
 		assert.match(block, /\[not loaded\]/);
 		assert.doesNotMatch(block, /readlink|dirname/);
@@ -350,7 +346,7 @@ test("classifies a persona reached through a symlinked package ancestor", () => 
 
 		assert.equal(
 			resolveProfile(fixture.agentDirectory, aliasPersonas),
-			"strict",
+			"standard",
 			"a symlinked personas path still resolves the managed persona",
 		);
 
@@ -361,11 +357,11 @@ test("classifies a persona reached through a symlinked package ancestor", () => 
 			loadedContextFiles: [],
 		});
 
-		assert.equal(facts.profile, "strict");
+		assert.equal(facts.profile, "standard");
 		assert.equal(facts.guidance[0]?.managed, true);
 		assert.equal(
 			facts.guidance[0]?.target,
-			join(aliasPersonas, "JIHYE_strict.md"),
+			join(aliasPersonas, "JIHYE.md"),
 			"the target is reported under the personas path the caller supplied",
 		);
 	} finally {

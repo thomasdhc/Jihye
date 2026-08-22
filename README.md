@@ -61,7 +61,7 @@ ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
 
 The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `jihye-setup` extension resolves the package, personas, and workspace locations behind those symlinks, so guidance can reference sibling `GIT.md` policy without an agent deriving any path by hand.
 
-Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard` or `strict`, and the two local environment files should be listed. See the [personas guide](personas/README.md) for strict-profile setup and local-configuration templates.
+Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard`, and the two local environment files should be listed. See the [personas guide](personas/README.md) for local-configuration templates.
 
 ## Utility Scripts
 
