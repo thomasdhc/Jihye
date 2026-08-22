@@ -21,7 +21,6 @@ const DOCTRINE_PATH = join(REPO_ROOT, "DOCTRINE.md");
 
 const POLICY_FILES = [
 	"JIHYE.md",
-	"JIHYE_strict.md",
 	"WORKSPACE.md",
 	"GIT.md",
 	"README.md",
@@ -136,53 +135,39 @@ test("doctrine defines Jihye's development principles and canonical policy domai
 		/(?:interpretive space|execution discretion)/i,
 		/operational (?:procedures|details|mechanics)/i,
 		/## Changing the Base Persona/,
-		/JIHYE_strict\.md/,
 		/tests\/personas\.test\.ts/,
 	], "Jihye development doctrine");
 });
 
-test("strict persona is the base persona plus its approval header", () => {
-	const baseBody = readPersona("JIHYE.md").replace(/^# Jihye\n\n/, "");
-	const strict = readPersona("JIHYE_strict.md");
-	const match = strict.match(
-		/^# Jihye — Strict\n\n(?<header>- [^\n]*EXPLICIT APPROVAL[^\n]*\n)\n(?<body>[\s\S]*)$/,
-	);
-
-	assert.ok(match?.groups, "strict persona must contain one approval header");
-	assert.equal(match.groups.body, baseBody);
-});
-
-test("global personas preserve canonical domains, coordination gates, and parent ownership", () => {
-	for (const path of ["JIHYE.md", "JIHYE_strict.md"]) {
-		const persona = readPersona(path);
-		assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Validation", "Context and Delegation", "Safety"], path);
-		assertTerms(persona, [
-			/\bFidelity\b/,
-			/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
-			/broader context[^\n]*scale of its potential consequences/i,
-			/blueprint brief[^\n]*equivalent guidance/i,
-			/blueprint guidance aligned[^\n]*placement[^\n]*relationships[^\n]*layers[^\n]*composition/i,
-			/derive only the task-relevant blueprint[^\n]*source-of-truth evidence/i,
-			/alternatives and trade-offs/i,
-			/targeted check[^\n]*changed behavior/i,
-			/every validation command[^\n]*required by repository guidance/i,
-			/every acceptance invariant[^\n]*prompt boundary[^\n]*automated tests[^\n]*manual checks/i,
-			/commands and manual checks[^\n]*results[^\n]*could not be run/i,
-			/never expose or commit secrets, credentials/i,
-			/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
-			/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
-			/delegate work[^\n]*main-agent context/i,
-			/coordinate.*skill/is,
-			/before the first subagent call/i,
-			/first actionable parallel group/i,
-			/ownership/i,
-			/integration/i,
-			/validation/i,
-			/final synthesis/i,
-		], path);
-		assert.doesNotMatch(persona, /\bcoordinator\b/);
-		assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, `${path}: the coordination gate admits no delegation exemption`);
-	}
+test("global persona preserves canonical domains, coordination gates, and parent ownership", () => {
+	const persona = readPersona("JIHYE.md");
+	assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Validation", "Context and Delegation", "Safety"]);
+	assertTerms(persona, [
+		/\bFidelity\b/,
+		/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
+		/broader context[^\n]*scale of its potential consequences/i,
+		/blueprint brief[^\n]*equivalent guidance/i,
+		/blueprint guidance aligned[^\n]*placement[^\n]*relationships[^\n]*layers[^\n]*composition/i,
+		/derive only the task-relevant blueprint[^\n]*source-of-truth evidence/i,
+		/alternatives and trade-offs/i,
+		/targeted check[^\n]*changed behavior/i,
+		/every validation command[^\n]*required by repository guidance/i,
+		/every acceptance invariant[^\n]*prompt boundary[^\n]*automated tests[^\n]*manual checks/i,
+		/commands and manual checks[^\n]*results[^\n]*could not be run/i,
+		/never expose or commit secrets, credentials/i,
+		/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
+		/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
+		/delegate work[^\n]*main-agent context/i,
+		/coordinate.*skill/is,
+		/before the first subagent call/i,
+		/first actionable parallel group/i,
+		/ownership/i,
+		/integration/i,
+		/validation/i,
+		/final synthesis/i,
+	], "JIHYE.md");
+	assert.doesNotMatch(persona, /\bcoordinator\b/);
+	assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, "the coordination gate admits no delegation exemption");
 });
 
 test("guidance never passes a policy domain", () => {
