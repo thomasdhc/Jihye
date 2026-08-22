@@ -11,6 +11,7 @@ Jihye packages focused Pi extensions that register tools and commands, enforce s
 | [`jihye-setup`](jihye-setup/) | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts. |
 | [`subagent`](subagent/) | Run Pi subagents as tools with portable bundled definitions and per-user overrides. |
 | [`terminal-notify`](terminal-notify.ts) | Send a native desktop alert when Pi is ready for input. |
+| [`voice`](voice/) | Record speech and send it to the agent as a transcribed user message. |
 | [`web-fetch`](web-fetch/) | Fetch a URL and extract readable content as Markdown. |
 | [`web-search`](web-search/) | Search the web through Serper. |
 | [`widget`](widget/) | Companion widget with pet reactions, context management, and session identity. |
@@ -193,6 +194,47 @@ The names may be any unique, non-empty labels without terminal control character
 Leases and the round-robin cursor live under Pi's user configuration directory at `state/session-identity`; they are retained across `/reload`, `/new`, `/resume`, and `/fork`, released on normal exit, and reclaimed when a crashed owner is no longer running. Allocation uses an atomic cross-process registry lock, and malformed lease records remain occupied rather than risking duplicate names.
 
 The leased name appears below the context status in the companion widget using Pi's teal accent color, and it remains part of the terminal tab title and notification title. An unnamed session automatically receives a display name such as `Agent One · 2026-02-19 14:32`, combining that identity with the session's original creation time in the local timezone. The name persists in Pi's built-in footer and `/resume` selector; an existing name or a later manual `/name` remains untouched.
+
+### `voice`
+
+`voice` captures speech from the microphone, transcribes it locally, and sends the transcript as a user message. It exists for spoken working sessions where typing is the bottleneck, so it sends by default rather than inserting text for review.
+
+```text
+f9              # start capture; press again to stop, transcribe, and send
+/voice          # same toggle, for terminals that intercept function keys
+/voice status   # resolved configuration and any missing prerequisite
+```
+
+Transcription runs on the workstation through [whisper.cpp](https://github.com/ggml-org/whisper.cpp); no audio leaves the machine and no API key is involved. Recording uses ALSA `arecord`. Install the binary and one model before first use:
+
+```bash
+git clone --depth 1 https://github.com/ggml-org/whisper.cpp ~/.local/opt/whisper.cpp
+cmake -S ~/.local/opt/whisper.cpp -B ~/.local/opt/whisper.cpp/build -DCMAKE_BUILD_TYPE=Release
+cmake --build ~/.local/opt/whisper.cpp/build -j --target whisper-cli
+~/.local/opt/whisper.cpp/models/download-ggml-model.sh base.en
+```
+
+Those paths are the defaults. Override them, or any other setting, in `~/.pi/agent/voice.json` (or `$PI_CODING_AGENT_DIR/voice.json`):
+
+```json
+{
+  "device": "hw:1,0",
+  "model": "/home/me/.local/opt/whisper.cpp/models/ggml-small.en.bin",
+  "threads": 8,
+  "autoSend": false
+}
+```
+
+| Setting | Default | Environment override | Purpose |
+|---|---|---|---|
+| `device` | `default` | `PI_VOICE_DEVICE` | ALSA capture device; list candidates with `arecord -L` |
+| `whisperBin` | `~/.local/opt/whisper.cpp/build/bin/whisper-cli` | `PI_VOICE_WHISPER_BIN` | Transcription binary |
+| `model` | `~/.local/opt/whisper.cpp/models/ggml-base.en.bin` | `PI_VOICE_MODEL` | ggml model file |
+| `threads` | `4` | `PI_VOICE_THREADS` | Decoder threads |
+| `autoSend` | `true` | `PI_VOICE_AUTO_SEND` | Send the transcript, or insert it into the editor for review |
+| `maxSeconds` | `900` | `PI_VOICE_MAX_SECONDS` | Hard cap on one recording |
+
+Environment values win over the file, and the file wins over the defaults. An unreadable or malformed file falls back to defaults instead of disabling the extension. A capture holding no speech is reported and discarded rather than sent.
 
 ### `terminal-notify`
 
