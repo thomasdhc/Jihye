@@ -43,6 +43,7 @@ test("publishes compact voice phases below the session identity", () => {
 test("resolves defaults when no file or environment settings exist", () => {
 	const { config, sources } = resolveVoiceConfig({}, {});
 	assert.deepEqual(config, VOICE_DEFAULTS);
+	assert.match(config.model, /ggml-small\.en\.bin$/);
 	assert.equal(sources.device, "default");
 	assert.equal(sources.autoSend, "default");
 });

@@ -28,7 +28,7 @@ const WHISPER_HOME = join(homedir(), ".local", "opt", "whisper.cpp");
 export const VOICE_DEFAULTS: VoiceConfig = {
 	device: "default",
 	whisperBin: join(WHISPER_HOME, "build", "bin", "whisper-cli"),
-	model: join(WHISPER_HOME, "models", "ggml-base.en.bin"),
+	model: join(WHISPER_HOME, "models", "ggml-small.en.bin"),
 	threads: 4,
 	autoSend: true,
 	maxSeconds: 900,

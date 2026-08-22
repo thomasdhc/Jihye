@@ -211,7 +211,7 @@ Transcription runs on the workstation through [whisper.cpp](https://github.com/g
 git clone --depth 1 https://github.com/ggml-org/whisper.cpp ~/.local/opt/whisper.cpp
 cmake -S ~/.local/opt/whisper.cpp -B ~/.local/opt/whisper.cpp/build -DCMAKE_BUILD_TYPE=Release
 cmake --build ~/.local/opt/whisper.cpp/build -j --target whisper-cli
-~/.local/opt/whisper.cpp/models/download-ggml-model.sh base.en
+~/.local/opt/whisper.cpp/models/download-ggml-model.sh small.en
 ```
 
 Those paths are the defaults. Override them, or any other setting, in `~/.pi/agent/voice.json` (or `$PI_CODING_AGENT_DIR/voice.json`):
@@ -229,7 +229,7 @@ Those paths are the defaults. Override them, or any other setting, in `~/.pi/age
 |---|---|---|---|
 | `device` | `default` | `PI_VOICE_DEVICE` | ALSA capture device; list candidates with `arecord -L` |
 | `whisperBin` | `~/.local/opt/whisper.cpp/build/bin/whisper-cli` | `PI_VOICE_WHISPER_BIN` | Transcription binary |
-| `model` | `~/.local/opt/whisper.cpp/models/ggml-base.en.bin` | `PI_VOICE_MODEL` | ggml model file |
+| `model` | `~/.local/opt/whisper.cpp/models/ggml-small.en.bin` | `PI_VOICE_MODEL` | ggml model file |
 | `threads` | `4` | `PI_VOICE_THREADS` | Decoder threads |
 | `autoSend` | `true` | `PI_VOICE_AUTO_SEND` | Send the transcript, or insert it into the editor for review |
 | `maxSeconds` | `900` | `PI_VOICE_MAX_SECONDS` | Hard cap on one recording |
