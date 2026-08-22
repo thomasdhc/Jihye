@@ -221,7 +221,9 @@ Those paths are the defaults. Override them, or any other setting, in `~/.pi/age
   "device": "hw:1,0",
   "model": "/home/me/.local/opt/whisper.cpp/models/ggml-small.en.bin",
   "threads": 8,
-  "autoSend": false
+  "autoSend": false,
+  "recordingSymbol": "●",
+  "transcribingSymbol": "≡"
 }
 ```
 
@@ -233,6 +235,8 @@ Those paths are the defaults. Override them, or any other setting, in `~/.pi/age
 | `threads` | `4` | `PI_VOICE_THREADS` | Decoder threads |
 | `autoSend` | `true` | `PI_VOICE_AUTO_SEND` | Send the transcript, or insert it into the editor for review |
 | `maxSeconds` | `900` | `PI_VOICE_MAX_SECONDS` | Hard cap on one recording |
+| `recordingSymbol` | `●` | `PI_VOICE_RECORDING_SYMBOL` | Companion-widget recording symbol |
+| `transcribingSymbol` | `≡` | `PI_VOICE_TRANSCRIBING_SYMBOL` | Companion-widget transcription symbol |
 
 Environment values win over the file, and the file wins over the defaults. An unreadable or malformed file falls back to defaults instead of disabling the extension. A capture holding no speech is reported and discarded rather than sent.
 

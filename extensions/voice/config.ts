@@ -14,6 +14,10 @@ export interface VoiceConfig {
 	autoSend: boolean;
 	/** Hard cap on a single recording, so a forgotten session cannot fill the disk. */
 	maxSeconds: number;
+	/** Companion-widget symbol shown while recording. */
+	recordingSymbol: string;
+	/** Companion-widget symbol shown while transcribing. */
+	transcribingSymbol: string;
 }
 
 export type VoiceSettingSource = "default" | "file" | "environment";
@@ -32,6 +36,8 @@ export const VOICE_DEFAULTS: VoiceConfig = {
 	threads: 4,
 	autoSend: true,
 	maxSeconds: 900,
+	recordingSymbol: "●",
+	transcribingSymbol: "≡",
 };
 
 const ENVIRONMENT_KEYS: Record<keyof VoiceConfig, string> = {
@@ -41,6 +47,8 @@ const ENVIRONMENT_KEYS: Record<keyof VoiceConfig, string> = {
 	threads: "PI_VOICE_THREADS",
 	autoSend: "PI_VOICE_AUTO_SEND",
 	maxSeconds: "PI_VOICE_MAX_SECONDS",
+	recordingSymbol: "PI_VOICE_RECORDING_SYMBOL",
+	transcribingSymbol: "PI_VOICE_TRANSCRIBING_SYMBOL",
 };
 
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -66,6 +74,12 @@ function parseText(value: unknown): string | undefined {
 	return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function parseSymbol(value: unknown): string | undefined {
+	const parsed = parseText(value);
+	if (!parsed || /[\u0000-\u001f\u007f-\u009f]/u.test(parsed)) return undefined;
+	return parsed;
+}
+
 const PARSERS: { [K in keyof VoiceConfig]: (value: unknown) => VoiceConfig[K] | undefined } = {
 	device: parseText,
 	whisperBin: parseText,
@@ -73,6 +87,8 @@ const PARSERS: { [K in keyof VoiceConfig]: (value: unknown) => VoiceConfig[K] | 
 	threads: parsePositiveInteger,
 	autoSend: parseBoolean,
 	maxSeconds: parsePositiveInteger,
+	recordingSymbol: parseSymbol,
+	transcribingSymbol: parseSymbol,
 };
 
 /**

@@ -30,6 +30,14 @@ test("publishes compact voice phases below the session identity", () => {
 		lines: ["≡"],
 		tone: "mdLink",
 	});
+	assert.deepEqual(
+		voicePhaseContribution("recording", { recordingSymbol: "◉", transcribingSymbol: "▤" }),
+		{ ...recording, lines: ["◉"] },
+	);
+	assert.deepEqual(
+		voicePhaseContribution("transcribing", { recordingSymbol: "◉", transcribingSymbol: "▤" }),
+		{ ...transcribing, lines: ["▤"] },
+	);
 	assert.equal(voicePhaseContribution("idle"), undefined);
 	assert.deepEqual(
 		renderCompanionWidgetLines([
@@ -50,7 +58,13 @@ test("resolves defaults when no file or environment settings exist", () => {
 
 test("prefers environment over file over default", () => {
 	const { config, sources } = resolveVoiceConfig(
-		{ device: "hw:1,0", model: "/models/file.bin", threads: 6 },
+		{
+			device: "hw:1,0",
+			model: "/models/file.bin",
+			threads: 6,
+			recordingSymbol: "◉",
+			transcribingSymbol: "▤",
+		},
 		{ PI_VOICE_MODEL: "/models/env.bin" },
 	);
 	assert.equal(config.model, "/models/env.bin");
@@ -58,6 +72,10 @@ test("prefers environment over file over default", () => {
 	assert.equal(config.device, "hw:1,0");
 	assert.equal(sources.device, "file");
 	assert.equal(config.threads, 6);
+	assert.equal(config.recordingSymbol, "◉");
+	assert.equal(config.transcribingSymbol, "▤");
+	assert.equal(sources.recordingSymbol, "file");
+	assert.equal(sources.transcribingSymbol, "file");
 	assert.equal(config.whisperBin, VOICE_DEFAULTS.whisperBin);
 	assert.equal(sources.whisperBin, "default");
 });
@@ -67,6 +85,8 @@ test("parses boolean and numeric settings from string environment values", () =>
 	assert.equal(resolveVoiceConfig({}, { PI_VOICE_AUTO_SEND: "TRUE" }).config.autoSend, true);
 	assert.equal(resolveVoiceConfig({}, { PI_VOICE_THREADS: "12" }).config.threads, 12);
 	assert.equal(resolveVoiceConfig({}, { PI_VOICE_MAX_SECONDS: "60" }).config.maxSeconds, 60);
+	assert.equal(resolveVoiceConfig({}, { PI_VOICE_RECORDING_SYMBOL: "◉" }).config.recordingSymbol, "◉");
+	assert.equal(resolveVoiceConfig({}, { PI_VOICE_TRANSCRIBING_SYMBOL: "▤" }).config.transcribingSymbol, "▤");
 });
 
 test("falls through to the next source when a value cannot be parsed", () => {
@@ -77,6 +97,10 @@ test("falls through to the next source when a value cannot be parsed", () => {
 	const blank = resolveVoiceConfig({ device: "   " }, {});
 	assert.equal(blank.config.device, VOICE_DEFAULTS.device);
 	assert.equal(blank.sources.device, "default");
+
+	const unsafeSymbol = resolveVoiceConfig({ recordingSymbol: "\u001b[31m●" }, {});
+	assert.equal(unsafeSymbol.config.recordingSymbol, VOICE_DEFAULTS.recordingSymbol);
+	assert.equal(unsafeSymbol.sources.recordingSymbol, "default");
 });
 
 test("tolerates a malformed configuration file instead of failing", () => {

@@ -30,14 +30,17 @@ const COMPANION_CONTRIBUTION_ID = "voice";
 
 export type VoicePhase = "idle" | "recording" | "transcribing";
 
-export function voicePhaseContribution(phase: VoicePhase): CompanionWidgetContribution | undefined {
+export function voicePhaseContribution(
+	phase: VoicePhase,
+	symbols: Pick<VoiceConfig, "recordingSymbol" | "transcribingSymbol"> = VOICE_DEFAULTS,
+): CompanionWidgetContribution | undefined {
 	switch (phase) {
 		case "recording":
 			return {
 				id: COMPANION_CONTRIBUTION_ID,
 				region: "details",
 				order: 40,
-				lines: ["●"],
+				lines: [symbols.recordingSymbol],
 				tone: "error",
 			};
 		case "transcribing":
@@ -45,7 +48,7 @@ export function voicePhaseContribution(phase: VoicePhase): CompanionWidgetContri
 				id: COMPANION_CONTRIBUTION_ID,
 				region: "details",
 				order: 40,
-				lines: ["≡"],
+				lines: [symbols.transcribingSymbol],
 				tone: "mdLink",
 			};
 		default:
@@ -96,7 +99,7 @@ export default function (pi: ExtensionAPI): void {
 
 	function setPhase(next: VoicePhase): void {
 		phase = next;
-		const contribution = voicePhaseContribution(next);
+		const contribution = voicePhaseContribution(next, config);
 		if (contribution) updateCompanionWidget(pi.events, contribution);
 		else removeCompanionWidgetContribution(pi.events, COMPANION_CONTRIBUTION_ID);
 	}
@@ -198,6 +201,8 @@ export default function (pi: ExtensionAPI): void {
 				`  model:     ${current.model} (${sources.model})`,
 				`  threads:   ${current.threads} (${sources.threads})`,
 				`  auto-send: ${current.autoSend ? "yes" : "no"} (${sources.autoSend})`,
+				`  recording: ${current.recordingSymbol} (${sources.recordingSymbol})`,
+				`  transcribe: ${current.transcribingSymbol} (${sources.transcribingSymbol})`,
 				`  config:    ${voiceConfigPath()}`,
 				missing.length > 0 ? `\n  missing:   ${missing.join("\n             ")}` : "",
 			]
