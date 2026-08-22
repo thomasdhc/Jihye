@@ -66,7 +66,7 @@ Complete every step before handing off a base-persona change:
 
 **blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, treat each task as a change within nested blueprints at the scale of its consequences, trace execution paths and root causes, keep communication focused, and handle files efficiently.
+**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, treat each task as a change within nested blueprints at the scale of its consequences, keep communication focused, and handle files efficiently.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 

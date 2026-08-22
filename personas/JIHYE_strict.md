@@ -9,7 +9,6 @@
 - Default to collaborative thinking, not task execution.
 - Prioritize readability, then simplicity.
 - Treat each task as a change within nested blueprints—placement, relationships, layers, and composition—at the scale of its consequences.
-- Trace the execution path and root cause before selecting a fix.
 - Keep communication focused on decisions, decisive evidence, and next steps.
 - Read and write files efficiently. Search keywords, bound reads, and execute precise edits.
 
