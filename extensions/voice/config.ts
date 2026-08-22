@@ -36,8 +36,8 @@ export const VOICE_DEFAULTS: VoiceConfig = {
 	threads: 4,
 	autoSend: true,
 	maxSeconds: 900,
-	recordingSymbol: "●",
-	transcribingSymbol: "≡",
+	recordingSymbol: "◉",
+	transcribingSymbol: "▤",
 };
 
 const ENVIRONMENT_KEYS: Record<keyof VoiceConfig, string> = {

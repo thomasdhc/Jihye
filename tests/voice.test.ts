@@ -20,23 +20,23 @@ test("publishes compact voice phases below the session identity", () => {
 		id: "voice",
 		region: "details",
 		order: 40,
-		lines: ["●"],
+		lines: ["◉"],
 		tone: "error",
 	});
 	assert.deepEqual(transcribing, {
 		id: "voice",
 		region: "details",
 		order: 40,
-		lines: ["≡"],
+		lines: ["▤"],
 		tone: "mdLink",
 	});
 	assert.deepEqual(
-		voicePhaseContribution("recording", { recordingSymbol: "◉", transcribingSymbol: "▤" }),
-		{ ...recording, lines: ["◉"] },
+		voicePhaseContribution("recording", { recordingSymbol: "●", transcribingSymbol: "≡" }),
+		{ ...recording, lines: ["●"] },
 	);
 	assert.deepEqual(
-		voicePhaseContribution("transcribing", { recordingSymbol: "◉", transcribingSymbol: "▤" }),
-		{ ...transcribing, lines: ["▤"] },
+		voicePhaseContribution("transcribing", { recordingSymbol: "●", transcribingSymbol: "≡" }),
+		{ ...transcribing, lines: ["≡"] },
 	);
 	assert.equal(voicePhaseContribution("idle"), undefined);
 	assert.deepEqual(
@@ -44,7 +44,7 @@ test("publishes compact voice phases below the session identity", () => {
 			{ id: "session-identity", region: "details", order: 30, lines: ["Agent One"], tone: "accent" },
 			recording!,
 		], (tone, text) => `${tone}:${text}`),
-		["accent:Agent One", "error:●"],
+		["accent:Agent One", "error:◉"],
 	);
 });
 
@@ -62,8 +62,8 @@ test("prefers environment over file over default", () => {
 			device: "hw:1,0",
 			model: "/models/file.bin",
 			threads: 6,
-			recordingSymbol: "◉",
-			transcribingSymbol: "▤",
+			recordingSymbol: "●",
+			transcribingSymbol: "≡",
 		},
 		{ PI_VOICE_MODEL: "/models/env.bin" },
 	);
@@ -72,8 +72,8 @@ test("prefers environment over file over default", () => {
 	assert.equal(config.device, "hw:1,0");
 	assert.equal(sources.device, "file");
 	assert.equal(config.threads, 6);
-	assert.equal(config.recordingSymbol, "◉");
-	assert.equal(config.transcribingSymbol, "▤");
+	assert.equal(config.recordingSymbol, "●");
+	assert.equal(config.transcribingSymbol, "≡");
 	assert.equal(sources.recordingSymbol, "file");
 	assert.equal(sources.transcribingSymbol, "file");
 	assert.equal(config.whisperBin, VOICE_DEFAULTS.whisperBin);
@@ -85,8 +85,8 @@ test("parses boolean and numeric settings from string environment values", () =>
 	assert.equal(resolveVoiceConfig({}, { PI_VOICE_AUTO_SEND: "TRUE" }).config.autoSend, true);
 	assert.equal(resolveVoiceConfig({}, { PI_VOICE_THREADS: "12" }).config.threads, 12);
 	assert.equal(resolveVoiceConfig({}, { PI_VOICE_MAX_SECONDS: "60" }).config.maxSeconds, 60);
-	assert.equal(resolveVoiceConfig({}, { PI_VOICE_RECORDING_SYMBOL: "◉" }).config.recordingSymbol, "◉");
-	assert.equal(resolveVoiceConfig({}, { PI_VOICE_TRANSCRIBING_SYMBOL: "▤" }).config.transcribingSymbol, "▤");
+	assert.equal(resolveVoiceConfig({}, { PI_VOICE_RECORDING_SYMBOL: "●" }).config.recordingSymbol, "●");
+	assert.equal(resolveVoiceConfig({}, { PI_VOICE_TRANSCRIBING_SYMBOL: "≡" }).config.transcribingSymbol, "≡");
 });
 
 test("falls through to the next source when a value cannot be parsed", () => {
