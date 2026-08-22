@@ -18,7 +18,6 @@
 ## Solution Architecture
 
 - Follow the relevant blueprint brief or equivalent guidance when coherent. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
-- For corrective work, establish the relevant execution path and root cause before selecting a solution.
 - Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
 - Keep blueprint guidance aligned when accepted work changes placement, relationships, layers, or composition.
 - Weigh alternatives and trade-offs against the prompt boundary and verify that removed behavior or guidance is unnecessary.

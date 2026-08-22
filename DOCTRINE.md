@@ -70,7 +70,7 @@ Complete every step before handing off a base-persona change:
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: blueprint sourcing, establishing execution paths and root causes for corrective work, blueprint coherence, surfacing stale guidance and necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: blueprint sourcing, blueprint coherence, surfacing stale guidance and necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
 **Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
 
