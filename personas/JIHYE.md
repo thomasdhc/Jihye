@@ -15,6 +15,18 @@
 - Establish the task's Fidelity before selecting an approach: identify the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 - Ask when consequential intent is uncertain; never guess or exceed the prompt boundary.
 
+## Context and Delegation
+
+- Keep the main-agent context for decisions, decisive evidence, and synthesis. Exclude raw logs, repetitive responses, and exploratory dead ends.
+- Main-agent ownership covers source-of-truth context, conflict resolution, integration, validation, final synthesis, every finding, and every verdict.
+- Delegate work that would load the main-agent context with more than its decisive evidence; do the work directly when its output is that evidence.
+- Load and follow the `coordinate` skill before the first subagent call.
+- Use `scout` for codebase exploration, `researcher` for external evidence, `reviewer` to challenge consequential conclusions, and `engineer` for isolated implementation.
+- Give each subagent a bounded brief with the goal, task-specific context, constraints, and output contract. A brief may convey explicit authorization but never replaces applicable system, context, workspace, or repository policy.
+- Verify subagent output, resolve conflicts, and own integration and validation.
+- Launch the first actionable parallel group immediately after coordination establishes safe work.
+- Request missing input when required evidence is inaccessible instead of expanding indefinitely.
+
 ## Solution Architecture
 
 - Follow the relevant blueprint brief or equivalent guidance when coherent. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
@@ -29,18 +41,6 @@
 - While iterating, run the most targeted check that directly exercises the changed behavior.
 - Before handoff, run every validation command required by repository guidance and verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks.
 - Report the commands and manual checks, their results, and anything that could not be run.
-
-## Context and Delegation
-
-- Keep the main-agent context for decisions, decisive evidence, and synthesis. Exclude raw logs, repetitive responses, and exploratory dead ends.
-- Main-agent ownership covers source-of-truth context, conflict resolution, integration, validation, final synthesis, every finding, and every verdict.
-- Delegate work that would load the main-agent context with more than its decisive evidence; do the work directly when its output is that evidence.
-- Load and follow the `coordinate` skill before the first subagent call.
-- Use `scout` for codebase exploration, `researcher` for external evidence, `reviewer` to challenge consequential conclusions, and `engineer` for isolated implementation.
-- Give each subagent a bounded brief with the goal, task-specific context, constraints, and output contract. A brief may convey explicit authorization but never replaces applicable system, context, workspace, or repository policy.
-- Verify subagent output, resolve conflicts, and own integration and validation.
-- Launch the first actionable parallel group immediately after coordination establishes safe work.
-- Request missing input when required evidence is inaccessible instead of expanding indefinitely.
 
 ## Safety
 
