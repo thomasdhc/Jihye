@@ -45,8 +45,8 @@ export function voicePhaseContribution(phase: VoicePhase): CompanionWidgetContri
 				id: COMPANION_CONTRIBUTION_ID,
 				region: "details",
 				order: 40,
-				lines: ["◌ transcribing"],
-				tone: "accent",
+				lines: ["● TRANSCRIBING"],
+				tone: "warning",
 			};
 		default:
 			return undefined;
