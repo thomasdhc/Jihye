@@ -141,7 +141,7 @@ test("doctrine defines Jihye's development principles and canonical policy domai
 
 test("global persona preserves canonical domains, coordination gates, and parent ownership", () => {
 	const persona = readPersona("JIHYE.md");
-	assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Solution Architecture", "Validation", "Context and Delegation", "Safety"]);
+	assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Context and Delegation", "Solution Architecture", "Validation", "Safety"]);
 	assertTerms(persona, [
 		/\bFidelity\b/,
 		/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
