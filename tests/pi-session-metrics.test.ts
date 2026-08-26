@@ -34,9 +34,11 @@ test("Pi session metric CSV helpers validate schemas and derive non-cache tokens
 		writeFileSync(csvPath, "date,total_tokens,cacheRead\n2026-08-03,100,75\n");
 		const program = [
 			"from pathlib import Path",
-			"from _common import load_csv, non_cache_tokens",
+			"from _common import date_figure_width, load_csv, non_cache_tokens",
 			`rows = load_csv(Path(${JSON.stringify(csvPath)}), {'date', 'total_tokens', 'cacheRead'})`,
 			"assert non_cache_tokens(rows[0]) == 25",
+			"assert date_figure_width(5, minimum=15.5, width_per_date=1.6) == 15.5",
+			"assert date_figure_width(16, minimum=15.5, width_per_date=1.6) == 25.6",
 		].join("; ");
 		const result = spawnSync(python, ["-c", program], {
 			encoding: "utf8",

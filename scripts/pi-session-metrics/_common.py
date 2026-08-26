@@ -50,5 +50,12 @@ def date_label(value: str) -> str:
     return parsed.strftime("%b %d")
 
 
+def date_figure_width(
+    date_count: int, *, minimum: float, width_per_date: float
+) -> float:
+    """Keep multi-date plot annotations readable as the date range grows."""
+    return max(minimum, date_count * width_per_date)
+
+
 def ensure_parent(path: Path) -> None:
     path.expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)

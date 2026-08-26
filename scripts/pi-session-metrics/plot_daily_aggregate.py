@@ -8,7 +8,14 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from _common import date_label, ensure_parent, integer, load_csv, non_cache_tokens
+from _common import (
+    date_figure_width,
+    date_label,
+    ensure_parent,
+    integer,
+    load_csv,
+    non_cache_tokens,
+)
 
 MAIN_COLUMNS = {"date", "total_tokens", "cacheRead", "used_subagents"}
 CHILD_COLUMNS = {"date", "total_tokens", "cacheRead"}
@@ -25,6 +32,8 @@ CHILD_COLOR = "#7a6fb1"
 TEXT_COLOR = "#172033"
 MUTED_COLOR = "#5b6472"
 BACKGROUND = "#f8fafc"
+MINIMUM_FIGURE_WIDTH = 15.5
+FIGURE_WIDTH_PER_DATE = 1.6
 
 
 def parse_args() -> argparse.Namespace:
@@ -177,7 +186,14 @@ def plot(args: argparse.Namespace) -> None:
     figure, (total_axis, non_cache_axis, activity_axis, session_axis) = plt.subplots(
         4,
         1,
-        figsize=(15.5, 16),
+        figsize=(
+            date_figure_width(
+                len(dates),
+                minimum=MINIMUM_FIGURE_WIDTH,
+                width_per_date=FIGURE_WIDTH_PER_DATE,
+            ),
+            16,
+        ),
         sharex=True,
         gridspec_kw={"height_ratios": [1.05, 1.05, 0.95, 1], "hspace": 0.31},
     )
@@ -325,7 +341,7 @@ def plot(args: argparse.Namespace) -> None:
     session_axis.set_xticks(
         x,
         [
-            f"{date_label(day)}\n{len(sessions_by_day[day])} sessions · "
+            f"{date_label(day)}\n{len(sessions_by_day[day])} sess. · "
             f"{sum(session['compactions'] for session in sessions_by_day[day])} comp."
             for day in dates
         ],

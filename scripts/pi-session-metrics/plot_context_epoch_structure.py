@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from _common import date_label, ensure_parent, integer, load_csv
+from _common import date_figure_width, date_label, ensure_parent, integer, load_csv
 
 REQUIRED_COLUMNS = {
     "start_date",
@@ -19,6 +19,8 @@ TEXT_COLOR = "#172033"
 MUTED_COLOR = "#5b6472"
 BACKGROUND = "#f8fafc"
 MEAN_COLOR = "#9a4d00"
+MINIMUM_FIGURE_WIDTH = 15.5
+FIGURE_WIDTH_PER_DATE = 1.2
 
 
 def parse_args() -> argparse.Namespace:
@@ -168,7 +170,14 @@ def plot(args: argparse.Namespace) -> None:
     figure, (events_axis, messages_axis) = plt.subplots(
         2,
         1,
-        figsize=(15.5, 11.6),
+        figsize=(
+            date_figure_width(
+                len(dates),
+                minimum=MINIMUM_FIGURE_WIDTH,
+                width_per_date=FIGURE_WIDTH_PER_DATE,
+            ),
+            11.6,
+        ),
         sharex=True,
         gridspec_kw={"hspace": 0.26},
     )
