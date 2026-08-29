@@ -15,6 +15,8 @@ Before the first tool call touching its target:
 
 Pass each read gate based on the nature of the action, never its size or obviousness.
 
+After compaction, re-pass a read gate only when its guidance still applies, before the next action that guidance governs.
+
 ## Instruction Boundary
 
 - Read and follow the most-specific repository guidance governing the target.
