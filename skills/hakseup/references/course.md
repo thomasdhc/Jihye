@@ -1,27 +1,38 @@
-# Course Layout and Templates
+# Course Artifact Roles and Templates
 
-## Layout
+## Artifact Model
 
-The course home is resolved, never assumed. Read the workflow's location ladder, then treat the
-resolved home as `<course-root>`'s parent.
+Every course keeps three stable common roots:
 
 ```text
 <course home>/<course-slug>/
-  CURRICULUM.md        agreed scope, module arc, status, resume pointer
-  notes.md             durable concept and internals write-ups
-  learner.md           miss patterns, hint tiers, calibration, feedback
-  module-<n>/
-    problems.md        every surfaced problem statement of that module, in order
-    <working file>     the learner's own attempts; named by the learner
-    review-test.<ext>  the retention test generated at that module's completion
-    sources.md         cited scouting evidence, only for a module drawing on a repository
+  CURRICULUM.md    agreed course contract, status, declarations, resume pointer
+  notes.md         durable learner-facing explanations and evidence
+  learner.md       learner evidence, calibration, feedback, and artifact pointers
+  <declared activity artifacts>
 ```
 
-Course-root files are cumulative and cross-referenced across every module. `module-<n>/` files are
-episodic and belong to one module only. A course adopts `module-<n>/` when it reaches its second
-module; a single-module course may stay flat. Number tasks by module, `<module>.<task>`.
+The course declares activity artifacts instead of inheriting a fixed module layout. It may use flat files, module directories, an external response channel with durable transcripts, executable files, diagrams, or other modality-appropriate records. Keep paths relative to the course root where files are used.
 
-Keep the learner's working file out of every template. The learner owns its contents.
+Keep these artifact roles distinct:
+
+- **Course contract:** agreed capability, outcome, scope, module arc, revisability, and activity declarations.
+- **Activity record:** the exact surfaced prompt, learner attempt, support, answer request, evaluation, feedback, completion state, and next action.
+- **Assessment material:** learner-visible completion criteria plus the answer, rubric, reference solution, probes, sources, or other basis used to evaluate. Declare which items the learner sees and which remain agent-facing and withheld. A declaration may defer agent consultation until after an attempt. Repository placement does not make material access-protected.
+- **Learning notes:** learner-facing explanations backed by observed evidence.
+- **Calibration record:** evidence-derived changes to difficulty, support, pacing, shape, and sequence.
+- **Retention material:** the modality-appropriate later exercise and its result.
+
+For each activity shape, declare:
+
+- its open-ended `shape` name and purpose,
+- prompt, attempt, assessment, source, and retention artifacts as applicable,
+- the response channel,
+- the learner-visible completion criteria, the evaluation material that remains withheld, and whether agent consultation is deferred until after an attempt,
+- validation and completion evidence,
+- the retention form.
+
+The conceptual-question and executable-task shapes below are starting shapes, not a closed enum. A course or module may declare another shape and its mechanics through the same contract.
 
 ## CURRICULUM.md
 
@@ -29,120 +40,164 @@ Keep the learner's working file out of every template. The learner owns its cont
 ---
 name: <course> curriculum
 subject: <subject>
-level: <current difficulty>
+level: <current calibration>
 ---
 
 # <Course>
 
-## Outcome
+## Capability and Outcome
 
-<the capability the learner wants, what it is for, and the observable condition that ends the course>
+<the learner-agreed capability, what it is for, and the observable completion condition>
 
-## Environment
+## Scope and Revisability
 
-<language, runtime, working file, and how the learner runs a check block>
+<included and excluded scope, plus how the learner may revise the course>
 
-## Session Shape
+## Learning Environment
 
-<tasks per sitting, and any standing preference the learner stated>
+<response channels, tools, constraints, and source authorities>
+
+## Activity Declarations
+
+### <shape name>
+
+- Purpose: <what this shape establishes>
+- Artifacts: <prompt, attempt, assessment, source, and retention paths or durable channels as applicable>
+- Response channel: <conversation, file, executable workspace, diagram, or another channel>
+- Assessment: <learner-visible completion criteria; answer, rubric, sources, checks, or other evaluation material; identify what remains withheld>
+- Validation: <how the evaluation material and learner evidence are verified>
+- Completion evidence: <observable condition>
+- Retention: <modality-appropriate form>
 
 ## Modules
 
 ### 1. <module title> — <planned | active | complete>
 
-<one line on the capability this module establishes>
+<capability and selected activity shapes>
 
-<Source: repository and paths, only when this module draws from one. Omit the line otherwise.>
-
-- [x] <task title>
-- [ ] <task title>
-
-### 2. <module title> — planned
-
-- [ ] <task title>
+- [x] <activity title>
+- [ ] <activity title>
 
 ## Resume
 
-<module, task, and the first action of the next sitting>
+<current module and activity, durable artifact pointers, and first action of the next sitting>
 ```
 
-Mark a module `complete` only after its review test exists.
-
-## module-\<n\>/problems.md
-
-Append each problem statement when it is surfaced, never before. Keep the statement exactly as the learner received it, so a later attempt starts from the same information.
-
-```markdown
-## <n>. <task title>
-
-<signature and docstring>
-
-**Check**
-
-<the executable check block>
-```
-
-Record a hint under its problem only after it is given, tagged with its tier.
+Revise the contract with the learner when capability, scope, level, module arc, or declarations change. Do not mark a module complete until its declared completion and retention evidence exists.
 
 ## notes.md
 
-One section per concept or detour. Number sections globally across modules so a cross-reference survives. Preserve the observed output that established the point; a claim without its evidence decays into an assertion the learner cannot re-verify.
+Use one section per concept or meaningful detour. Number or anchor sections so retention records can refer to them durably.
 
 ```markdown
 ## <concept>
 
-<what is true, stated first>
+<what is true>
 
-<the evidence: the command or snippet, and its real output>
+<Evidence: the observed response, source, command, output, or comparison that supports it>
 
-<the consequence for how the learner should write code>
+<the consequence for the learner's model or practice>
 ```
 
-Order sections by when they arose. A learner-initiated detour is a first-class section, not an appendix to the task that triggered it.
+Keep agent-facing assessment material out of `notes.md` while its assessment remains unresolved.
 
 ## learner.md
 
 ```markdown
 # <Course> — Learner Record
 
-## Level
+## Calibration
 
-<current difficulty, the last adjustment, and its trigger>
+- <date/activity> — <adjustment and evidence that triggered it>
 
-## Miss Patterns
+## Evidence and Gaps
 
-- <pattern stated as a habit> — <task, and what the probe or check block showed>
+- <activity> — <attempt artifact or concise evidence; evaluation; gap or demonstrated capability>
 
-## Hints
+## Support and Answer Requests
 
-- <task> — tier <n>: <what was still unclear at that tier>
+- <activity> — <hint tier, other support, or explicit answer request and its calibration effect>
+
+## Retention
+
+- <activity or capability> — <retention form, result, and next interval or action>
 
 ## Feedback
 
 - <date> — <the learner's words and what changes because of them>
 ```
 
-State a miss pattern as a recurring habit rather than a single wrong answer; a habit generates a review-test case, an isolated slip does not.
+Store full prompts and attempts in their declared activity record when they would make `learner.md` unwieldy. Keep durable pointers here.
 
-## module-\<n\>/sources.md
+## Activity Record
 
-Only for a module that draws its material from a source repository. Record the scouting evidence a
-task was authored from, so the task can be re-derived rather than recalled.
+Declare the path or durable channel in `CURRICULUM.md`; no filename is globally required. Preserve each event only after it occurs.
 
 ```markdown
-# module-<n> — Sources
+## <activity id and title>
 
-- `<path>` — `<construct>`: <the pattern it establishes, and the task that draws on it>
+- Shape: <declared shape>
+- Status: <prepared | surfaced | attempted | assessed | complete>
+
+### Prompt
+
+<exact surfaced prompt>
+
+### Attempt
+
+<exact learner response or pointer to learner-owned evidence>
+
+### Support and Answer Requests
+
+<support used; whether and when an answer was explicitly requested>
+
+### Evaluation
+
+<result, decisive learner evidence, assessment criterion or source, and taught gap>
+
+### Feedback and Resume
+
+<learner feedback, next choice, and durable next action>
 ```
 
-This file is agent-facing. Keep it out of `notes.md`, which is the learner's reference.
+## Conceptual-Question Shape
 
-## module-\<n\>/review-test.\<ext\>
+A typical declaration names a question inventory or just-in-time prompt record, a durable response channel, an agent-facing assessment artifact, source lineage, and a conceptual retention form.
 
-Keep it standalone and runnable in the learner's environment with no other course file present. Structure it so a failure names the concept it came from.
+Mechanics:
 
-```text
-one callable per concept, with variant data
-a runner that reports which concepts failed
-a pointer from each concept to its notes.md section
+1. Surface the question, expected response form, and completion evidence without revealing its answer or assessment basis to the learner.
+2. Preserve the learner's response before evaluation for diagnostic or practice questions.
+3. Consult the assessment basis now when its declaration deferred agent access, then compare the response with the declared answer, rubric, and authoritative sources; cite the decisive criterion or source.
+4. Use a follow-up or transfer question when validation requires stronger evidence.
+5. Teach evidenced gaps and retain the capability through a declared form such as spaced recall, variants, explanations, comparisons, or concept maps.
+
+A pre-authored inventory may keep questions, coverage tags, source lineage, and agent-facing answers together or in separate declared artifacts. Such material is withheld from the learner during unresolved assessment, and its declaration may defer agent consultation; it is not access-protected. Use pre-authorship when coverage, comparability, or sourced correctness benefits; otherwise prefer just-in-time authorship for adaptive calibration.
+
+## Executable-Task Shape
+
+A typical declaration names a prompt record, learner-owned working file, learner-visible unchanged executable checks, agent-facing reference material and probes, probe evidence, and an executable retention artifact. These are required only when this shape declares them.
+
+Mechanics:
+
+1. Surface the task contract without teaching the target implementation.
+2. Verify unchanged checks against a temporary reference solution and discard that solution before surfacing the task.
+3. Preserve learner ownership of the working file; never place an implementation there.
+4. Run the learner attempt against unchanged checks and at least one relevant probe, preserving observed output.
+5. Evaluate from that evidence before teaching the gap or unused idiom.
+6. Reveal a verified solution only on explicit request, record the request for calibration, and keep the learner's working file untouched.
+7. Prefer standalone executable retention where the environment permits, using variants derived from recorded gaps rather than passed checks.
+
+## Other Declared Shapes
+
+Declare another shape whenever the capability needs different mechanics, such as a lab, discussion, design critique, simulation, observation, or performance. Define its artifacts, response channel, assessment basis, validation, completion evidence, and retention form. Apply the common lifecycle without forcing conceptual-question or executable-task artifacts onto it.
+
+## Source Lineage
+
+When an activity depends on external material or repository conventions, declare an agent-facing source artifact and record enough lineage to re-derive the activity:
+
+```markdown
+- `<source or path>` — `<construct or claim>`: <what it establishes and which activity uses it>
 ```
+
+Keep source lineage separate from learner-facing notes unless the source itself is part of what the learner should retain.

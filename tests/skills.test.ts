@@ -160,44 +160,43 @@ test("review-guidance preserves a narrow subject and evidence threshold", () => 
 	assert.match(content, /do not[^\n]*unrelated Markdown/i, "review scope excludes unrelated documentation");
 });
 
-test("hakseup preserves learner-first surfacing and retention semantics", () => {
+test("hakseup preserves a flexible learner-evidence course contract", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "hakseup", "SKILL.md"), "utf8");
-	for (const section of ["Preserve the Teaching Invariants", "Locate the Course", "Scope the Curriculum", "Run the Task Loop", "Calibrate Difficulty", "Capture Notes and Feedback", "Generate and Run the Review Test", "Deliver the Course Record"]) {
+	for (const section of ["Preserve the Learning Invariants", "Locate the Course", "Scope the Curriculum", "Run the Common Activity Lifecycle", "Use Conceptual Questions", "Use Executable Tasks", "Calibrate the Course", "Capture Notes and Feedback", "Build and Run Retention", "Deliver the Course Record"]) {
 		assert.ok(headings(content).includes(section), section);
 	}
 	assertTerms(content, [
-		/signature, docstring, and check block alone/i,
-		/never name the concept, list traps, preview failure modes/i,
-		/explain after the attempt, never before/i,
-		/never write an implementation into the learner's working file/i,
-		/discard the reference solution/i,
-		/acceptance invariants/i,
-		/finding gate/i,
-		/applying Validation to the attempt/,
-		/prompt boundary/i,
-		/read gate/i,
-		/one tier per request/i,
-		/explicit request to see the solution/i,
-		/show it in the conversation only/i,
-		/leave the learner's working file untouched/i,
-		/third hint tier/i,
-		/at least one input the check block does not cover/i,
-		/advance only when the learner says so/i,
-		/never reuse a check block the learner has already passed/i,
+		/agree with the learner.*target capability.*observable outcome.*scope/i,
+		/revise it with the learner/i,
+		/explicit shape and completion evidence/i,
+		/completion criteria the learner sees.*answer or evaluation material remains agent-facing/i,
+		/withhold the answer and every item declared withheld/i,
+		/declared activity defer agent consultation/i,
+		/do not describe repository files as access-protected/i,
+		/explicit(?:ly)? (?:asks?|ask) to see the answer/i,
+		/record the request.*calibration evidence/i,
+		/diagnostic and practice activities.*learner evidence before evaluating/i,
+		/allow prerequisite exposition/i,
+		/base every evaluation on observed learner evidence/i,
+		/teach the evidenced gap/i,
+		/advance only on the learner's explicit signal/i,
+		/surfaced prompts, learner attempts, notes, feedback.*resume pointer/i,
+		/modality.*retention/i,
+		/prefer authoring an activity just before surfacing it/i,
+		/pre-authored inventories.*coverage, comparability, or sourced correctness/i,
+		/response channel, learner-visible completion criteria, withheld evaluation material, validation, completion evidence, and retention form/i,
+		/one hint tier at a time/i,
+		/checks as learner-visible completion criteria/i,
+		/reference solution and uncovered probes withheld/i,
+		/learner's working file as learner-owned/i,
+		/at least one relevant probe/i,
+		/standalone executable retention/i,
 		/references\/course\.md/,
 		/resolve the course home rather than assuming one/i,
 		/workspace-owned configuration/i,
-		/never hardcode a course home/i,
 		/only from code read in this session/i,
-		/per-module choice, not a course-wide setting/i,
-		/`scout` subagent/,
-		/record the cited evidence in that module's `sources\.md`/,
-		/keep it out of `notes\.md`/i,
-		/a module is initialized and its first task is surfaced/i,
-		/a module completes and its review test exists/i,
-		/the learner pauses, ends a sitting, or asks to stop/i,
-		/carry every checkpoint through to the pull request/i,
-		/no checkpoint waits for a later checkpoint to deliver it/i,
+		/meaningful configured delivery checkpoints/i,
+		/a pause alone does not require repository delivery/i,
 		/delivery boundary in the course home's repository/i,
 		/apply the workspace Git workflow/i,
 	], "hakseup semantics");
@@ -205,18 +204,30 @@ test("hakseup preserves learner-first surfacing and retention semantics", () => 
 	assert.doesNotMatch(content, /\bpython\b/i, "hakseup must stay subject-agnostic");
 	assert.doesNotMatch(content, /\bEtude\b/i, "hakseup must not name a configured course home");
 	assert.doesNotMatch(content, /\blearnings\/\B/i, "hakseup must not hardcode a course directory");
+	assert.doesNotMatch(content, /\b(?:answer|assessment|key|material)\b[^\n.]*\bis access-protected\b/i, "hakseup must not overstate repository assessment-key security");
 
 	const coursePath = join(SKILLS_ROOT, "hakseup", "references", "course.md");
 	assert.ok(existsSync(coursePath));
 	const course = readFileSync(coursePath, "utf8");
-	for (const file of ["CURRICULUM.md", "notes.md", "learner.md"]) {
-		assert.match(course, new RegExp(`^## ${file.replace(".", "\\.")}$`, "m"), `course: ${file}`);
+	for (const section of ["Artifact Model", "CURRICULUM.md", "notes.md", "learner.md", "Activity Record", "Conceptual-Question Shape", "Executable-Task Shape", "Other Declared Shapes"]) {
+		assert.ok(headings(course).includes(section), `course: ${section}`);
 	}
-	for (const file of ["problems.md", "sources.md"]) {
-		assert.match(course, new RegExp(`^## module-\\\\<n\\\\>/${file.replace(".", "\\.")}$`, "m"), `course: module-<n>/${file}`);
-	}
-	assert.match(course, /^## module-\\<n\\>\/review-test\./m, "course: module-<n>/review-test");
-	assert.match(course, /a course adopts `module-<n>\/` when it reaches its second\s+module/i, "course: module adoption rule");
+	assertTerms(course, [
+		/three stable common roots/i,
+		/course declares activity artifacts instead of inheriting a fixed module layout/i,
+		/prompt, attempt, assessment, source, and retention artifacts/i,
+		/response channel/i,
+		/learner-visible completion criteria/i,
+		/evaluation material that remains withheld/i,
+		/validation and completion evidence/i,
+		/not a closed enum/i,
+		/pre-authored inventory/i,
+		/withheld from the learner during unresolved assessment/i,
+		/defer agent consultation/i,
+		/not access-protected/i,
+		/required only when this shape declares them/i,
+		/standalone executable retention/i,
+	], "hakseup course artifact contract");
 });
 
 test("dokhae preserves source-first critical-reading and lineage semantics", () => {

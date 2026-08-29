@@ -1,112 +1,130 @@
 ---
 name: hakseup
-description: Teach one subject through a scoped curriculum and a repeating learner-first task loop, with tiered hints, evidence-backed review, durable notes, and generated retention tests. Use when asked to teach, tutor, or drill a subject, to build a learning curriculum, or to resume or review a course.
+description: Teach one subject through a learner-agreed, revisable curriculum and an adaptive learning loop with declared activity shapes, evidence-backed assessment, durable records, and modality-appropriate retention. Use when asked to teach, tutor, drill, build, resume, or review a course.
 disable-model-invocation: true
 ---
 
 # Hakseup
 
-## Preserve the Teaching Invariants
+## Preserve the Learning Invariants
 
-- Surface a task as its signature, docstring, and check block alone. Never name the concept, list traps, preview failure modes, or hint at the idiom.
-- Let the learner reach the failure. Explain after the attempt, never before.
-- Never write an implementation into the learner's working file. Write scaffolding there only when the learner asks for it, and leave every behavior unimplemented.
-- Show a solution only when the learner explicitly asks to see it. Verify a minimal implementation against the unchanged check block, show it in the conversation only, and leave the learner's working file untouched.
-- Verify each check block against a reference solution, confirm every assertion passes, then discard the reference solution before surfacing the task.
-- Treat the check block as the task's acceptance invariants, expressed as executable assertions the learner runs unchanged.
-- Apply the finding gate to every claim about language or system behavior: run it and report the observed output.
-- Treat learner questions and detours as curriculum, not interruption.
-- Derive a task from a source repository only from code read in this session. Cite the file and the construct, and never surface a sourced task from recall.
+- Agree with the learner on the target capability, observable outcome, scope, and course shape. Treat the agreement as the course's prompt boundary and revise it with the learner as their needs or learning capability change.
+- Give every activity an explicit shape and completion evidence. Let the course declare shapes beyond the initial standards.
+- Declare which completion criteria the learner sees and which answer or evaluation material remains agent-facing. While an assessment is unresolved, withhold the answer and every item declared withheld unless the learner explicitly asks to see the answer. Let a declared activity defer agent consultation when that separation prevents leakage. Do not describe repository files as access-protected.
+- On an explicit answer request, show the answer, record the request, and use it as calibration evidence.
+- For diagnostic and practice activities, collect learner evidence before evaluating or teaching the tested gap. Allow prerequisite exposition before an activity when the curriculum calls for it.
+- Base every evaluation on observed learner evidence and the declared assessment basis. Teach the evidenced gap after evaluating it.
+- Adapt difficulty, support, pacing, and activity choice from recorded evidence.
 - Advance only on the learner's explicit signal.
-- Treat the conversation as transient. Capture notes before advancing.
-- Preserve the agreed subject, outcome, module order, and session shape as the course's prompt boundary. Revise them with the learner, never unilaterally.
+- Treat the conversation as transient. Durably capture surfaced prompts, learner attempts, notes, feedback, calibration, and the resume pointer before advancing.
+- Use a retention form appropriate to the activity's modality.
 
 ## Locate the Course
 
 Resolve the course home rather than assuming one. Follow an explicit target, then the first applicable:
 
 1. Follow explicit user or project instructions.
-2. Use the course home named by workspace-owned configuration, such as a workspace `REPO.md` that designates a repository or directory for courses.
+2. Use the course home named by workspace-owned configuration, such as a workspace `REPO.md`.
 3. Under a workspace whose guidance claims a directory for reusable learning artifacts, use that directory.
 4. Propose a location and confirm it before creating one.
 
-Place the course at `<course home>/<course-slug>/`. Derive the slug from the subject in lowercase kebab-case; ask when ambiguous. Never hardcode a course home into this workflow; a resolved home is configuration, and configuration changes without changing the workflow.
+Place the course at `<course home>/<course-slug>/`. Derive the slug from the subject in lowercase kebab-case; ask when ambiguous. Never hardcode a course home into this workflow.
 
-Read `references/course.md` for the file layout and templates, and follow the course home's own guidance when it adds constraints.
+Read `references/course.md` completely for the artifact roles and declaration templates. Follow the course home's guidance when it adds constraints.
 
-Pass this read gate: read `CURRICULUM.md` and `learner.md` before surfacing a task, authoring a problem, or generating a review test.
+For an existing course, pass this read gate before revising its scope, authoring, or resuming an activity: read `CURRICULUM.md`, `notes.md`, `learner.md`, and the artifacts declared for the current activity.
 
 ## Scope the Curriculum
 
-Run this once per course, before authoring any task. Establish through dialogue:
+Establish through dialogue:
 
-- the capability the learner wants and what it is for,
-- the learner's current level, evidenced by a sample of their work or a short diagnostic task rather than self-report alone,
-- the target level and the observable outcome that ends the course,
-- the ordered modules and the task titles within each,
-- the starting difficulty and how many tasks a sitting holds,
-- the learner's working environment, language, and file layout,
-- whether any module draws its material from a source repository, and which.
+- the capability the learner wants, what it is for, and the observable outcome that ends the course,
+- the included and excluded scope, ordered module arc, and how the learner may revise them,
+- the learner's current capability, evidenced by prior work or a short diagnostic when appropriate,
+- the starting difficulty, pacing, support preferences, and learner-controlled advancement,
+- the activity shapes each module uses and each shape's artifacts, response channel, learner-visible completion criteria, withheld evaluation material, validation, completion evidence, and retention form,
+- the learner's environment and any authoritative sources or source repositories.
 
-Adopt already-completed work as a completed module instead of re-teaching it. Confirm the scope with the learner, then write `CURRICULUM.md` once.
+Adopt already-demonstrated capability rather than re-teaching it. Confirm the scope, then create or revise `CURRICULUM.md` with the learner.
 
-Author each task's problem statement immediately before surfacing it, never in advance, so difficulty follows the calibration record.
+Prefer authoring an activity just before surfacing it when calibration should shape the activity. Allow pre-authored inventories when coverage, comparability, or sourced correctness benefits more; select and sequence their items adaptively.
 
-Treat a source repository as a per-module choice, not a course-wide setting. Prefer it where the repository's own conventions are the lesson, and prefer generic material where real code would add noise instead of signal. When a module names a source repository, use a `scout` subagent to locate its real patterns before authoring, and record the cited evidence in that module's `sources.md`. Keep it out of `notes.md`, which is the learner's reference rather than an agent-facing record.
+Treat sources as a per-activity or per-module choice. Make claims about a source repository only from code read in this session, cite the file and construct in a declared agent-facing source artifact, and use a `scout` subagent when locating repository patterns would otherwise load the main-agent context.
 
-## Run the Task Loop
+## Run the Common Activity Lifecycle
 
-Repeat for each task:
+Repeat this lifecycle independently of activity shape:
 
-1. **Surface** the problem statement under the teaching invariants, and append it to `problems.md`.
-2. **Hint** only on request, one tier per request: a nudge toward the shape, then the concept name, then a worked analogy drawn from an unrelated domain. Never give the answer as a hint. Record the tier reached.
-3. **Answer** only on an explicit request to see the solution. Treat that request as distinct from a hint request: verify a minimal implementation against the unchanged check block, show it in the conversation only, record that it was shown, and continue to leave the learner's working file untouched.
-4. **Wait** for the learner's attempt. Do not implement, correct, or preempt while waiting.
-5. **Probe** by applying Validation to the attempt: run it against the check block, then construct and run at least one input the check block does not cover. Report both results with their output.
-6. **Review** in order: the correctness verdict, what the code implies about the learner's model, then the idiom left unused.
-7. **Open the floor** for questions and follow them wherever they lead.
-8. **Gate** on the learner: ask whether questions are done, and advance only when the learner says so.
-9. **Capture** notes and calibration signal before surfacing the next task.
+1. **Prepare** the activity from the curriculum, calibration record, declared shape, and sources. Verify the prompt as its declaration requires before surfacing it.
+2. **Surface** the prompt and learner-visible completion criteria through the declared response channel. Persist exactly what the learner receives, but withhold the answer and every evaluation item declared withheld while its assessment remains unresolved.
+3. **Support** only when requested or previously agreed. Give one hint tier at a time without revealing the answer, and record support used.
+4. **Collect** the learner's attempt or other declared evidence before evaluating a diagnostic or practice activity.
+5. **Evaluate** the evidence against the declared assessment basis and validation. Consult and verify the assessment basis now when the activity deferred agent access until after the attempt. Report the result and decisive evidence, distinguishing a misconception from a slip or tooling failure.
+6. **Teach** the evidenced gap, answer follow-up questions, and capture durable notes with the evidence supporting them.
+7. **Gate** on the learner: ask whether to continue, revisit, change the activity shape, or revise the course.
+8. **Capture** the attempt, evaluation, feedback, calibration change, completion state, and resume pointer before the next activity.
 
-## Calibrate Difficulty
+If the learner explicitly asks for the answer before resolving the assessment, record the request, reveal the answer through the response channel, mark the assessment accordingly, and use the request and subsequent evidence for calibration. Never disguise an answer as a hint.
 
-Raise difficulty when a task passes on the first attempt with no hint and the probe finds nothing. Lower it when the learner reaches the third hint tier, explicitly asks to see the solution, or when the probe exposes a misconception rather than a slip.
+## Use Conceptual Questions
 
-Record every adjustment and its trigger in `learner.md`, and keep the level stated in `CURRICULUM.md` honest.
+Use this standard shape for verbal, written, diagrammatic, or other conceptual responses unless the course declares a better shape.
+
+- Surface a question with its expected response form and completion evidence.
+- Accept the response through the declared channel and preserve it as the learner's attempt.
+- Assess it against an agent-facing, withheld answer, rubric, source set, or combination of them. Cite the decisive source or criterion in the evaluation.
+- Probe uncertain understanding with a follow-up or transfer question when the declared validation requires it.
+- Retain learning through an appropriate form such as spaced recall, a question variant, explanation, comparison, or concept map.
+
+A conceptual question inventory may be pre-authored. Keep inventory coverage and source lineage explicit, but select questions using the learner's calibration record.
+
+## Use Executable Tasks
+
+Use this standard shape when runnable behavior is the learning evidence.
+
+- Surface only the task contract, such as its signature, docstring, and unchanged check block. Treat the checks as learner-visible completion criteria; keep the reference solution and uncovered probes withheld. Do not preview the target concept, traps, failure modes, or preferred idiom.
+- Verify the check block against a minimal reference solution before surfacing it, confirm the expected assertions pass, then discard the reference solution.
+- Treat the learner's working file as learner-owned. Never write an implementation there; add behavior-free scaffolding only on request.
+- Wait for the learner's attempt, run the unchanged checks, then construct and run at least one relevant probe the checks do not cover. Report observed outputs under Validation.
+- Review correctness, what the evidence implies about the learner's model, and then useful idiom or design improvement.
+- On an explicit solution request, verify a minimal solution against the unchanged checks, show it through the response channel only, record the request, and leave the learner's working file untouched.
+- Use standalone executable retention when it fits the environment. Build variants from recorded gaps rather than reusing a check the learner has already passed.
+
+## Calibrate the Course
+
+Use completion evidence, attempts, support used, explicit answer requests, follow-up probes, retention results, and learner feedback as calibration evidence.
+
+Increase challenge or reduce support after consistently independent success. Reduce challenge, add prerequisite exposition, change shape, or narrow the step when evidence shows a misconception or excessive load. Do not infer capability from self-report alone when a proportionate diagnostic is available.
+
+Record every meaningful adjustment and its trigger in `learner.md`. Keep `CURRICULUM.md` honest when the agreed level, pacing, module arc, or activity declarations change.
 
 ## Capture Notes and Feedback
 
-Keep two records with separate purposes:
+Keep the common roots distinct:
 
-- `notes.md` holds the durable concept and internals write-ups the learner re-reads. Preserve the evidence and observed output that established each point.
-- `learner.md` holds miss patterns, hint tiers reached, calibration adjustments, and the learner's own feedback. It is the input to calibration and to the review test, not reading material.
+- `CURRICULUM.md` holds the learner-agreed capability, outcome, scope, declarations, status, and resume pointer.
+- `notes.md` holds durable concept and internals write-ups with the evidence that established them.
+- `learner.md` holds attempts or their artifact pointers, support and answer requests, observed gaps, calibration changes, retention results, and learner feedback.
 
-Collect learner feedback at module completion and whenever the learner offers it. Record it precisely enough to act on.
+Use the course-declared activity artifacts for surfaced prompts, full attempts, assessment material, source lineage, and retention material. Keep agent-facing assessment material separate from learner-facing notes, and label it withheld rather than protected.
 
-## Generate and Run the Review Test
+Collect feedback at meaningful completions and whenever the learner offers it. Record it precisely enough to change the course.
 
-Generate a runnable review test at module completion, built from `learner.md`.
+## Build and Run Retention
 
-- Build variants that exercise the same concepts through different shapes and data. Never reuse a check block the learner has already passed.
-- Include one case for each recorded miss pattern.
-- Verify the review test against a reference solution, then discard the reference solution.
-- Keep it runnable standalone, depending on no other course file.
+Generate or schedule the declared retention form at meaningful module or course intervals from `learner.md` and the activity record.
 
-On a later run, report each failure against the `notes.md` section covering it, and record new misses in `learner.md`.
+- Exercise the same capability through changed material rather than replaying a completed assessment.
+- Include recorded gap patterns without treating isolated slips as habits.
+- Verify retention material and its assessment basis before use.
+- Evaluate later retention evidence through the common lifecycle and feed new gaps back into calibration.
+
+Do not force executable review tests onto non-executable learning. When executable retention is declared, keep it standalone where the environment permits and point failures to the relevant `notes.md` section.
 
 ## Deliver the Course Record
 
-Commit the course record and open a pull request at each checkpoint:
+Persist the current activity artifacts and resume pointer whenever the learner pauses; a pause alone does not require repository delivery.
 
-- the curriculum is scoped, or a module's task arc is agreed and written,
-- a module is initialized and its first task is surfaced,
-- a module completes and its review test exists,
-- the learner pauses, ends a sitting, or asks to stop.
+Follow the course home's guidance for meaningful configured delivery checkpoints. When a checkpoint uses version control, treat its course record as a delivery boundary in the course home's repository, pass the read gate for its Git guidance, and apply the workspace Git workflow without restating repository mechanics here.
 
-Carry every checkpoint through to the pull request. A commit alone does not satisfy one, and no checkpoint waits for a later checkpoint to deliver it.
-
-Treat each checkpoint as a delivery boundary in the course home's repository. Pass the read gate for Git guidance, then apply the workspace Git workflow for branching, staging, the agent commit command, the push handoff, and the pull request.
-
-Stage the artifacts the checkpoint produced. Include the learner's working file when its attempts belong to that checkpoint, and never edit it to make a commit or a validation run clean.
-
-Report the checkpoint reached and what was committed, then resume the loop where the learner left it.
+Include only the artifacts owned by the checkpoint. Preserve learner-owned files unchanged, and report the checkpoint and durable resume state before continuing.
