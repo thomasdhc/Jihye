@@ -33,4 +33,4 @@ The design therefore has separable dimensions: trigger timing, verbatim retentio
 ## References
 
 - Pi 0.84.2: `docs/compaction.md`, `docs/extensions.md`, and `examples/extensions/custom-compaction.ts`
-- Jihye trigger: [`extensions/widget/ctx-manager.ts`](extensions/widget/ctx-manager.ts)
+- Jihye trigger: [`extensions/widget/ctx-manager.ts`](../extensions/widget/ctx-manager.ts)

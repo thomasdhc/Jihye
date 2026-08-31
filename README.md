@@ -65,7 +65,7 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 ## Design Notes
 
-- [Compaction](COMPACTION.md) maps Pi and Jihye's current compaction surfaces and the open design questions.
+- [Compaction](docs/compaction.md) maps Pi and Jihye's current compaction surfaces and the open design questions.
 
 ## Utility Scripts
 
