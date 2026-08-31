@@ -2,24 +2,29 @@
 
 This note maps the choices for changing Pi compaction in Jihye. It is based on Pi 0.84.2 and records current constraints and open implementation decisions.
 
-## Landscape
+## Default Mechanics
 
-Pi compaction is a lossy context checkpoint, not history deletion. The session JSONL retains the full branch, while subsequent model requests receive a generated summary plus a recent verbatim tail.
+Pi compaction is a lossy context checkpoint, not history deletion. The session JSONL remains append-only; subsequent model requests use the standing system prompt, one generated summary, and one contiguous recent tail.
 
-Pi owns two triggers: manual `/compact` and automatic threshold or overflow recovery when core auto-compaction is enabled. Its settings control the response reserve and approximate retained-tail size. The default path selects a valid cut point, handles split turns, updates any previous summary, summarizes with the active model, and carries forward read and modified file lists. Tool results are truncated during summary serialization.
+1. **Trigger:** Native auto-compaction runs when `contextTokens > contextWindow - reserveTokens`, or for overflow recovery, when enabled. Manual `/compact` and `ctx.compact()` use the same pipeline. Defaults are a 16,384-token reserve and 20,000-token retained tail.
+2. **Boundary:** Pi walks backward through current-branch entries until their estimated size reaches `keepRecentTokens`, then aligns to a valid user, assistant, bash, or custom-message boundary. It never cuts at a tool result. A turn larger than the target is split into a summarized prefix and verbatim suffix.
+3. **Summary:** Pi serializes entries before the boundary, truncating each tool result to 2,000 characters, and asks the active model for a structured checkpoint covering goal, constraints, progress, decisions, next steps, and critical context. Repeated compactions update the previous summary; read and modified file lists are carried forward.
+4. **Persistence:** Pi appends a `compaction` entry containing `summary`, `firstKeptEntryId`, token usage, and optional `details`. Older entries remain in JSONL but leave active context.
+5. **Presentation:** The summary is sent on later requests as a user-role message beginning `The conversation history before this point was compacted into the following summary:` with the content inside `<summary>` tags, followed by the retained tail.
 
-Extensions can change each layer without patching Pi:
+The amount summarized varies with current context size; the tail has an approximate fixed target. Post-compaction context is therefore the unchanged system prompt plus a variable summary plus roughly 20,000 recent tokens. The default normal-summary output cap is 80% of `reserveTokens`—13,107 tokens with default settings—capped by the model limit.
 
-- `ctx.compact()` can add a trigger policy.
-- `session_before_compact` can cancel compaction or replace its summary, model call, metadata, and retained boundary.
-- `session_compact` can observe the saved checkpoint.
-- `session_before_tree` separately controls summaries created during tree navigation.
+## Customization Surface
 
-Pi does not provide a per-message or per-tool-call "never compact" flag. A compaction checkpoint contains one summary and one contiguous verbatim tail beginning at `firstKeptEntryId`. An extension can move that boundary earlier, but doing so also retains every later entry. Selective older content must instead be copied exactly into a custom checkpoint, rehydrated through extension-managed context, or declared invalid and reread.
+- Settings can enable native auto-compaction and change `reserveTokens` or `keepRecentTokens`.
+- `/compact [instructions]` and `ctx.compact({ customInstructions })` append focus to the default prompt; they do not replace its schema.
+- `session_before_compact` can cancel compaction or fully replace summary generation, including prompt, input selection, model, output budget, previous-summary handling, retained boundary, usage, and extension metadata.
+- `session_compact` can observe the saved checkpoint; `session_before_tree` independently customizes branch summaries.
+- The fixed summary wrapper has no direct setting. A `context` hook could transform its message, but changing summary generation is the narrower intervention.
 
-Jihye currently adds proactive triggering in `extensions/widget/ctx-manager.ts`: it warns at 50% context use and calls `ctx.compact()` at 65%. It does not replace Pi's summary behavior. Because this policy is a widget component, disabling that component also disables Jihye's proactive trigger; Pi's core auto-compaction remains an independent installation setting.
+Pi has no per-message or per-tool-call "never compact" flag. Moving `firstKeptEntryId` earlier also retains every later entry. Selective older content must be copied exactly into a custom checkpoint, rehydrated through extension-managed context, or declared invalid and reread.
 
-The design therefore has separable dimensions: trigger timing, verbatim retention, checkpoint content, summarizer routing, failure recovery, configuration, and observability.
+Jihye currently warns at 50% context use and calls `ctx.compact()` at 65% from `extensions/widget/ctx-manager.ts`. This changes trigger timing only and couples proactive compaction to an optional widget component; Pi's native auto-compaction remains an independent installation setting.
 
 ## Guidance Continuity
 
@@ -43,6 +48,6 @@ The broader question of what belongs in standing guidance, gated files, and skil
 
 ## References
 
-- Pi 0.84.2: `docs/compaction.md`, `docs/extensions.md`, and `examples/extensions/custom-compaction.ts`
+- Pi 0.84.2: `docs/compaction.md`, `docs/extensions.md`, `examples/extensions/custom-compaction.ts`, `dist/core/compaction/{compaction,utils}.js`, and `dist/core/messages.js`
 - Jihye trigger: [`extensions/widget/ctx-manager.ts`](../../extensions/widget/ctx-manager.ts)
 - Related design: [System Context Design Landscape](system-context.md)
