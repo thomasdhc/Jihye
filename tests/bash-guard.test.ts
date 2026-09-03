@@ -9,6 +9,7 @@ import bashGuard, {
 } from "../extensions/bash-guard/index.ts";
 import { analyzeHeadlessGitCommand } from "../extensions/bash-guard/analysis.ts";
 import { HEADLESS_GIT_BLOCKED } from "../extensions/bash-guard/policy.ts";
+import { promptRunOrAbort } from "../extensions/bash-guard/prompt.ts";
 import { TERMINAL_NOTIFY_EVENT } from "../extensions/terminal-notify.ts";
 
 test("detects destructive filesystem commands", () => {
@@ -709,6 +710,82 @@ test("requests a terminal alert before showing an approval prompt", async () => 
 		mode: "tui",
 		body: "Bash approval required (high risk)",
 		ringBell: true,
+	});
+});
+
+test("keeps bash approval actions visible while long details scroll", async () => {
+	const command = Array.from({ length: 60 }, (_, index) => `command-line-${index + 1}`).join("\n");
+	let firstRender: string[] = [];
+	let lastRender: string[] = [];
+	let renderRequests = 0;
+	let overlayOptions: unknown;
+	const sizedRenders: Array<{ rows: number; lines: string[] }> = [];
+
+	const choice = await promptRunOrAbort(
+		{
+			hasUI: true,
+			cwd: "/workspace/example",
+			ui: {
+				async custom(factory: any, options: unknown) {
+					overlayOptions = options;
+					const terminal = { rows: 24 };
+					const component = factory(
+						{
+							terminal,
+							requestRender() {
+								renderRequests++;
+							},
+						},
+						{
+							fg: (_color: string, text: string) => text,
+							bold: (text: string) => text,
+						},
+						{},
+						() => {},
+					);
+					firstRender = component.render(80);
+					for (let page = 0; page < 10; page++) {
+						component.handleInput?.("\x1b[6~");
+						lastRender = component.render(80);
+					}
+					for (const rows of [3, 4, 6, 10, 24, 40]) {
+						terminal.rows = rows;
+						sizedRenders.push({ rows, lines: component.render(40) });
+					}
+					return "abort" as const;
+				},
+			},
+		},
+		command,
+		{
+			severity: "high",
+			reasons: ["rm (file deletion)"],
+			flaggedCommands: ["rm file.txt"],
+			requiresInteractiveApproval: false,
+		},
+	);
+
+	assert.equal(choice, "abort");
+	assert.ok(firstRender.length <= 22);
+	assert.match(firstRender.join("\n"), /Details 1-/);
+	assert.match(firstRender.join("\n"), /Run/);
+	assert.match(firstRender.join("\n"), /Abort/);
+	assert.doesNotMatch(firstRender.join("\n"), /command-line-60/);
+	assert.ok(lastRender.length <= 22);
+	assert.match(lastRender.join("\n"), /command-line-60/);
+	assert.match(lastRender.join("\n"), /Run/);
+	assert.match(lastRender.join("\n"), /Abort/);
+	assert.ok(renderRequests > 0);
+	for (const { rows, lines } of sizedRenders) {
+		const overlayHeight = Math.max(1, rows - 2);
+		const visibleOverlay = lines.slice(0, overlayHeight).join("\n");
+		assert.ok(lines.length <= overlayHeight, `render exceeds ${rows}-row terminal`);
+		assert.match(visibleOverlay, /Run/, `${rows}-row terminal hides Run`);
+		assert.match(visibleOverlay, /Abort/, `${rows}-row terminal hides Abort`);
+	}
+	assert.deepEqual(overlayOptions, {
+		overlay: true,
+		overlayOptions: { width: "90%", maxHeight: "100%", margin: 1 },
 	});
 });
 
