@@ -183,6 +183,8 @@ test("recognizes direct iTerm focus reporting and rejects unsafe multiplexer ass
 	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "iTerm.app", TMUX: "/tmp/tmux" }), false);
 	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "iTerm.app", STY: "screen" }), false);
 	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "Apple_Terminal" }), false);
+	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "iTerm.app" }, "regular"), true);
+	assert.equal(shouldEnableTerminalFocusReporting({ TERM_PROGRAM: "iTerm.app" }, "fullscreen"), false);
 
 	assert.deepEqual(parseTerminalFocusInput(TERMINAL_FOCUS_IN_SEQUENCE), { focused: true, data: "" });
 	assert.deepEqual(parseTerminalFocusInput(TERMINAL_FOCUS_OUT_SEQUENCE), { focused: false, data: "" });
@@ -259,4 +261,60 @@ test("reports and consumes direct iTerm focus changes for companion components",
 		DISABLE_TERMINAL_FOCUS_REPORTING_SEQUENCE,
 	]);
 	assert.deepEqual(focusEvents, [true, false, true, false]);
+});
+
+test("claims no terminal focus in fullscreen mode, where Pi consumes focus reports", async () => {
+	type Handler = (event: unknown, ctx: unknown) => Promise<void> | void;
+	const handlers = new Map<string, Handler>();
+	const terminalWrites: string[] = [];
+	const focusEvents: boolean[] = [];
+	let widgetFactory: ((tui: any, theme: any) => { dispose(): void }) | undefined;
+	let inputListenerRegistered = false;
+
+	registerCompanionWidgetHost({
+		events: {
+			on() {
+				return () => {};
+			},
+			emit(_event: string, payload: { focused?: boolean }) {
+				focusEvents.push(payload.focused!);
+			},
+		},
+		on(event: string, handler: Handler) {
+			handlers.set(event, handler);
+		},
+	} as never, {
+		environment: { TERM_PROGRAM: "iTerm.app" },
+		writeTerminal(sequence) {
+			terminalWrites.push(sequence);
+		},
+	});
+
+	await handlers.get("session_start")?.({}, {
+		mode: "tui",
+		ui: {
+			setWidget(_id: string, factory: typeof widgetFactory) {
+				widgetFactory = factory;
+			},
+		},
+	});
+	const component = widgetFactory?.(
+		{
+			mode: "fullscreen",
+			requestRender() {},
+			addInputListener() {
+				inputListenerRegistered = true;
+				return () => {};
+			},
+		},
+		{ fg(_tone: string, text: string) { return text; } },
+	);
+
+	assert.equal(inputListenerRegistered, false);
+	assert.deepEqual(terminalWrites, []);
+	assert.deepEqual(focusEvents, [], "an unobservable terminal focus is never reported as focused");
+
+	component?.dispose();
+	assert.deepEqual(terminalWrites, []);
+	assert.deepEqual(focusEvents, []);
 });

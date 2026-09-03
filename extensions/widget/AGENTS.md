@@ -30,6 +30,7 @@ Canonical evidence: `index.ts`, `api.ts`, `config.ts`, `settings.ts`, `ctx-manag
 - Components must remove their contributions and clean up timers, listeners, leases, or process-wide state during shutdown.
 - Pi-pet must ignore malformed, unknown, terminal, and late subagent progress IDs. Concurrent top-level calls keep independent animation state, and nested child agents remain activity of their top-level pet rather than creating new pets.
 - Pi-pet artwork must already satisfy its configured display width; do not pad frames at runtime, and keep tests glyph-agnostic so manual artwork edits remain safe.
+- Enable terminal focus reporting only where the host can observe the reports, and never claim a focus state it cannot observe. Pi's fullscreen viewport consumes focus reports, and continuous output from a background tab makes terminals report perpetual activity.
 - Keep configuration sources separate from component logic. Inject policy callbacks when lifecycle behavior depends on persisted settings.
 - Preserve default-enabled behavior when no `widget.json` exists or a component key is omitted. Invalid configuration should be reported rather than silently normalized.
 
