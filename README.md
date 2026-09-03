@@ -65,7 +65,8 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 ## Design Notes
 
-- [Compaction](docs/design/compaction.md) maps Pi and Jihye's current compaction surfaces and the open design questions.
+- [Compaction](docs/design/compaction.md) maps checkpoint behavior, guidance continuity, and the open implementation questions.
+- [System context](docs/design/system-context.md) maps standing guidance, read-gated policy, skills, and their shared boundary with compaction.
 
 ## Utility Scripts
 
