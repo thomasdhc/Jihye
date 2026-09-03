@@ -717,9 +717,11 @@ test("keeps bash approval actions visible while long details scroll", async () =
 	const command = Array.from({ length: 60 }, (_, index) => `command-line-${index + 1}`).join("\n");
 	let firstRender: string[] = [];
 	let lastRender: string[] = [];
+	let wheelDownRender: string[] = [];
+	let wheelUpRender: string[] = [];
 	let renderRequests = 0;
 	let overlayOptions: unknown;
-	const sizedRenders: Array<{ rows: number; lines: string[] }> = [];
+	const sizedRenders: Array<{ rows: number; maxRows: number; lines: string[] }> = [];
 
 	const choice = await promptRunOrAbort(
 		{
@@ -744,13 +746,25 @@ test("keeps bash approval actions visible while long details scroll", async () =
 						() => {},
 					);
 					firstRender = component.render(80);
+					component.handleInput?.("\x1b[<65;10;10M");
+					wheelDownRender = component.render(80);
+					component.handleInput?.("\x1b[<64;10;10M");
+					wheelUpRender = component.render(80);
 					for (let page = 0; page < 10; page++) {
 						component.handleInput?.("\x1b[6~");
 						lastRender = component.render(80);
 					}
-					for (const rows of [3, 4, 6, 10, 24, 40]) {
+					// 60% of the terminal, floored at 8 rows and capped by the 1-row overlay margins.
+					for (const [rows, maxRows] of [
+						[3, 1],
+						[4, 2],
+						[6, 4],
+						[10, 8],
+						[24, 14],
+						[40, 24],
+					] as const) {
 						terminal.rows = rows;
-						sizedRenders.push({ rows, lines: component.render(40) });
+						sizedRenders.push({ rows, maxRows, lines: component.render(40) });
 					}
 					return "abort" as const;
 				},
@@ -766,20 +780,21 @@ test("keeps bash approval actions visible while long details scroll", async () =
 	);
 
 	assert.equal(choice, "abort");
-	assert.ok(firstRender.length <= 22);
+	assert.ok(firstRender.length <= 14);
 	assert.match(firstRender.join("\n"), /Details 1-/);
+	assert.match(wheelDownRender.join("\n"), /Details 4-/);
+	assert.match(wheelUpRender.join("\n"), /Details 1-/);
 	assert.match(firstRender.join("\n"), /Run/);
 	assert.match(firstRender.join("\n"), /Abort/);
 	assert.doesNotMatch(firstRender.join("\n"), /command-line-60/);
-	assert.ok(lastRender.length <= 22);
+	assert.ok(lastRender.length <= 14);
 	assert.match(lastRender.join("\n"), /command-line-60/);
 	assert.match(lastRender.join("\n"), /Run/);
 	assert.match(lastRender.join("\n"), /Abort/);
 	assert.ok(renderRequests > 0);
-	for (const { rows, lines } of sizedRenders) {
-		const overlayHeight = Math.max(1, rows - 2);
-		const visibleOverlay = lines.slice(0, overlayHeight).join("\n");
-		assert.ok(lines.length <= overlayHeight, `render exceeds ${rows}-row terminal`);
+	for (const { rows, maxRows, lines } of sizedRenders) {
+		const visibleOverlay = lines.slice(0, maxRows).join("\n");
+		assert.ok(lines.length <= maxRows, `render exceeds ${maxRows} rows on a ${rows}-row terminal`);
 		assert.match(visibleOverlay, /Run/, `${rows}-row terminal hides Run`);
 		assert.match(visibleOverlay, /Abort/, `${rows}-row terminal hides Abort`);
 	}
@@ -795,7 +810,7 @@ test("highlights the destructive segment in the approval prompt", async () => {
 		ctx: never,
 	) => Promise<{ block?: boolean; reason?: string } | undefined>;
 	type PromptFactory = (
-		tui: { requestRender(): void },
+		tui: { requestRender(): void; terminal: { rows: number } },
 		theme: {
 			fg(color: string, text: string): string;
 			bold(text: string): string;
@@ -823,7 +838,8 @@ test("highlights the destructive segment in the approval prompt", async () => {
 			ui: {
 				async custom(factory: PromptFactory) {
 					const component = factory(
-						{ requestRender() {} },
+						// Tall enough that the bounded prompt shows every detail line.
+						{ requestRender() {}, terminal: { rows: 40 } },
 						{
 							fg: (color, text) => `<${color}>${text}</${color}>`,
 							bold: (text) => `<bold>${text}</bold>`,

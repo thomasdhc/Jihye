@@ -18,6 +18,27 @@ type PromptTui = Pick<TUI, "requestRender"> & { terminal?: { rows?: number } };
 
 const OVERLAY_MARGIN = 1;
 const FALLBACK_TERMINAL_ROWS = 24;
+/** Share of the terminal the prompt may cover, so the session stays visible behind it. */
+const MAX_HEIGHT_FRACTION = 0.6;
+/** Rows the prompt may claim beyond that share, so small terminals stay readable. */
+const MIN_PROMPT_ROWS = 8;
+/** Lines scrolled per wheel notch, matching Pi's default viewport step. */
+const WHEEL_SCROLL_LINES = 3;
+
+/** Wheel direction from an SGR or X10 mouse report, or undefined for any other input. */
+function readWheelDirection(data: string): -1 | 1 | undefined {
+	const sgr = /^\x1b\[<(\d+);\d+;\d+[Mm]$/.exec(data);
+	const button = sgr
+		? Number.parseInt(sgr[1], 10)
+		: data.length === 6 && data.startsWith("\x1b[M")
+			? data.charCodeAt(3) - 32
+			: undefined;
+	if (button === undefined || (button & 64) === 0) return undefined;
+	const direction = button & 3;
+	if (direction === 0) return -1;
+	if (direction === 1) return 1;
+	return undefined;
+}
 
 export class BashGuardPromptComponent implements Component {
 	private readonly actions: SelectList;
@@ -55,6 +76,13 @@ export class BashGuardPromptComponent implements Component {
 			: FALLBACK_TERMINAL_ROWS;
 	}
 
+	private get maxPromptRows(): number {
+		const rows = this.terminalRows;
+		const available = Math.max(1, rows - OVERLAY_MARGIN * 2);
+		const bounded = Math.max(MIN_PROMPT_ROWS, Math.round(rows * MAX_HEIGHT_FRACTION));
+		return Math.min(available, bounded);
+	}
+
 	private buildBody(): string {
 		const flaggedLabel = this.risk.flaggedCommands.length === 1 ? "Problematic command" : "Problematic commands";
 		const flaggedText = this.risk.flaggedCommands
@@ -87,7 +115,7 @@ export class BashGuardPromptComponent implements Component {
 
 	render(width: number): string[] {
 		const safeWidth = Math.max(1, Math.floor(width));
-		const maxHeight = Math.max(1, this.terminalRows - OVERLAY_MARGIN * 2);
+		const maxHeight = this.maxPromptRows;
 		const fullActions = this.actions.render(safeWidth);
 		const actions = maxHeight < fullActions.length ? this.renderCompactActions(safeWidth) : fullActions;
 		let remainingHeight = maxHeight - actions.length;
@@ -126,7 +154,7 @@ export class BashGuardPromptComponent implements Component {
 					this.theme.fg(
 						"dim",
 						truncateToWidth(
-							` Details ${this.scrollOffset + 1}-${this.scrollOffset + visibleDetails.length} of ${details.length} · PageUp/PageDown to scroll`,
+							` Details ${this.scrollOffset + 1}-${this.scrollOffset + visibleDetails.length} of ${details.length} · PageUp/PageDown or wheel to scroll`,
 							safeWidth,
 							"",
 						),
@@ -137,18 +165,23 @@ export class BashGuardPromptComponent implements Component {
 		return [...leading, ...visibleDetails, ...scrollStatus, ...actions, ...trailing];
 	}
 
-	handleInput(data: string): void {
+	private scrollStep(data: string): number | undefined {
+		const wheelDirection = readWheelDirection(data);
+		if (wheelDirection !== undefined) return wheelDirection * WHEEL_SCROLL_LINES;
 		const pageStep = Math.max(1, this.pageSize - 1);
-		let nextOffset = this.scrollOffset;
-		if (matchesKey(data, "pageUp")) {
-			nextOffset = Math.max(0, this.scrollOffset - pageStep);
-		} else if (matchesKey(data, "pageDown")) {
-			nextOffset = Math.min(this.maxScrollOffset, this.scrollOffset + pageStep);
-		} else {
+		if (matchesKey(data, "pageUp")) return -pageStep;
+		if (matchesKey(data, "pageDown")) return pageStep;
+		return undefined;
+	}
+
+	handleInput(data: string): void {
+		const step = this.scrollStep(data);
+		if (step === undefined) {
 			this.actions.handleInput(data);
 			this.tui.requestRender();
 			return;
 		}
+		const nextOffset = Math.min(this.maxScrollOffset, Math.max(0, this.scrollOffset + step));
 		if (nextOffset !== this.scrollOffset) {
 			this.scrollOffset = nextOffset;
 			this.tui.requestRender();
