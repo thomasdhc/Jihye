@@ -63,6 +63,28 @@ The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `j
 
 Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard`, and the two local environment files should be listed. See the [personas guide](personas/README.md) for local-configuration templates.
 
+## Keep iTerm2 Scrollback Bounded
+
+Pi's regular TUI writes redraws into terminal-owned scrollback, so a long session can accumulate repeated output and make iTerm2 lag. Configure each workstation running iTerm2 as follows.
+
+With Pi `0.84.2` or newer, merge these keys into `~/.pi/agent/settings.json` without replacing its other settings:
+
+```json
+{
+  "tuiMode": "fullscreen",
+  "fullscreenExitOutput": "resume-hint"
+}
+```
+
+Fullscreen mode keeps the live transcript inside Pi's viewport, and `resume-hint` prevents Pi from printing the full transcript into native scrollback when it exits. These settings apply to both `pi` and `pi -c`; use `pi -c` only when resuming the most recent session.
+
+In **iTerm2 → Settings → Profiles → Terminal**, configure every profile used with Pi:
+
+- Disable **Unlimited scrollback**.
+- Set **Scrollback lines** to `10000`.
+
+Restart Pi after changing its settings. To retain the current conversation, run `/quit` and then `pi -c` once. Press **Command-K** after quitting if the current iTerm2 tab already contains excessive scrollback.
+
 ## Design Notes
 
 - [Compaction](docs/design/compaction.md) maps Pi and Jihye's current compaction surfaces and the open design questions.
