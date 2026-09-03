@@ -14,7 +14,7 @@ Which commands are guarded is policy. How a command is parsed, matched, and prom
 - `policy.ts` is data only. It declares which commands are guarded, at what severity, and with which user-facing reason. It contains no matching, parsing, or control flow.
 - `analysis.ts` turns a command string into a `Risk` (`severity`, `reasons`, `flaggedCommands`, `requiresInteractiveApproval`). It interprets the policy tables and owns the token-stream detectors.
 - `shell.ts` is syntax only: tokenizing via `shell-quote`, splitting on operators, unwrapping `env`/`command`/assignment prefixes, extracting nested shell `-c` commands, and option/flag inspection. It knows nothing about risk.
-- `prompt.ts` renders the approval dialog and depends only on the `Risk` type, so analysis stays testable without a UI.
+- `prompt.ts` renders the approval dialog and depends only on the `Risk` type, so analysis stays testable without a UI. It owns its own height bound and detail scrolling.
 
 Canonical evidence: `index.ts`, `policy.ts`, `shell.ts`, `analysis.ts`, `prompt.ts`, and `../../tests/bash-guard.test.ts`.
 
@@ -52,6 +52,7 @@ If a new rule needs a condition the vocabulary cannot express, prefer a named de
 - Exact flag matching (`hasArg`) and substring matching (`argContains`) are distinct on purpose. `argContains: "-f"` catches bundled forms like `-fd`; `hasArg: "--force"` must not match `--force-with-lease`.
 - The matcher must not stop at the first match. Multiple rules may contribute reasons to one segment.
 - `index.ts` must remain the only entrypoint Pi discovers, and must keep re-exporting `analyzeBashCommand`, `analyzeGitHubCliCommand`, and `analyzeGitLabCliCommand`.
+- Bound the prompt to a share of the terminal so the session stays visible behind it, and scroll the details within that bound. Pi clips an overlay from the bottom, so the component must render within the height it computes and never delegate that bound to `overlayOptions`. Run and abort stay visible at every terminal size; degrade the actions to their compact form before any content clips.
 - Guard operations whose effects escape the session: irreversible locally, disruptive to shared systems, externally publishing a delivery boundary, or broad enough that review is cheaper than recovery. Additive, self-authored, trivially-undone writes — creating an issue, editing your own description, posting a comment — are intentionally not guarded, and reads never are. `git push`, `gh pr create`, and `glab mr create` are explicit delivery-boundary exceptions and always require interactive approval.
 - `high` means unrecoverable. `medium` means recoverable but externally visible or wide-reaching. If a proposed rule fits neither, it probably should not exist.
 
