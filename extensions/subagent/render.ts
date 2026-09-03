@@ -13,6 +13,8 @@ import type { AgentResult } from "./types.ts";
 
 type Theme = ExtensionContext["ui"]["theme"];
 
+const COLLAPSED_TOOL_LIMIT = 5;
+
 export function getTermWidth(): number {
 	return process.stdout.columns || 120;
 }
@@ -117,7 +119,15 @@ export function renderAgentProgress(
 		}
 	};
 
-	for (const t of prog.recentTools) {
+	const visibleTools = expanded
+		? prog.recentTools
+		: prog.recentTools.slice(-COLLAPSED_TOOL_LIMIT);
+	const hiddenToolCount = prog.recentTools.length - visibleTools.length;
+	if (hiddenToolCount > 0) {
+		const label = hiddenToolCount === 1 ? "tool call" : "tool calls";
+		addLine(theme.fg("dim", `  … ${hiddenToolCount} earlier ${label}`));
+	}
+	for (const t of visibleTools) {
 		renderToolRow(t.tool, t.args, t.children, t.status === "running");
 	}
 
