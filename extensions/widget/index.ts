@@ -114,7 +114,7 @@ export function registerCompanionWidgetHost(
 			WIDGET_ID,
 			(tui, theme) => {
 				requestRender = () => tui.requestRender();
-				const focusReportingEnabled = shouldEnableTerminalFocusReporting(environment)
+				const focusReportingEnabled = shouldEnableTerminalFocusReporting(environment, tui.mode)
 					&& typeof tui.addInputListener === "function";
 				const removeFocusInputListener = focusReportingEnabled
 					? tui.addInputListener((data) => {
