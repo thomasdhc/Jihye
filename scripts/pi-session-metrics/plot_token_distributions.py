@@ -10,7 +10,7 @@ from typing import Any, Callable
 
 from _common import date_label, ensure_parent, integer, load_csv, non_cache_tokens
 
-MAIN_COLUMNS = {"date", "total_tokens", "cacheRead", "used_subagents"}
+MAIN_COLUMNS = {"date", "total_tokens", "cacheRead", "subagent_calls"}
 CHILD_COLUMNS = {"date", "total_tokens", "cacheRead"}
 TEXT_COLOR = "#172033"
 MUTED_COLOR = "#5b6472"
@@ -139,7 +139,7 @@ def plot(args: argparse.Namespace) -> None:
             jitter = rng.normal(0, 0.075, size=len(values))
             highlighted = np.array(
                 [
-                    integer(row, "used_subagents") > 0 if main_agent else True
+                    integer(row, "subagent_calls") > 0 if main_agent else True
                     for row in day_rows
                 ],
                 dtype=bool,
