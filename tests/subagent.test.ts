@@ -393,7 +393,6 @@ test("adds built-in MCP support only for tools whose backend requires it", async
 		assert.ok(paths.includes(join(REPO_ROOT, "extensions/web-search/index.ts")));
 		assert.equal(paths.filter((path) => path !== "builtin:mcp").every((path) => existsSync(path)), true);
 
-		// Without the mcpTools membership the wiring collapses to paths only.
 		const plain = await buildPiArgs(agent, "Inspect the fixture", REPO_ROOT);
 		try {
 			assert.equal(extensionArgs(plain.args).includes("builtin:mcp"), false);
@@ -407,9 +406,7 @@ test("adds built-in MCP support only for tools whose backend requires it", async
 
 test("mcpBackedTools follows the web-search backend configuration", async () => {
 	assert.equal(typeof mcpBackedTools, "function");
-	// Mirrors the live on-disk web-search config rather than assuming the
-	// packaged default: a checkout whose config.json sets backend "mcp" must
-	// list web_search, while the Serper default must not.
+	// Derived from the on-disk web-search config, which a checkout may override.
 	const expected = defaultWebSearchRequiresMcp() ? ["web_search"] : [];
 	assert.deepEqual([...mcpBackedTools(["web_search", "web_fetch", "bash"])], expected);
 });
@@ -444,9 +441,6 @@ test("always loads setup infrastructure without granting tools or tool extension
 });
 
 test("child loads caller-specified provider extensions so the agent model resolves", async () => {
-	// Providers registered only by an optional package are invisible to a
-	// `--no-extensions` child; the argv must carry whatever extensions the
-	// caller resolved for the agent model's provider.
 	const agent: AgentConfig = {
 		name: "provider-model",
 		description: "Fixture agent with a provider-mapped model",
@@ -473,8 +467,6 @@ test("child loads caller-specified provider extensions so the agent model resolv
 		rmSync(without.tempDir, { recursive: true, force: true });
 	}
 
-	// Unconfigured providers map to nothing, so a fresh checkout adds no
-	// extensions for them.
 	assert.deepEqual(providerExtensionsFor("not-a-registered-provider/any-model"), []);
 });
 

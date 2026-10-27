@@ -2,11 +2,10 @@
  * Subagent configuration: package-relative paths, extension config, the tool
  * catalogue used to build a child pi invocation, and pi binary resolution.
  *
- * Data and path resolution only; imports `types.ts` and, for the web-search
- * wiring decision, the sibling extension's pure configuration module. Every
- * exported path derives from this file's own location so local, Git, and npm
- * package installs all work without workstation-specific paths — moving the
- * module moves the agent and extension directories with it.
+ * Data and path resolution only; imports `types.ts` and `../web-search/config.ts`
+ * and nothing else. Every exported path derives from this file's own location
+ * so local, Git, and npm package installs all work without workstation-specific
+ * paths — moving the module moves the agent and extension directories with it.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -87,35 +86,22 @@ export const JIHYE_SETUP_EXTENSION = path.join(EXTENSIONS_DIR, "jihye-setup", "i
 
 // Tools that exist only once an extension is loaded into the child process,
 // keyed by tool name so the runner can turn an agent's tool list into
-// `--extension` arguments. `requiresBuiltinMcp` marks tools whose configured
-// backend also needs the child's built-in MCP support to connect; the
-// decision is captured once at module load, so a config change needs /reload.
+// `--extension` arguments.
 export interface CustomToolWiring {
 	readonly extensions: readonly string[];
 	readonly requiresBuiltinMcp?: () => boolean;
 }
 
 export const BASH_GUARD_EXTENSION = path.join(EXTENSIONS_DIR, "bash-guard", "index.ts");
-/** Built-in extension spec for pi's MCP support; not a path on disk. */
+// A pi built-in extension spec, not a path on disk.
 export const MCP_BUILTIN_EXTENSION = "builtin:mcp";
 
-// Read once at module load, matching subagent's own config.json: changing the
-// web-search backend requires /reload, and a malformed web-search config
-// fails subagent startup loudly instead of producing children that cannot
-// search.
+// Read once at module load: changes need /reload, and malformed config fails
+// startup loudly instead of spawning children that cannot search or resolve
+// their model.
 const webSearchRequiresMcp = defaultWebSearchRequiresMcp();
-
-// Read once at module load like webSearchRequiresMcp: changing provider
-// extension mappings requires /reload, and a malformed entry fails startup
-// loudly instead of producing children that cannot resolve their model.
 const providerExtensions = loadConfig().providerExtensions ?? {};
 
-/**
- * Extension paths a child pi must load so that `model`'s provider resolves.
- * Children start with `--no-extensions`, which strips workstation packages —
- * without this, a model pinned to a provider registered only by such a
- * package makes every child fail immediately with "model not found".
- */
 export function providerExtensionsFor(model: string): readonly string[] {
 	const provider = model.split("/")[0];
 	return providerExtensions[provider] ?? [];
@@ -135,7 +121,6 @@ export const CUSTOM_TOOL_EXTENSIONS: Record<string, CustomToolWiring> = {
 	subagent: { extensions: [path.join(EXT_DIR, "index.ts")] },
 };
 
-/** Tools among `tools` whose current configuration needs `-e builtin:mcp` in the child. */
 export function mcpBackedTools(tools: readonly string[]): Set<string> {
 	const backed = new Set<string>();
 	for (const tool of tools) {

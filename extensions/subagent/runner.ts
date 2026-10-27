@@ -15,9 +15,7 @@ import { BASH_GUARD_EXTENSION, BUILTIN_TOOLS, CUSTOM_TOOL_EXTENSIONS, JIHYE_SETU
 import type { AgentProgress, AgentResult, ResolvedAgentConfig } from "./types.ts";
 
 export interface BuildPiArgsOptions {
-	/** Tool names the current configuration backs with MCP; each receives `-e builtin:mcp`. */
 	mcpTools?: ReadonlySet<string>;
-	/** Extension paths the child must load so `agent.model`'s provider resolves under `--no-extensions`. */
 	providerExtensions?: readonly string[];
 }
 
@@ -40,10 +38,6 @@ export async function buildPiArgs(
 	const allowlist: string[] = [];
 	const extensionPaths = new Set<string>([JIHYE_SETUP_EXTENSION]);
 
-	// Providers registered only by an optional package (one pi's
-	// `--no-extensions` strips) do not exist in the child; load the mapped
-	// extensions so the child's `--model` resolves instead of failing with
-	// "model not found".
 	for (const extPath of options?.providerExtensions ?? []) extensionPaths.add(extPath);
 
 	for (const tool of agent.tools) {
