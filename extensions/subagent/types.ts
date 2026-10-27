@@ -97,4 +97,13 @@ export interface ExtensionConfig {
 	enableAlternateProviders?: boolean;
 	/** Partial override of the bundled provider tier maps. */
 	modelProfiles?: unknown;
+	/**
+	 * Provider id (the part before "/" in `provider/model-id`) → extension
+	 * paths a child pi must load for that provider's models to resolve.
+	 * Children start with `--no-extensions`, which also strips workstation
+	 * packages like a model-provider plugin; providers registered only by
+	 * such a package must be listed here or the child fails with
+	 * "model not found".
+	 */
+	providerExtensions?: Record<string, string[]>;
 }

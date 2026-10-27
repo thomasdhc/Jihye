@@ -2,16 +2,18 @@
  * Subagent configuration: package-relative paths, extension config, the tool
  * catalogue used to build a child pi invocation, and pi binary resolution.
  *
- * Data and path resolution only; imports `types.ts` and nothing else in this
- * extension. Every exported path derives from this file's own location so
- * local, Git, and npm package installs all work without workstation-specific
- * paths — moving the module moves the agent and extension directories with it.
+ * Data and path resolution only; imports `types.ts` and, for the web-search
+ * wiring decision, the sibling extension's pure configuration module. Every
+ * exported path derives from this file's own location so local, Git, and npm
+ * package installs all work without workstation-specific paths — moving the
+ * module moves the agent and extension directories with it.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 
+import { defaultWebSearchRequiresMcp } from "../web-search/config.ts";
 import type { ExtensionConfig } from "./types.ts";
 
 const EXT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -61,6 +63,19 @@ export function loadConfig(configPath: string = CONFIG_PATH): ExtensionConfig {
 	if (config.enableAlternateProviders !== undefined && typeof config.enableAlternateProviders !== "boolean") {
 		throw new Error(`Invalid subagent config at ${configPath}: enableAlternateProviders must be a boolean`);
 	}
+	if (config.providerExtensions !== undefined) {
+		const pe = config.providerExtensions;
+		if (typeof pe !== "object" || pe === null || Array.isArray(pe)) {
+			throw new Error(`Invalid subagent config at ${configPath}: providerExtensions must be a JSON object`);
+		}
+		for (const [provider, exts] of Object.entries(pe)) {
+			if (!Array.isArray(exts) || exts.some((e) => typeof e !== "string" || e.trim() === "")) {
+				throw new Error(
+					`Invalid subagent config at ${configPath}: providerExtensions.${provider} must be an array of extension paths`,
+				);
+			}
+		}
+	}
 	return config;
 }
 
@@ -72,18 +87,62 @@ export const JIHYE_SETUP_EXTENSION = path.join(EXTENSIONS_DIR, "jihye-setup", "i
 
 // Tools that exist only once an extension is loaded into the child process,
 // keyed by tool name so the runner can turn an agent's tool list into
-// `--extension` paths.
+// `--extension` arguments. `requiresBuiltinMcp` marks tools whose configured
+// backend also needs the child's built-in MCP support to connect; the
+// decision is captured once at module load, so a config change needs /reload.
+export interface CustomToolWiring {
+	readonly extensions: readonly string[];
+	readonly requiresBuiltinMcp?: () => boolean;
+}
+
 export const BASH_GUARD_EXTENSION = path.join(EXTENSIONS_DIR, "bash-guard", "index.ts");
-export const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
-	web_search: path.join(EXTENSIONS_DIR, "web-search", "index.ts"),
-	web_fetch: path.join(EXTENSIONS_DIR, "web-fetch", "index.ts"),
-	safe_bash: path.join(TOOLS_DIR, "safe-bash.ts"),
+/** Built-in extension spec for pi's MCP support; not a path on disk. */
+export const MCP_BUILTIN_EXTENSION = "builtin:mcp";
+
+// Read once at module load, matching subagent's own config.json: changing the
+// web-search backend requires /reload, and a malformed web-search config
+// fails subagent startup loudly instead of producing children that cannot
+// search.
+const webSearchRequiresMcp = defaultWebSearchRequiresMcp();
+
+// Read once at module load like webSearchRequiresMcp: changing provider
+// extension mappings requires /reload, and a malformed entry fails startup
+// loudly instead of producing children that cannot resolve their model.
+const providerExtensions = loadConfig().providerExtensions ?? {};
+
+/**
+ * Extension paths a child pi must load so that `model`'s provider resolves.
+ * Children start with `--no-extensions`, which strips workstation packages —
+ * without this, a model pinned to a provider registered only by such a
+ * package makes every child fail immediately with "model not found".
+ */
+export function providerExtensionsFor(model: string): readonly string[] {
+	const provider = model.split("/")[0];
+	return providerExtensions[provider] ?? [];
+}
+
+export const CUSTOM_TOOL_EXTENSIONS: Record<string, CustomToolWiring> = {
+	web_search: {
+		extensions: [path.join(EXTENSIONS_DIR, "web-search", "index.ts")],
+		requiresBuiltinMcp: () => webSearchRequiresMcp,
+	},
+	web_fetch: { extensions: [path.join(EXTENSIONS_DIR, "web-fetch", "index.ts")] },
+	safe_bash: { extensions: [path.join(TOOLS_DIR, "safe-bash.ts")] },
 	// `subagent` is the tool this very extension registers. Listing it here lets
 	// a parent agent grant it to a child agent — the child pi process loads this
 	// same index.ts via `--extension`, sees its own subagent tool, and (if
 	// PI_SUBAGENT_ALLOWED is set) only registers the allowlisted agents.
-	subagent: path.join(EXT_DIR, "index.ts"),
+	subagent: { extensions: [path.join(EXT_DIR, "index.ts")] },
 };
+
+/** Tools among `tools` whose current configuration needs `-e builtin:mcp` in the child. */
+export function mcpBackedTools(tools: readonly string[]): Set<string> {
+	const backed = new Set<string>();
+	for (const tool of tools) {
+		if (CUSTOM_TOOL_EXTENSIONS[tool]?.requiresBuiltinMcp?.()) backed.add(tool);
+	}
+	return backed;
+}
 
 /**
  * Single source of truth for what counts as a usable tool name, so discovery
