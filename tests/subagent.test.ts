@@ -404,11 +404,23 @@ test("adds built-in MCP support only for tools whose backend requires it", async
 	}
 });
 
-test("mcpBackedTools follows the web-search backend configuration", async () => {
-	assert.equal(typeof mcpBackedTools, "function");
-	// Derived from the on-disk web-search config, which a checkout may override.
-	const expected = defaultWebSearchRequiresMcp() ? ["web_search"] : [];
-	assert.deepEqual([...mcpBackedTools(["web_search", "web_fetch", "bash"])], expected);
+test("mcpBackedTools marks web_search only when its configured backend is MCP", () => {
+	const dir = mkdtempSync(join(tmpdir(), "subagent-backends-"));
+	try {
+		const mcpConfig = join(dir, "mcp.json");
+		writeFileSync(mcpConfig, JSON.stringify({ backend: "mcp", mcpTool: "mcp__examples__search" }));
+		const serperConfig = join(dir, "serper.json");
+		writeFileSync(serperConfig, JSON.stringify({ backend: "serper" }));
+
+		const tools = ["web_search", "web_fetch", "bash"];
+		const backedFor = (configPath: string) =>
+			[...mcpBackedTools(tools, { webSearchRequiresMcp: defaultWebSearchRequiresMcp(configPath) })];
+		assert.deepEqual(backedFor(mcpConfig), ["web_search"]);
+		assert.deepEqual(backedFor(serperConfig), []);
+		assert.deepEqual(backedFor(join(dir, "absent.json")), []);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
 });
 
 test("always loads setup infrastructure without granting tools or tool extensions", async () => {
@@ -467,7 +479,9 @@ test("child loads caller-specified provider extensions so the agent model resolv
 		rmSync(without.tempDir, { recursive: true, force: true });
 	}
 
-	assert.deepEqual(providerExtensionsFor("not-a-registered-provider/any-model"), []);
+	const mapping = { "example-llm": ["./example-provider/index.ts"] };
+	assert.deepEqual(providerExtensionsFor("example-llm/example-model", mapping), ["./example-provider/index.ts"]);
+	assert.deepEqual(providerExtensionsFor("other-llm/any-model", mapping), []);
 });
 
 test("loadConfig validates providerExtensions", async () => {

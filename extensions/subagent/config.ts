@@ -87,22 +87,29 @@ export const JIHYE_SETUP_EXTENSION = path.join(EXTENSIONS_DIR, "jihye-setup", "i
 // Tools that exist only once an extension is loaded into the child process,
 // keyed by tool name so the runner can turn an agent's tool list into
 // `--extension` arguments.
+export interface ToolBackends {
+	readonly webSearchRequiresMcp: boolean;
+}
+
 export interface CustomToolWiring {
 	readonly extensions: readonly string[];
-	readonly requiresBuiltinMcp?: () => boolean;
+	readonly requiresBuiltinMcp?: (backends: ToolBackends) => boolean;
 }
 
 export const BASH_GUARD_EXTENSION = path.join(EXTENSIONS_DIR, "bash-guard", "index.ts");
 // A pi built-in extension spec, not a path on disk.
 export const MCP_BUILTIN_EXTENSION = "builtin:mcp";
 
-// Read once at module load: changes need /reload, and malformed config fails
-// startup loudly instead of spawning children that cannot search or resolve
-// their model.
-const webSearchRequiresMcp = defaultWebSearchRequiresMcp();
-const providerExtensions = loadConfig().providerExtensions ?? {};
+// The workstation defaults, read once at module load: changes need /reload,
+// and malformed config fails startup loudly instead of spawning children that
+// cannot search or resolve their model.
+const workstationBackends: ToolBackends = { webSearchRequiresMcp: defaultWebSearchRequiresMcp() };
+const workstationProviderExtensions = loadConfig().providerExtensions ?? {};
 
-export function providerExtensionsFor(model: string): readonly string[] {
+export function providerExtensionsFor(
+	model: string,
+	providerExtensions: Readonly<Record<string, readonly string[]>> = workstationProviderExtensions,
+): readonly string[] {
 	const provider = model.split("/")[0];
 	return providerExtensions[provider] ?? [];
 }
@@ -110,7 +117,7 @@ export function providerExtensionsFor(model: string): readonly string[] {
 export const CUSTOM_TOOL_EXTENSIONS: Record<string, CustomToolWiring> = {
 	web_search: {
 		extensions: [path.join(EXTENSIONS_DIR, "web-search", "index.ts")],
-		requiresBuiltinMcp: () => webSearchRequiresMcp,
+		requiresBuiltinMcp: (backends) => backends.webSearchRequiresMcp,
 	},
 	web_fetch: { extensions: [path.join(EXTENSIONS_DIR, "web-fetch", "index.ts")] },
 	safe_bash: { extensions: [path.join(TOOLS_DIR, "safe-bash.ts")] },
@@ -121,10 +128,10 @@ export const CUSTOM_TOOL_EXTENSIONS: Record<string, CustomToolWiring> = {
 	subagent: { extensions: [path.join(EXT_DIR, "index.ts")] },
 };
 
-export function mcpBackedTools(tools: readonly string[]): Set<string> {
+export function mcpBackedTools(tools: readonly string[], backends: ToolBackends = workstationBackends): Set<string> {
 	const backed = new Set<string>();
 	for (const tool of tools) {
-		if (CUSTOM_TOOL_EXTENSIONS[tool]?.requiresBuiltinMcp?.()) backed.add(tool);
+		if (CUSTOM_TOOL_EXTENSIONS[tool]?.requiresBuiltinMcp?.(backends)) backed.add(tool);
 	}
 	return backed;
 }

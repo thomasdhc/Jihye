@@ -11,6 +11,7 @@
 
 # Workstation-specific extension settings
 extensions/subagent/config.json
+extensions/web-search/config.json
 
 # misc
 .DS_Store
