@@ -2,9 +2,9 @@
  * Subagent configuration: package-relative paths, extension config, the tool
  * catalogue used to build a child pi invocation, and pi binary resolution.
  *
- * Data and path resolution only; imports `types.ts` and nothing else in this
- * extension. Every exported path derives from this file's own location so
- * local, Git, and npm package installs all work without workstation-specific
+ * Data and path resolution only; imports `types.ts` and `../web-search/config.ts`
+ * and nothing else. Every exported path derives from this file's own location
+ * so local, Git, and npm package installs all work without workstation-specific
  * paths — moving the module moves the agent and extension directories with it.
  */
 import * as fs from "node:fs";
@@ -12,6 +12,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 
+import { defaultWebSearchRequiresMcp } from "../web-search/config.ts";
 import type { ExtensionConfig } from "./types.ts";
 
 const EXT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -61,6 +62,19 @@ export function loadConfig(configPath: string = CONFIG_PATH): ExtensionConfig {
 	if (config.enableAlternateProviders !== undefined && typeof config.enableAlternateProviders !== "boolean") {
 		throw new Error(`Invalid subagent config at ${configPath}: enableAlternateProviders must be a boolean`);
 	}
+	if (config.providerExtensions !== undefined) {
+		const pe = config.providerExtensions;
+		if (typeof pe !== "object" || pe === null || Array.isArray(pe)) {
+			throw new Error(`Invalid subagent config at ${configPath}: providerExtensions must be a JSON object`);
+		}
+		for (const [provider, exts] of Object.entries(pe)) {
+			if (!Array.isArray(exts) || exts.some((e) => typeof e !== "string" || e.trim() === "")) {
+				throw new Error(
+					`Invalid subagent config at ${configPath}: providerExtensions.${provider} must be an array of extension paths`,
+				);
+			}
+		}
+	}
 	return config;
 }
 
@@ -72,18 +86,55 @@ export const JIHYE_SETUP_EXTENSION = path.join(EXTENSIONS_DIR, "jihye-setup", "i
 
 // Tools that exist only once an extension is loaded into the child process,
 // keyed by tool name so the runner can turn an agent's tool list into
-// `--extension` paths.
+// `--extension` arguments.
+export interface ToolBackends {
+	readonly webSearchRequiresMcp: boolean;
+}
+
+export interface CustomToolWiring {
+	readonly extensions: readonly string[];
+	readonly requiresBuiltinMcp?: (backends: ToolBackends) => boolean;
+}
+
 export const BASH_GUARD_EXTENSION = path.join(EXTENSIONS_DIR, "bash-guard", "index.ts");
-export const CUSTOM_TOOL_EXTENSIONS: Record<string, string> = {
-	web_search: path.join(EXTENSIONS_DIR, "web-search", "index.ts"),
-	web_fetch: path.join(EXTENSIONS_DIR, "web-fetch", "index.ts"),
-	safe_bash: path.join(TOOLS_DIR, "safe-bash.ts"),
+// A pi built-in extension spec, not a path on disk.
+export const MCP_BUILTIN_EXTENSION = "builtin:mcp";
+
+// The workstation defaults, read once at module load: changes need /reload,
+// and malformed config fails startup loudly instead of spawning children that
+// cannot search or resolve their model.
+const workstationBackends: ToolBackends = { webSearchRequiresMcp: defaultWebSearchRequiresMcp() };
+const workstationProviderExtensions = loadConfig().providerExtensions ?? {};
+
+export function providerExtensionsFor(
+	model: string,
+	providerExtensions: Readonly<Record<string, readonly string[]>> = workstationProviderExtensions,
+): readonly string[] {
+	const provider = model.split("/")[0];
+	return providerExtensions[provider] ?? [];
+}
+
+export const CUSTOM_TOOL_EXTENSIONS: Record<string, CustomToolWiring> = {
+	web_search: {
+		extensions: [path.join(EXTENSIONS_DIR, "web-search", "index.ts")],
+		requiresBuiltinMcp: (backends) => backends.webSearchRequiresMcp,
+	},
+	web_fetch: { extensions: [path.join(EXTENSIONS_DIR, "web-fetch", "index.ts")] },
+	safe_bash: { extensions: [path.join(TOOLS_DIR, "safe-bash.ts")] },
 	// `subagent` is the tool this very extension registers. Listing it here lets
 	// a parent agent grant it to a child agent — the child pi process loads this
 	// same index.ts via `--extension`, sees its own subagent tool, and (if
 	// PI_SUBAGENT_ALLOWED is set) only registers the allowlisted agents.
-	subagent: path.join(EXT_DIR, "index.ts"),
+	subagent: { extensions: [path.join(EXT_DIR, "index.ts")] },
 };
+
+export function mcpBackedTools(tools: readonly string[], backends: ToolBackends = workstationBackends): Set<string> {
+	const backed = new Set<string>();
+	for (const tool of tools) {
+		if (CUSTOM_TOOL_EXTENSIONS[tool]?.requiresBuiltinMcp?.(backends)) backed.add(tool);
+	}
+	return backed;
+}
 
 /**
  * Single source of truth for what counts as a usable tool name, so discovery

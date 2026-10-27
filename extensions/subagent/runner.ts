@@ -11,13 +11,19 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { truncateHead, withFileMutationQueue, DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES } from "@earendil-works/pi-coding-agent";
 
-import { BASH_GUARD_EXTENSION, BUILTIN_TOOLS, CUSTOM_TOOL_EXTENSIONS, JIHYE_SETUP_EXTENSION, resolvePiBinary } from "./config.ts";
+import { BASH_GUARD_EXTENSION, BUILTIN_TOOLS, CUSTOM_TOOL_EXTENSIONS, JIHYE_SETUP_EXTENSION, MCP_BUILTIN_EXTENSION, mcpBackedTools, providerExtensionsFor, resolvePiBinary } from "./config.ts";
 import type { AgentProgress, AgentResult, ResolvedAgentConfig } from "./types.ts";
+
+export interface BuildPiArgsOptions {
+	mcpTools?: ReadonlySet<string>;
+	providerExtensions?: readonly string[];
+}
 
 export async function buildPiArgs(
 	agent: ResolvedAgentConfig,
 	task: string,
 	cwd: string,
+	options?: BuildPiArgsOptions,
 ): Promise<{ args: string[]; tempDir: string; childEnv: NodeJS.ProcessEnv }> {
 	const piBin = resolvePiBinary();
 	const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "pi-sub-"));
@@ -32,13 +38,19 @@ export async function buildPiArgs(
 	const allowlist: string[] = [];
 	const extensionPaths = new Set<string>([JIHYE_SETUP_EXTENSION]);
 
+	for (const extPath of options?.providerExtensions ?? []) extensionPaths.add(extPath);
+
 	for (const tool of agent.tools) {
 		if (BUILTIN_TOOLS.has(tool)) {
 			allowlist.push(tool);
 			if (tool === "bash") extensionPaths.add(BASH_GUARD_EXTENSION);
 		} else if (CUSTOM_TOOL_EXTENSIONS[tool]) {
+			const wiring = CUSTOM_TOOL_EXTENSIONS[tool];
 			allowlist.push(tool);
-			extensionPaths.add(CUSTOM_TOOL_EXTENSIONS[tool]);
+			for (const extension of wiring.extensions) extensionPaths.add(extension);
+			if (wiring.requiresBuiltinMcp && options?.mcpTools?.has(tool)) {
+				extensionPaths.add(MCP_BUILTIN_EXTENSION);
+			}
 		}
 	}
 
@@ -174,7 +186,10 @@ export async function runSubagent(
 	signal: AbortSignal | undefined,
 	onUpdate?: (progress: AgentProgress, usage: AgentResult["usage"]) => void,
 ): Promise<AgentResult> {
-	const { args, tempDir, childEnv } = await buildPiArgs(agent, task, cwd);
+	const { args, tempDir, childEnv } = await buildPiArgs(agent, task, cwd, {
+		mcpTools: mcpBackedTools(agent.tools),
+		providerExtensions: providerExtensionsFor(agent.model),
+	});
 	const command = args[0];
 	const spawnArgs = args.slice(1);
 

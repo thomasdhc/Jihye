@@ -6,6 +6,8 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { type AgentConfig, buildPiArgs, getAgentDirectories, loadAgentsFromDirectories } from "../extensions/subagent/index.ts";
+import { loadConfig, mcpBackedTools, providerExtensionsFor } from "../extensions/subagent/config.ts";
+import { defaultWebSearchRequiresMcp } from "../extensions/web-search/config.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BUNDLED_AGENTS_DIR = join(REPO_ROOT, "personas", "subagents");
@@ -368,6 +370,59 @@ test("builds portable child arguments with the requested model and safety guard"
 	}
 });
 
+test("adds built-in MCP support only for tools whose backend requires it", async () => {
+	const agent: AgentConfig = {
+		name: "test-agent",
+		description: "Fixture agent",
+		tools: ["web_search", "web_fetch"],
+		model: "openai-codex/gpt-5.6-sol",
+		thinking: "high",
+		systemPrompt: "Test system prompt",
+		filePath: "<fixture>",
+	};
+
+	let tempDir: string | undefined;
+	try {
+		const built = await buildPiArgs(agent, "Inspect the fixture", REPO_ROOT, {
+			mcpTools: new Set(["web_search"]),
+		});
+		tempDir = built.tempDir;
+
+		const paths = extensionArgs(built.args);
+		assert.ok(paths.includes("builtin:mcp"), "mcp-backed web_search loads built-in MCP in the child");
+		assert.ok(paths.includes(join(REPO_ROOT, "extensions/web-search/index.ts")));
+		assert.equal(paths.filter((path) => path !== "builtin:mcp").every((path) => existsSync(path)), true);
+
+		const plain = await buildPiArgs(agent, "Inspect the fixture", REPO_ROOT);
+		try {
+			assert.equal(extensionArgs(plain.args).includes("builtin:mcp"), false);
+		} finally {
+			rmSync(plain.tempDir, { recursive: true, force: true });
+		}
+	} finally {
+		if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("mcpBackedTools marks web_search only when its configured backend is MCP", () => {
+	const dir = mkdtempSync(join(tmpdir(), "subagent-backends-"));
+	try {
+		const mcpConfig = join(dir, "mcp.json");
+		writeFileSync(mcpConfig, JSON.stringify({ backend: "mcp", mcpTool: "mcp__examples__search" }));
+		const serperConfig = join(dir, "serper.json");
+		writeFileSync(serperConfig, JSON.stringify({ backend: "serper" }));
+
+		const tools = ["web_search", "web_fetch", "bash"];
+		const backedFor = (configPath: string) =>
+			[...mcpBackedTools(tools, { webSearchRequiresMcp: defaultWebSearchRequiresMcp(configPath) })];
+		assert.deepEqual(backedFor(mcpConfig), ["web_search"]);
+		assert.deepEqual(backedFor(serperConfig), []);
+		assert.deepEqual(backedFor(join(dir, "absent.json")), []);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test("always loads setup infrastructure without granting tools or tool extensions", async () => {
 	const agent: AgentConfig = {
 		name: "no-tools",
@@ -394,5 +449,56 @@ test("always loads setup infrastructure without granting tools or tool extension
 		]);
 	} finally {
 		if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("child loads caller-specified provider extensions so the agent model resolves", async () => {
+	const agent: AgentConfig = {
+		name: "provider-model",
+		description: "Fixture agent with a provider-mapped model",
+		tools: [],
+		model: "example-llm/example-model",
+		thinking: "medium",
+		systemPrompt: "Test system prompt",
+		filePath: "<fixture>",
+	};
+
+	const withProvider = await buildPiArgs(agent, "Inspect the fixture", REPO_ROOT, {
+		providerExtensions: ["./example-provider/index.ts"],
+	});
+	try {
+		assert.ok(extensionArgs(withProvider.args).includes("./example-provider/index.ts"));
+	} finally {
+		rmSync(withProvider.tempDir, { recursive: true, force: true });
+	}
+
+	const without = await buildPiArgs(agent, "Inspect the fixture", REPO_ROOT);
+	try {
+		assert.ok(extensionArgs(without.args).every((path) => path !== "./example-provider/index.ts"));
+	} finally {
+		rmSync(without.tempDir, { recursive: true, force: true });
+	}
+
+	const mapping = { "example-llm": ["./example-provider/index.ts"] };
+	assert.deepEqual(providerExtensionsFor("example-llm/example-model", mapping), ["./example-provider/index.ts"]);
+	assert.deepEqual(providerExtensionsFor("other-llm/any-model", mapping), []);
+});
+
+test("loadConfig validates providerExtensions", async () => {
+	const dir = mkdtempSync(join(tmpdir(), "subagent-config-"));
+	try {
+		const goodPath = join(dir, "good.json");
+		writeFileSync(goodPath, JSON.stringify({ providerExtensions: { "example-llm": ["./example-provider/index.ts"] } }));
+		assert.deepEqual(loadConfig(goodPath).providerExtensions, { "example-llm": ["./example-provider/index.ts"] });
+
+		const badPath = join(dir, "bad.json");
+		writeFileSync(badPath, JSON.stringify({ providerExtensions: { "example-llm": [42] } }));
+		assert.throws(() => loadConfig(badPath), /providerExtensions/);
+
+		const nonObjectPath = join(dir, "non-object.json");
+		writeFileSync(nonObjectPath, JSON.stringify({ providerExtensions: ["./example-provider/index.ts"] }));
+		assert.throws(() => loadConfig(nonObjectPath), /providerExtensions/);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
 	}
 });

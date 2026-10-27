@@ -97,4 +97,11 @@ export interface ExtensionConfig {
 	enableAlternateProviders?: boolean;
 	/** Partial override of the bundled provider tier maps. */
 	modelProfiles?: unknown;
+	/**
+	 * Provider id (the part before "/" in a model) → extension paths a child
+	 * loads for that provider. Children run with `--no-extensions`, so a
+	 * provider registered only by a package fails with "model not found"
+	 * unless listed here.
+	 */
+	providerExtensions?: Record<string, string[]>;
 }
