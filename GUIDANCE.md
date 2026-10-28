@@ -45,7 +45,7 @@ Before adding or expanding a statement, ask whether it is cross-cutting, concept
 
 ## Changing the Base Persona
 
-`JIHYE.md` is the canonical owner of shared behavioral policy. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
+`JIHYE.md` defines Jihye's universal behavioral policy. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
 
 Complete every step before handing off a base-persona change:
 
