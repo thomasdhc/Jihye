@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PERSONAS_ROOT = join(REPO_ROOT, "personas");
-const DOCTRINE_PATH = join(REPO_ROOT, "DOCTRINE.md");
+const GUIDANCE_PATH = join(REPO_ROOT, "GUIDANCE.md");
 
 const POLICY_FILES = [
 	"JIHYE.md",
@@ -106,10 +106,9 @@ test("repository guidance supplies nested blueprint briefs", () => {
 	}
 });
 
-test("doctrine defines Jihye's development principles and canonical policy domains", () => {
-	const doctrine = readFileSync(DOCTRINE_PATH, "utf8");
-	assertTerms(doctrine, [
-		/# Jihye Development Doctrine/,
+test("guidance standards define Jihye's architecture and canonical policy domains", () => {
+	const guidance = readFileSync(GUIDANCE_PATH, "utf8");
+	assertTerms(guidance, [
 		/## Purpose and Evolution/,
 		/on-demand maintainer context[^\n]*not standing runtime context[^\n]*maintaining Jihye[^\n]*authoring guidance/i,
 		/## Guidance Architecture/,
@@ -130,14 +129,18 @@ test("doctrine defines Jihye's development principles and canonical policy domai
 		/subagent role in backticks/i,
 		/different triggers or different failure modes/i,
 		/## Core Persona Standard/,
-		/constitutional layer/i,
-		/universal law/i,
+		/base policy layer/i,
+		/cross-cutting behavioral constraint/i,
 		/execution (?:methods|mechanics|procedures)/i,
 		/(?:interpretive space|execution discretion)/i,
 		/operational (?:procedures|details|mechanics)/i,
 		/## Changing the Base Persona/,
 		/tests\/personas\.test\.ts/,
-	], "Jihye development doctrine");
+	], "Jihye guidance standards");
+
+	for (const path of ["AGENTS.md", "README.md"]) {
+		assert.match(readFileSync(join(REPO_ROOT, path), "utf8"), /\bGUIDANCE\.md\b/, path);
+	}
 });
 
 test("global persona preserves canonical domains, coordination gates, and parent ownership", () => {
@@ -174,7 +177,7 @@ test("global persona preserves canonical domains, coordination gates, and parent
 test("guidance never passes a policy domain", () => {
 	const skillRoot = join(REPO_ROOT, "skills");
 	const files = [
-		DOCTRINE_PATH,
+		GUIDANCE_PATH,
 		...POLICY_FILES.map((path) => join(PERSONAS_ROOT, path)),
 		...readdirSync(join(PERSONAS_ROOT, "subagents")).map((entry) => join(PERSONAS_ROOT, "subagents", entry)),
 		...readdirSync(skillRoot).map((entry) => join(skillRoot, entry, "SKILL.md")),

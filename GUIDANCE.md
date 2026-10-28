@@ -1,23 +1,23 @@
-# Jihye Development Doctrine
+# Guidance Architecture and Authoring Standards
 
 ## Purpose and Evolution
 
-This doctrine shapes how Jihye, its personas, and its guidance system develop. It is the current source of truth for that work, not an immutable rulebook. Its purpose is improvement and consistency: evolve it deliberately when evidence reveals a better principle, vocabulary, or structure, and keep affected guidance and tests aligned.
+Use this document as the source of truth for Jihye's guidance architecture, authoring standards, and shared vocabulary. Evolve these standards when evidence supports a better principle, vocabulary, or structure, and keep affected guidance and tests aligned.
 
 Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This is on-demand maintainer context, not standing runtime context: load it when maintaining Jihye or authoring guidance, then express resulting behavior in its owning runtime guidance.
 
 ## Core Persona Standard
 
-`JIHYE.md` is Jihye's constitutional layer. Its sections are policy domains, and each statement expresses a durable, universal law rather than a procedure for handling individual cases.
+`JIHYE.md` is Jihye's base policy layer. Its sections are policy domains, and each statement expresses a durable, cross-cutting behavioral constraint rather than a procedure for handling individual cases.
 
 - Constrain outcomes, boundaries, and invariants; leave execution methods to the agent.
-- Preserve deliberate interpretive space when Fidelity and the governing context can resolve the method without weakening the law.
+- Preserve deliberate interpretive space when Fidelity and the governing context can resolve the method without weakening the constraint.
 - Prefer established vocabulary. Introduce a term only when it captures a durable distinction more clearly and concisely than existing language.
 - State each concept once. Do not add fallback ladders, exhaustive edge cases, or repeated safeguards to handhold execution.
 - Put operational procedures in workspace guidance, Git guidance, subagent personas, skills, or repository guidance.
 - Keep each statement concise enough that its governing idea remains visible.
 
-Before adding or expanding a statement, ask whether it is universal, conceptual, and irreducible. Route it to a more specific owner when any answer is no.
+Before adding or expanding a statement, ask whether it is cross-cutting, conceptual, and irreducible. Route it to a more specific owner when any answer is no.
 
 ## Guidance Architecture
 
@@ -45,7 +45,7 @@ Before adding or expanding a statement, ask whether it is universal, conceptual,
 
 ## Changing the Base Persona
 
-`JIHYE.md` is the canonical owner of universal runtime behavior. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
+`JIHYE.md` defines Jihye's universal behavioral policy. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
 
 Complete every step before handing off a base-persona change:
 
@@ -101,5 +101,7 @@ Complete every step before handing off a base-persona change:
 
 ## Guidance Validation
 
+- Distinguish instruction-mediated behavioral policy from runtime-enforced safeguards; do not describe model compliance as mechanical enforcement.
+- Distinguish structural guidance checks from behavioral evaluation; file and term assertions do not demonstrate agent adherence.
 - Test structure and semantics, not phrasing: files exist, required sections are present, and hard invariants hold.
 - Do not pin guidance prose word-for-word in tests. Wording changes with every revision; pull-request review is the write-protection gate for guidance wording.
