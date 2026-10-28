@@ -7,7 +7,7 @@ Extensions provide capabilities, skills define workflows, and layered `AGENTS.md
 ## Components
 
 - [Extensions](extensions/README.md) — subagent orchestration, security safeguards, UI features, and other tools and runtime integrations.
-- [Skills](skills/README.md) — workflows that Pi loads on demand.
+- [Skills](skills/README.md) — structured workflows for subagent delegation, code and guidance review, repository analysis, learning, planning, and preserving session knowledge.
 - [Personas](personas/README.md) — layered global and workspace guidance installed through `AGENTS.md`, subagent definitions, and local-configuration templates.
 
 ## Requirements
