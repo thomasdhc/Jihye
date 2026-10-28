@@ -8,6 +8,8 @@
     "pi-package"
   ],
   "scripts": {
+    "preview:header": "tsx scripts/preview-header.ts",
+    "preview:header:watch": "tsx watch --clear-screen=false scripts/preview-header.ts --watch-mode",
     "preview:pi-pet": "tsx scripts/preview-pi-pet.ts",
     "preview:pi-pet:watch": "tsx watch --clear-screen=false scripts/preview-pi-pet.ts --watch-mode",
     "test": "node scripts/test.mjs"
