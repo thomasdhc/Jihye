@@ -34,24 +34,15 @@ test("bundled template is a rectangle of single-width glyphs with painted ink co
 	}
 });
 
-test("preserves the existing custom header artwork", () => {
+test("renders the configured custom header artwork without changing its glyphs", () => {
 	const plainTheme = {
 		fg: (_color: string, text: string) => text,
 		bold: (text: string) => text,
 	} as Parameters<typeof renderCustomHeaderLines>[0];
 	const lines = renderCustomHeaderLines(plainTheme, { version: "9.9.9" });
+	const artwork = lines.slice(1, 1 + CUSTOM_HEADER_ASSETS.art.length).map((line) => line.trimEnd());
 
-	assert.deepEqual(lines.slice(1, 10).map((line) => line.trimEnd()), [
-		"     █▌  █▌",
-		"  ██████████████╗",
-		"  ╚══██╔═══██╔══╝",
-		"     ██║   ██║",
-		"     ██║   ██║",
-		"     ██║   ██║",
-		"     ██║   ██║",
-		"   █████╗ █████╗",
-		"   ╚════╝ ╚════╝",
-	]);
+	assert.deepEqual(artwork, CUSTOM_HEADER_ASSETS.art.map((row) => row.art.trimEnd()));
 });
 
 test("renders spacing, artwork, and the versioned caption", () => {

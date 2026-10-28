@@ -1,14 +1,41 @@
 {
   "version": 1,
   "rows": [
-    { "art": "     █▌  █▌      ", "ink": "     bd  bd      " },
-    { "art": "  ██████████████╗", "ink": "  ffffffffffffffe" },
-    { "art": "  ╚══██╔═══██╔══╝", "ink": "  eeeffeeeeffeeee" },
-    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
-    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
-    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
-    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
-    { "art": "   █████╗ █████╗ ", "ink": "   fffffe fffffe " },
-    { "art": "   ╚════╝ ╚════╝ ", "ink": "   eeeeee eeeeee " }
+    {
+      "art": "  ╔═════════════╗",
+      "ink": "  fffffffffffffff"
+    },
+    {
+      "art": "  ║████▓▓█▓█████║",
+      "ink": "  fffbfffffffffff"
+    },
+    {
+      "art": " ╔╝██▓▓╔════════╝",
+      "ink": " fffbffefffffffff"
+    },
+    {
+      "art": " ║████╔╝ ╔══╗  ║║",
+      "ink": " fffffee eeee  ed"
+    },
+    {
+      "art": " ║███▒║  ║  ║█▓║║",
+      "ink": " fffffe  b  ebfed"
+    },
+    {
+      "art": " ║██▓█║  ║  ║  ║║",
+      "ink": " fffffe  ee e  ed"
+    },
+    {
+      "art": " ║████║ ╔╝  ╚══╝║",
+      "ink": " fffffe ebe eeeed"
+    },
+    {
+      "art": " ║███▓║ ╚══════╗╝",
+      "ink": " fffffe eeeeeeeeb"
+    },
+    {
+      "art": " ╚═══╝╚════════╝ ",
+      "ink": " fffffed d d dde "
+    }
   ]
 }
