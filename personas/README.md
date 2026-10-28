@@ -6,7 +6,7 @@ The `personas/` tree distributes reusable global guidance, workspace policy, loc
 
 | Path | Purpose |
 |---|---|
-| `JIHYE.md` | Own universal runtime behavior, validation, and delegation policy. |
+| `JIHYE.md` | Own shared behavioral policy, including validation and delegation. |
 | `WORKSPACE.md` | Add workspace resolution, repository discovery, local-environment, and read-gate policy. |
 | `GIT.md` | Add branch, worktree, commit, push, and request workflow. |
 | `templates/` | Provide factual templates for local `REPO.md` and `USERNAME.md`. |
@@ -35,7 +35,7 @@ Initialize them from `templates/` when needed. Never link machine-specific confi
 
 ## Guidance Resolution
 
-Pi loads global and workspace context independently; neither persona imports the other. `JIHYE.md` is the canonical owner of universal runtime behavior. The workspace and workflow files add only their environment- or task-specific deltas.
+Pi loads global and workspace context independently; neither persona imports the other. `JIHYE.md` is the canonical owner of shared behavioral policy. The workspace and workflow files add only their environment- or task-specific deltas.
 
 - Treat the **workspace root** as the location of local `REPO.md` and `USERNAME.md` configuration.
 - Treat the **policy directory** as the location of the workspace profile and its sibling `GIT.md` workflow file.

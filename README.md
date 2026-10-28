@@ -1,8 +1,8 @@
 # <img src="docs/assets/jihye-header.svg" alt="" width="64" align="absbottom">&ensp;Jihye · 지혜 · 智慧
 
-Jihye is an agent environment built on [Pi](https://pi.dev), combining subagent, security, and UI extensions with skills and layered guidance adaptable to your workflow.
+Jihye is a configurable agent environment for [Pi](https://pi.dev), combining runtime extensions, layered behavioral policy, and reusable workflows.
 
-Extensions provide capabilities, skills define workflows, and layered `AGENTS.md` guidance shapes how agents work. Together, they form a portable environment you can configure across workstations.
+Extensions provide capabilities, skills define workflows, and layered `AGENTS.md` guidance shapes how agents work. Its guidance architecture separates standing constraints, scope-specific policy, and on-demand procedures, with explicit ownership and validation across layers. Together, they form a portable environment you can configure across workstations.
 
 ## Components
 
@@ -76,7 +76,7 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 ## Development
 
-Read the [Jihye Development Doctrine](DOCTRINE.md) before changing repository guidance, personas, skills, or their governing vocabulary.
+Read the [Guidance Architecture and Authoring Standards](GUIDANCE.md) before changing repository guidance, personas, skills, or their governing vocabulary.
 
 Requires a Node.js version that supports type stripping.
 
