@@ -6,36 +6,36 @@
       "ink": "  fffffffffffffff"
     },
     {
-      "art": "  ║████▓▓█▓█████║",
-      "ink": "  fffbfffffffffff"
+      "art": "  ║██▄█▓▓█▓████▌║",
+      "ink": "  fffefffffffffff"
     },
     {
-      "art": " ╔╝██▓▓╔════════╝",
-      "ink": " fffbffefffffffff"
+      "art": " ╔╝█▌▓▓╔════════╝",
+      "ink": " fffeffefffffffff"
     },
     {
-      "art": " ║████╔╝ ╔══╗  ║║",
-      "ink": " fffffee eeee  ed"
+      "art": " ║████╔╝ ╔══╗  ║ ",
+      "ink": " fffffee eeee  e "
     },
     {
-      "art": " ║███▒║  ║  ║█▓║║",
-      "ink": " fffffe  b  ebfed"
+      "art": " ║███▒║  ║  ║▄▌║ ",
+      "ink": " fffffe  f  eede "
     },
     {
-      "art": " ║██▓█║  ║  ║  ║║",
-      "ink": " fffffe  ee e  ed"
+      "art": " ║██▓█║  ║  ║  ║ ",
+      "ink": " fffffe  fe e  e "
     },
     {
-      "art": " ║████║ ╔╝  ╚══╝║",
-      "ink": " fffffe ebe eeeed"
+      "art": " ║█▒█░║ ╔╝  ╚══╝ ",
+      "ink": " ffdfde efe eeee "
     },
     {
-      "art": " ║███▓║ ╚══════╗╝",
-      "ink": " fffffe eeeeeeeeb"
+      "art": " ║▀▐░▓║ ╚══════╗ ",
+      "ink": " fffdfe eeeeeeee "
     },
     {
       "art": " ╚═══╝╚════════╝ ",
-      "ink": " fffffed d d dde "
+      "ink": " fffffedddddddde "
     }
   ]
 }
