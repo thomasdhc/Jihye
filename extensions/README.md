@@ -23,17 +23,18 @@ Extensions without a section below require no user configuration.
 
 ### `custom-header` artwork
 
-`custom-header` replaces Pi's built-in startup header. Artwork, palette, caption, and hint data live in [`custom-header/assets.ts`](custom-header/assets.ts); rendering stays in `render.ts` and Pi wiring in `index.ts`.
+`custom-header` replaces Pi's built-in startup header. The grid editor saves portable artwork rows in [`custom-header/artwork.json`](custom-header/artwork.json); palette, caption, and hint configuration stays in [`custom-header/assets.ts`](custom-header/assets.ts), rendering in `render.ts`, and Pi wiring in `index.ts`.
 
-Each artwork line pairs an `art` string of single-width glyphs with an `ink` string of one palette key per column, so the shape and its colors stay readable side by side:
+Draw in an interactive terminal, save with `Ctrl+S`, then run `/reload` in Pi:
 
-```ts
-{ art: "   █████╗ █████╗ ", ink: "   fffffe fffffe " },
+```bash
+npm run edit:header                    # dark-theme editor
+npm run edit:header -- --theme light   # light-theme editor
 ```
 
-A space in `ink` leaves that column unpainted; every other key must exist in `palette`, which maps it to an optional Pi theme color and bold styling. The bundled template preserves the existing Pi logo, and a blank canvas to copy sits in the same file.
+Use arrow keys to move. In draw mode, type or paste single-width glyphs, use `[` and `]` to choose common box glyphs, and press Enter to stamp the selected glyph. Tab switches to paint mode, where `f`, `e`, `b`, and `d` apply the configured palette and `x` clears color. `Ctrl+Z` and `Ctrl+Y` undo and redo; Escape or `Ctrl+Q` quits, asking for confirmation when edits are unsaved.
 
-Preview edits without starting Pi, then run `/reload` to pick them up in a live session:
+The non-interactive preview remains useful for checking boundaries and masks:
 
 ```bash
 npm run preview:header                        # artwork inside visible boundaries

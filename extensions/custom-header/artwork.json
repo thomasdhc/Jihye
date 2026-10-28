@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "rows": [
+    { "art": "     █▌  █▌      ", "ink": "     bd  bd      " },
+    { "art": "  ██████████████╗", "ink": "  ffffffffffffffe" },
+    { "art": "  ╚══██╔═══██╔══╝", "ink": "  eeeffeeeeffeeee" },
+    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
+    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
+    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
+    { "art": "     ██║   ██║   ", "ink": "     ffe   ffe   " },
+    { "art": "   █████╗ █████╗ ", "ink": "   fffffe fffffe " },
+    { "art": "   ╚════╝ ╚════╝ ", "ink": "   eeeeee eeeeee " }
+  ]
+}

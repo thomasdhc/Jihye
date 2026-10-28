@@ -3,7 +3,7 @@
  *
  * Replaces Pi's built-in startup header with the artwork in `assets.ts`.
  *
- * Edit `assets.ts`, preview with `npm run preview:header`, then run `/reload`.
+ * Draw with `npm run edit:header`, preview with `npm run preview:header`, then run `/reload`.
  * Use `/builtin-header` to restore the built-in header for the current session,
  * or delete this directory to restore it permanently.
  */

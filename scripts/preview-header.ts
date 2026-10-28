@@ -119,7 +119,7 @@ export function formatHeaderPreview(options: HeaderPreviewOptions = {}): string 
 
 	return [
 		`Custom header preview (${width}-column art, theme: ${themeName})`,
-		"Edit extensions/custom-header/assets.ts; the | boundaries show the art block edges.",
+		"Run npm run edit:header to draw; the | boundaries show the art block edges.",
 		"",
 		...grid,
 		"",

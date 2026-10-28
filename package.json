@@ -8,6 +8,7 @@
     "pi-package"
   ],
   "scripts": {
+    "edit:header": "tsx scripts/edit-header.ts",
     "preview:header": "tsx scripts/preview-header.ts",
     "preview:header:watch": "tsx watch --clear-screen=false scripts/preview-header.ts --watch-mode",
     "preview:pi-pet": "tsx scripts/preview-pi-pet.ts",

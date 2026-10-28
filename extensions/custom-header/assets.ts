@@ -1,17 +1,19 @@
 /**
  * Custom header template.
  *
- * This file is the editable half of the `custom-header` extension: artwork,
- * palette, caption, and hint data only. Rendering lives in `render.ts` and Pi
- * wiring lives in `index.ts`.
+ * Artwork rows load from `artwork.json`; this file owns their palette, caption,
+ * hints, validation, and document parsing. Rendering lives in `render.ts` and
+ * Pi wiring lives in `index.ts`.
  *
- * Preview edits without restarting Pi:
+ * Draw and preview edits without restarting Pi:
  *
+ *   npm run edit:header
  *   npm run preview:header
- *   npm run preview:header:watch
  *
  * Then run `/reload` in Pi to pick the change up in a live session.
  */
+
+import { readFileSync } from "node:fs";
 
 import type { ThemeColor } from "@earendil-works/pi-coding-agent";
 import { visibleWidth } from "@earendil-works/pi-tui";
@@ -66,48 +68,35 @@ export interface CustomHeaderAssets {
 	readonly hints: readonly HeaderHint[];
 }
 
-// ─── Editable region ────────────────────────────────────────────────────────
-//
-// Blank 17×9 canvas to copy when starting a new design. Keep `art` and `ink`
-// the same length on every row, and keep every row the same length.
-//
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//	{ art: "                 ", ink: "                 " },
-//
-// Useful glyphs: █ ▀ ▄ ▌ ▐ ▖ ▗ ▘ ▝ ▙ ▟ ▛ ▜ ░ ▒ ▓ ╱ ╲ ╳
-//
-// Ink keys used below:
-//   f  green front face
-//   e  accent-colored depth edge
-//   b  bold terminal foreground
-//   d  dim eye edge
-//   ' ' unpainted background
+export interface HeaderArtworkDocument {
+	readonly version: 1;
+	readonly rows: readonly HeaderArtRow[];
+}
 
-/**
- * Keep the visible glyphs in `art` and their colors in the matching `ink`
- * string. Trailing spaces make every row a 17-column canvas.
- */
-const PI_ART: readonly HeaderArtRow[] = [
-	{ art: "     █▌  █▌      ", ink: "     bd  bd      " },
-	{ art: "  ██████████████╗", ink: "  ffffffffffffffe" },
-	{ art: "  ╚══██╔═══██╔══╝", ink: "  eeeffeeeeffeeee" },
-	{ art: "     ██║   ██║   ", ink: "     ffe   ffe   " },
-	{ art: "     ██║   ██║   ", ink: "     ffe   ffe   " },
-	{ art: "     ██║   ██║   ", ink: "     ffe   ffe   " },
-	{ art: "     ██║   ██║   ", ink: "     ffe   ffe   " },
-	{ art: "   █████╗ █████╗ ", ink: "   fffffe fffffe " },
-	{ art: "   ╚════╝ ╚════╝ ", ink: "   eeeeee eeeeee " },
-];
+/** Parse the grid editor's portable artwork document. */
+export function parseHeaderArtworkDocument(value: unknown): HeaderArtworkDocument {
+	if (!value || typeof value !== "object") throw new Error("[custom-header] artwork must be an object");
+	const document = value as { version?: unknown; rows?: unknown };
+	if (document.version !== 1) throw new Error("[custom-header] artwork version must be 1");
+	if (!Array.isArray(document.rows)) throw new Error("[custom-header] artwork rows must be an array");
+
+	const rows = document.rows.map((row, index) => {
+		if (!row || typeof row !== "object") throw new Error(`[custom-header] artwork row ${index} must be an object`);
+		const candidate = row as { art?: unknown; ink?: unknown };
+		if (typeof candidate.art !== "string" || typeof candidate.ink !== "string") {
+			throw new Error(`[custom-header] artwork row ${index} must contain art and ink strings`);
+		}
+		return { art: candidate.art, ink: candidate.ink };
+	});
+
+	return { version: 1, rows };
+}
+
+const ARTWORK_URL = new URL("./artwork.json", import.meta.url);
+const ARTWORK = parseHeaderArtworkDocument(JSON.parse(readFileSync(ARTWORK_URL, "utf8")));
 
 export const CUSTOM_HEADER_ASSETS: CustomHeaderAssets = {
-	art: PI_ART,
+	art: ARTWORK.rows,
 	palette: {
 		f: { color: "success", bold: true },
 		e: { color: "accent", bold: true },
