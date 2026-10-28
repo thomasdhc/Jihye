@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
+
+import { DOMParser } from "linkedom";
 
 import { initTheme } from "@earendil-works/pi-coding-agent";
 import { visibleWidth } from "@earendil-works/pi-tui";
@@ -32,6 +35,19 @@ test("bundled template is a rectangle of single-width glyphs with painted ink co
 		assert.equal([...row.art].length, width);
 		assert.equal([...row.ink].length, width);
 	}
+});
+
+test("README header SVG matches the bundled artwork glyphs and ink", () => {
+	const svg = readFileSync(new URL("../docs/assets/jihye-header.svg", import.meta.url), "utf8");
+	const document = new DOMParser().parseFromString(svg, "image/svg+xml");
+	const rows = [...document.querySelectorAll("text")].map((row) => ({
+		art: row.textContent,
+		ink: [...row.querySelectorAll("tspan")].map((span) =>
+			(span.getAttribute("class") || " ").repeat([...span.textContent!].length),
+		).join(""),
+	}));
+
+	assert.deepEqual(rows, CUSTOM_HEADER_ASSETS.art, "Update artwork.json and the README SVG together");
 });
 
 test("renders the configured custom header artwork without changing its glyphs", () => {

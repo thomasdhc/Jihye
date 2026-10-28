@@ -10,6 +10,8 @@
  *   npm run edit:header
  *   npm run preview:header
  *
+ * When artwork changes, update both `extensions/custom-header/artwork.json`
+ * and `docs/assets/jihye-header.svg` (the README header), keeping glyphs and ink aligned.
  * Then run `/reload` in Pi to pick the change up in a live session.
  */
 
