@@ -7,7 +7,7 @@ Jihye packages focused Pi extensions that register tools and commands, enforce s
 | Extension | Purpose |
 |---|---|
 | [`bash-guard`](bash-guard/) | Interactive prompt for destructive commands and Git publication boundaries; headless hard-block in subagents. |
-| [`custom-header`](custom-header.ts) | Custom Pi startup header. |
+| [`custom-header`](custom-header/) | Custom Pi startup header rendered from an editable artwork template. |
 | [`jihye-setup`](jihye-setup/) | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts. |
 | [`subagent`](subagent/) | Run Pi subagents as tools with portable bundled definitions and per-user overrides. |
 | [`terminal-notify`](terminal-notify.ts) | Send a native desktop alert when Pi is ready for input. |
@@ -20,6 +20,30 @@ Jihye packages focused Pi extensions that register tools and commands, enforce s
 ## Configuration and Usage
 
 Extensions without a section below require no user configuration.
+
+### `custom-header` artwork
+
+`custom-header` replaces Pi's built-in startup header. The grid editor saves portable artwork rows in [`custom-header/artwork.json`](custom-header/artwork.json); palette, caption, and hint configuration stays in [`custom-header/assets.ts`](custom-header/assets.ts), rendering in `render.ts`, and Pi wiring in `index.ts`.
+
+Draw in an interactive terminal, save with `Ctrl+S`, then run `/reload` in Pi:
+
+```bash
+npm run edit:header                    # dark-theme editor
+npm run edit:header -- --theme light   # light-theme editor
+```
+
+Use arrow keys to move. In draw mode, type or paste single-width glyphs, use `[` and `]` to choose common box glyphs, and press Enter to stamp the selected glyph. Tab switches to paint mode, where `f`, `e`, `b`, and `d` apply the configured palette and `x` clears color. `Ctrl+Z` and `Ctrl+Y` undo and redo; Escape or `Ctrl+Q` quits, asking for confirmation when edits are unsaved.
+
+The non-interactive preview remains useful for checking boundaries and masks:
+
+```bash
+npm run preview:header                        # artwork inside visible boundaries
+npm run preview:header -- --mask              # artwork beside its ink mask
+npm run preview:header -- --theme light       # dark, light, or a theme JSON path
+npm run preview:header:watch                  # redraw on save
+```
+
+A malformed template names the offending row and column. The extension reports that message as a warning and leaves the built-in header in place instead of failing every redraw. Use `/builtin-header` to restore the built-in header for the current session, or delete `custom-header/` to restore it permanently.
 
 ### `web-fetch` third-party fallback
 

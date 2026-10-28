@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "rows": [
+    {
+      "art": "  ╔═════════════╗",
+      "ink": "  fffffffffffffff"
+    },
+    {
+      "art": "  ║████▓▓█▓█████║",
+      "ink": "  fffbfffffffffff"
+    },
+    {
+      "art": " ╔╝██▓▓╔════════╝",
+      "ink": " fffbffefffffffff"
+    },
+    {
+      "art": " ║████╔╝ ╔══╗  ║║",
+      "ink": " fffffee eeee  ed"
+    },
+    {
+      "art": " ║███▒║  ║  ║█▓║║",
+      "ink": " fffffe  b  ebfed"
+    },
+    {
+      "art": " ║██▓█║  ║  ║  ║║",
+      "ink": " fffffe  ee e  ed"
+    },
+    {
+      "art": " ║████║ ╔╝  ╚══╝║",
+      "ink": " fffffe ebe eeeed"
+    },
+    {
+      "art": " ║███▓║ ╚══════╗╝",
+      "ink": " fffffe eeeeeeeeb"
+    },
+    {
+      "art": " ╚═══╝╚════════╝ ",
+      "ink": " fffffed d d dde "
+    }
+  ]
+}
