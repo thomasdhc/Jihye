@@ -1,12 +1,14 @@
 # <img src="docs/assets/jihye-header.svg" alt="" width="64" align="absbottom">&ensp;Jihye · 지혜 · 智慧
 
-Jihye is an installable toolkit for shaping [Pi](https://pi.dev) around your workflow. It bundles focused extensions, reusable skills, portable agent definitions, and global/workspace guidance into one package that works consistently across workstations.
+Jihye is an agent environment built on [Pi](https://pi.dev), combining subagent, security, and UI extensions with skills and layered guidance adaptable to your workflow.
+
+Extensions provide capabilities, skills define workflows, and layered `AGENTS.md` guidance shapes how agents work. Together, they form a portable environment you can configure across workstations.
 
 ## Components
 
-- [Extensions](extensions/README.md) — tools, commands, lifecycle integrations, terminal features, and their configuration.
-- [Skills](skills/README.md) — reusable workflows that Pi loads on demand.
-- [Personas](personas/README.md) — global and workspace guidance, local-configuration templates, and portable subagent definitions.
+- [Extensions](extensions/README.md) — subagent orchestration, security safeguards, UI features, and other tools and runtime integrations.
+- [Skills](skills/README.md) — workflows that Pi loads on demand.
+- [Personas](personas/README.md) — layered global and workspace guidance installed through `AGENTS.md`, subagent definitions, and local-configuration templates.
 
 ## Requirements
 
