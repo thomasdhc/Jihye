@@ -55,15 +55,26 @@ The optional Jina Reader fallback sends failed public URLs to a third-party serv
 pi --web-fetch-jina
 ```
 
-### `web-search` credentials
+### `web-search` backends
 
-`web-search` reads credentials from `SERPER_API_KEY` or a local `extensions/web-search/auth.json` file:
+The default backend is Serper. Its credentials come from `SERPER_API_KEY` or a local `extensions/web-search/auth.json` file:
 
 ```bash
 cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 ```
 
 `auth.json` is gitignored and meant to stay local.
+
+To search through an MCP server instead — for example a workstation with a registered `mcp__<server>__<tool>` search tool and no Serper key — create the gitignored `extensions/web-search/config.json`:
+
+```json
+{
+  "backend": "mcp",
+  "mcpTool": "mcp__<server>__<tool>"
+}
+```
+
+The MCP backend composes the same query from `query`, `exactPhrases`, `excludeTerms`, and `site`, waits for the tool to become callable on cold sessions, and keeps the highest-scored `count` results. The same `config.json` governs subagent children: when the backend is `"mcp"`, the `subagent` extension adds pi's built-in MCP support to the child process, so `researcher` and `reviewer` subagents can also search. Run `/reload` in existing sessions after changing backends.
 
 ### `subagent` agent definitions
 

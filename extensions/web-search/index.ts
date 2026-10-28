@@ -4,13 +4,16 @@ import { Text } from "@earendil-works/pi-tui";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { loadWebSearchConfig, WEB_SEARCH_CONFIG_PATH } from "./config.ts";
+import { runMcpToolSearch, type McpToolCaller } from "./mcp.ts";
+
 interface SearchResult {
 	title: string;
 	url: string;
 	snippet: string;
 }
 
-interface StructuredSearchArgs {
+export interface StructuredSearchArgs {
 	query?: string;
 	exactPhrases?: string[];
 	excludeTerms?: string[];
@@ -129,7 +132,7 @@ function quoteForSearch(value: string): string {
 	return `"${value.replace(/"/g, '\\"')}"`;
 }
 
-function buildSearchQuery(args: StructuredSearchArgs): BuiltSearchQuery {
+export function buildSearchQuery(args: StructuredSearchArgs): BuiltSearchQuery {
 	const baseQuery = cleanQuery(args.query);
 	const exactPhrases = cleanItems(args.exactPhrases);
 	const excludeTerms = cleanItems(args.excludeTerms);
@@ -163,6 +166,8 @@ function buildSearchQuery(args: StructuredSearchArgs): BuiltSearchQuery {
 }
 
 export default function (pi: ExtensionAPI) {
+	const registrationConfig = loadWebSearchConfig();
+
 	pi.registerTool({
 		name: "web_search",
 		label: "Web Search",
@@ -209,22 +214,36 @@ export default function (pi: ExtensionAPI) {
 			),
 		}),
 
-		async execute(_toolCallId, params: StructuredSearchArgs, signal) {
-			const creds = loadCredentials();
-			if (!creds) {
-				throw new Error(
-					`Missing Serper credentials. Set SERPER_API_KEY env var, or add serper_api_key to ${AUTH_PATH}. Get a free API key at https://serper.dev`,
-				);
-			}
-
+		async execute(_toolCallId, params: StructuredSearchArgs, signal, _onUpdate, ctx) {
 			const count = params.count ?? 5;
 			const built = buildSearchQuery(params);
-			const results = await serperSearch(
-				built.query,
-				count,
-				creds.apiKey,
-				signal,
-			);
+
+			// Read once at registration: a malformed config fails fast at startup
+			// instead of at the first search; a change requires /reload.
+			const config = registrationConfig;
+			let results: SearchResult[];
+			if (config.backend === "mcp") {
+				const caller: McpToolCaller = {
+					get tools() {
+						return ctx.tools;
+					},
+					executeTool: (name, args, options) => ctx.executeTool(name, args, options),
+				};
+				results = await runMcpToolSearch(caller, config.mcpTool as string, built.query, count, signal);
+			} else {
+				const creds = loadCredentials();
+				if (!creds) {
+					throw new Error(
+						`Missing Serper credentials. Set SERPER_API_KEY env var, or add serper_api_key to ${AUTH_PATH}; alternatively set backend to "mcp" in ${WEB_SEARCH_CONFIG_PATH}. Get a free API key at https://serper.dev`,
+					);
+				}
+				results = await serperSearch(
+					built.query,
+					count,
+					creds.apiKey,
+					signal,
+				);
+			}
 
 			return {
 				content: [
@@ -234,6 +253,7 @@ export default function (pi: ExtensionAPI) {
 					},
 				],
 				details: {
+					backend: config.backend ?? "serper",
 					composedQuery: built.query,
 					query: built.baseQuery,
 					exactPhrases: built.exactPhrases,
