@@ -58,17 +58,15 @@ const CAT_FACES: PiPetStateFrameMap = {
 	error: ["( x⁔x )", "( x⁔x )", "( ╸⁔╺ )", "( ╸⁔╺ )"],
 };
 
-const DEFAULT_TOP = " /\\_/\\ ";
-
 export const DEFAULT_PI_PET_ASSETS = createPiPetModeAssets({
-	top: repeatPiPetElement(DEFAULT_TOP),
+	top: repeatPiPetElement([" ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "," ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "]),
 	face: CAT_FACES,
 	bottom: {
-		idle: [" > ▵ < ", " > ▵ < ", " ▹ ▵ ◃ ", " ▹ ▵ ◃ "],
-		thinking: [" > 🬃 < ", " > 🬖 < ", " > 🬞 < ", " > 🬢 < "],
-		working: [" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "],
-		success: [" > ★ < ", " > ★ < ", " ▹ ★ ◃ ", " ▹ ★ ◃ "],
-		error: [" > ! < ", " > ! < ", " ▹ ! ◃ ", " ▹ ! ◃ "],
+		idle: " ⊑   ⊒ ",
+		thinking: [" ⊑ 🬃 ⊒ ", " ⊑ 🬖 ⊒ ", " ⊑ 🬞 ⊒ ", " ⊑ 🬢 ⊒ "],
+		working: [" ⊑∿∼∿⊒ ", " ⊑∼∿∼⊒ "],
+		success: [" ⊑∼∻∼⊒ ", " ⊑∻∼∻⊒ "],
+		error: [" ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ "],
 	},
 });
 
@@ -125,14 +123,14 @@ export const SUBAGENT_PI_PET_ASSETS = {
 		},
 	}),
 	engineer: createPiPetModeAssets({
-		top: repeatPiPetElement([" ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "," ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "]),
+		top: repeatPiPetElement(" /\\_/\\ "),
 		face: CAT_FACES,
 		bottom: {
-			idle: " ⊑   ⊒ ",
-			thinking: [" ⊑ 🬃 ⊒ ", " ⊑ 🬖 ⊒ ", " ⊑ 🬞 ⊒ ", " ⊑ 🬢 ⊒ "],
-			working: [" ⊑∿∼∿⊒ ", " ⊑∼∿∼⊒ "],
-			success: [" ⊑∼∻∼⊒ ", " ⊑∻∼∻⊒ "],
-			error: [" ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ ", " ⊑ ! ⊒ "],
+			idle: [" > ▵ < ", " > ▵ < ", " ▹ ▵ ◃ ", " ▹ ▵ ◃ "],
+			thinking: [" > 🬃 < ", " > 🬖 < ", " > 🬞 < ", " > 🬢 < "],
+			working: [" > ◐ < ", " > ◓ < ", " > ◑ < ", " > ◒ < "],
+			success: [" > ★ < ", " > ★ < ", " ▹ ★ ◃ ", " ▹ ★ ◃ "],
+			error: [" > ! < ", " > ! < ", " ▹ ! ◃ ", " ▹ ! ◃ "],
 		},
 	}),
 } satisfies Readonly<Record<string, PiPetModeAssets>>;
