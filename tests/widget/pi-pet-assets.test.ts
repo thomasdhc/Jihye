@@ -10,6 +10,7 @@ import {
 	createPiPetModeAssets,
 	getPiPetAnimationInterval,
 	getPiPetElementAlternativeCount,
+	getPiPetModeAssets,
 	getPiPetStateCycleLength,
 	resolvePiPetElement,
 	resolvePiPetStateElements,
@@ -43,6 +44,15 @@ test("models every lifecycle state as three exact-width ordered elements", () =>
 				assert.deepEqual(alternatives.map(visibleWidth), alternatives.map(() => PI_PET_ASSETS.frameWidth));
 			}
 		}
+	}
+});
+
+test("selects each role's sprite and falls back to the current default", () => {
+	assert.equal(getPiPetModeAssets(), PI_PET_ASSETS.default);
+	assert.equal(getPiPetModeAssets("unknown-role"), PI_PET_ASSETS.default);
+	for (const [role, mode] of Object.entries(PI_PET_ASSETS.subagents)) {
+		assert.equal(getPiPetModeAssets(role), mode);
+		assert.notEqual(mode, PI_PET_ASSETS.default);
 	}
 });
 
