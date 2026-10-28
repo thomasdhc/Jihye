@@ -19,13 +19,13 @@
 	</style>
 	<g xml:space="preserve">
 		<text x="0" y="11"><tspan>  </tspan><tspan class="f">╔═════════════╗</tspan></text>
-		<text x="0" y="24"><tspan>  </tspan><tspan class="f">║██</tspan><tspan class="b">█</tspan><tspan class="f">█▓▓█▓█████║</tspan></text>
-		<text x="0" y="37"><tspan> </tspan><tspan class="f">╔╝█</tspan><tspan class="b">█</tspan><tspan class="f">▓▓</tspan><tspan class="e">╔</tspan><tspan class="f">════════╝</tspan></text>
-		<text x="0" y="50"><tspan> </tspan><tspan class="f">║████</tspan><tspan class="e">╔╝</tspan><tspan> </tspan><tspan class="e">╔══╗</tspan><tspan>  </tspan><tspan class="e">║</tspan><tspan class="d">║</tspan></text>
-		<text x="0" y="63"><tspan> </tspan><tspan class="f">║███▒</tspan><tspan class="e">║</tspan><tspan>  </tspan><tspan class="b">║</tspan><tspan>  </tspan><tspan class="e">║</tspan><tspan class="b">█</tspan><tspan class="f">▓</tspan><tspan class="e">║</tspan><tspan class="d">║</tspan></text>
-		<text x="0" y="76"><tspan> </tspan><tspan class="f">║██▓█</tspan><tspan class="e">║</tspan><tspan>  </tspan><tspan class="e">║ </tspan><tspan> </tspan><tspan class="e">║</tspan><tspan>  </tspan><tspan class="e">║</tspan><tspan class="d">║</tspan></text>
-		<text x="0" y="89"><tspan> </tspan><tspan class="f">║████</tspan><tspan class="e">║</tspan><tspan> </tspan><tspan class="e">╔</tspan><tspan class="b">╝</tspan><tspan class="e"> </tspan><tspan> </tspan><tspan class="e">╚══╝</tspan><tspan class="d">║</tspan></text>
-		<text x="0" y="102"><tspan> </tspan><tspan class="f">║███▓</tspan><tspan class="e">║</tspan><tspan> </tspan><tspan class="e">╚══════╗</tspan><tspan class="b">╝</tspan></text>
-		<text x="0" y="115"><tspan> </tspan><tspan class="f">╚═══╝</tspan><tspan class="e">╚</tspan><tspan class="d">═</tspan><tspan>═</tspan><tspan class="d">═</tspan><tspan>═</tspan><tspan class="d">═</tspan><tspan>═</tspan><tspan class="d">══</tspan><tspan class="e">╝</tspan><tspan> </tspan></text>
+		<text x="0" y="24"><tspan>  </tspan><tspan class="f">║██</tspan><tspan class="e">▄</tspan><tspan class="f">█▓▓█▓████▌║</tspan></text>
+		<text x="0" y="37"><tspan> </tspan><tspan class="f">╔╝█</tspan><tspan class="e">▌</tspan><tspan class="f">▓▓</tspan><tspan class="e">╔</tspan><tspan class="f">════════╝</tspan></text>
+		<text x="0" y="50"><tspan> </tspan><tspan class="f">║████</tspan><tspan class="e">╔╝</tspan><tspan> </tspan><tspan class="e">╔══╗</tspan><tspan>  </tspan><tspan class="e">║</tspan><tspan> </tspan></text>
+		<text x="0" y="63"><tspan> </tspan><tspan class="f">║███▒</tspan><tspan class="e">║</tspan><tspan>  </tspan><tspan class="f">║</tspan><tspan>  </tspan><tspan class="e">║▄</tspan><tspan class="d">▌</tspan><tspan class="e">║</tspan><tspan> </tspan></text>
+		<text x="0" y="76"><tspan> </tspan><tspan class="f">║██▓█</tspan><tspan class="e">║</tspan><tspan>  </tspan><tspan class="f">║</tspan><tspan class="e"> </tspan><tspan> </tspan><tspan class="e">║</tspan><tspan>  </tspan><tspan class="e">║</tspan><tspan> </tspan></text>
+		<text x="0" y="89"><tspan> </tspan><tspan class="f">║█</tspan><tspan class="d">▒</tspan><tspan class="f">█</tspan><tspan class="d">░</tspan><tspan class="e">║</tspan><tspan> </tspan><tspan class="e">╔</tspan><tspan class="f">╝</tspan><tspan class="e"> </tspan><tspan> </tspan><tspan class="e">╚══╝</tspan><tspan> </tspan></text>
+		<text x="0" y="102"><tspan> </tspan><tspan class="f">║▀▐</tspan><tspan class="d">░</tspan><tspan class="f">▓</tspan><tspan class="e">║</tspan><tspan> </tspan><tspan class="e">╚══════╗</tspan><tspan> </tspan></text>
+		<text x="0" y="115"><tspan> </tspan><tspan class="f">╚═══╝</tspan><tspan class="e">╚</tspan><tspan class="d">════════</tspan><tspan class="e">╝</tspan><tspan> </tspan></text>
 	</g>
 </svg>
