@@ -67,9 +67,9 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 ## Compose an Environment
 
-Keep Jihye as the shared core and attach separately maintained environment packages through Pi's native package declarations. The generic [public example](examples/profiles/public/settings.example.json) loads Jihye alone; the [work example](examples/profiles/work/settings.example.json) adds an optional environment package without company-specific defaults.
+Keep Jihye installed globally as the shared baseline. Add a separately maintained environment package through `.pi/settings.json` in each workspace that needs it, then start Pi at that workspace root. The attachment adds to the global packages without requiring a separate Jihye installation or profile directory.
 
-Use an existing configuration or separate agent directories. These are copyable examples, not active configuration or an inheritance system. Read the [environment composition guide](docs/design/environment-composition.md) for ownership, path resolution, guidance setup, and replacing an attachment before copying or merging settings.
+The [global declaration example](examples/composition/global.settings.example.json) and [workspace attachment example](examples/composition/workspace.settings.example.json) use source markers that must be replaced before merging them into existing settings. Read the [environment composition guide](docs/design/environment-composition.md) for package sources, project trust, the workspace-root session boundary, and attachment replacement.
 
 ## Design Notes
 
