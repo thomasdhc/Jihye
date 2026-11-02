@@ -8,7 +8,7 @@ Jihye is an installable Pi toolkit. The package manifest loads runtime integrati
 
 Place each capability in its owning layer: extensions integrate with Pi runtime APIs, skills own bounded workflows, and personas own inherited policy and agent definitions. Keep cross-layer relationships explicit and compose shared behavior through defined contracts rather than bypassing layer ownership.
 
-Keep environment-specific integrations and workflows in separately maintained Pi packages. Keep Jihye as the global baseline and attach optional packages through workspace-root `.pi/settings.json`; start Pi at that workspace root. Keep Jihye usable without an attachment. Treat `examples/composition/` as declaration examples requiring actual package sources, not active settings or a runtime template system.
+Keep environment-specific integrations and workflows in separately maintained Pi packages. Keep Jihye as the global baseline and attach optional packages through each machine's global Pi settings. Keep machine-specific package selections in local configuration and Jihye usable without an attachment. Treat `examples/composition/` as declaration examples requiring actual package sources, not active settings or a runtime template system.
 
 Canonical evidence: `package.json`, `README.md`, `extensions/README.md`, `skills/README.md`, `personas/README.md`, `docs/design/environment-composition.md`, `examples/composition/`, and `tests/`.
 
