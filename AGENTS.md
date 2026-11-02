@@ -8,7 +8,7 @@ Jihye is an installable Pi toolkit. The package manifest loads runtime integrati
 
 Place each capability in its owning layer: extensions integrate with Pi runtime APIs, skills own bounded workflows, and personas own inherited policy and agent definitions. Keep cross-layer relationships explicit and compose shared behavior through defined contracts rather than bypassing layer ownership.
 
-Keep environment-specific integrations and workflows in separately maintained Pi packages. Keep Jihye as the global baseline and attach optional packages through each machine's global Pi settings. Keep machine-specific package selections in local configuration and Jihye usable without an attachment. Treat `examples/composition/` as declaration examples requiring actual package sources, not active settings or a runtime template system.
+Keep Jihye independently usable as the global baseline. Put environment-specific integrations and workflows in separate Pi packages, selected through each machine's global settings. Keep machine-specific configuration local.
 
 Canonical evidence: `package.json`, `README.md`, `extensions/README.md`, `skills/README.md`, `personas/README.md`, `docs/design/environment-composition.md`, `examples/composition/`, and `tests/`.
 
@@ -49,6 +49,6 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 - `extensions/` — Pi extensions loaded by the package manifest.
 - `personas/` — Global and workspace guidance, local-configuration templates, and portable default subagent definitions.
 - `skills/` — Pi skills loaded by the package manifest.
-- `examples/` — Portable package-declaration examples without workstation-specific values.
+- `examples/` — Portable package-declaration examples.
 - `docs/design/` — Maintainer design notes and composition contracts.
 - `tests/` — Node test-runner coverage for extension logic, event behavior, and composition contracts.

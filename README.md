@@ -67,9 +67,7 @@ Verify the chain with `/jihye-setup`: both guidance locations should report as m
 
 ## Compose an Environment
 
-Keep Jihye installed globally as the shared baseline. On each machine, add optional, separately maintained environment packages to the existing `packages` list in `~/.pi/agent/settings.json`. Each machine chooses its package set independently; no workspace-local package declaration, separate Jihye installation, or profile directory is needed.
-
-The [declaration example](examples/composition/settings.example.json) shows Jihye plus an optional environment package. Replace its source markers before merging into existing settings, and omit the attachment on machines that do not need it. Read the [environment composition guide](docs/design/environment-composition.md) for package sources, guidance setup, and attachment replacement.
+Add optional environment packages alongside Jihye in the `packages` array of `~/.pi/agent/settings.json`, then run `/reload`. Replace the source markers in the [example](examples/composition/settings.example.json) before merging it into existing settings. See the [composition guide](docs/design/environment-composition.md) for setup details.
 
 ## Design Notes
 
