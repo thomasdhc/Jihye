@@ -1,0 +1,6 @@
+{
+  "packages": [
+    "<jihye-package-source>",
+    "<environment-package-source>"
+  ]
+}

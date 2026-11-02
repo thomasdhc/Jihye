@@ -65,8 +65,13 @@ The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `j
 
 Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard`, and the two local environment files should be listed. See the [personas guide](personas/README.md) for local-configuration templates.
 
+## Compose an Environment
+
+Add optional environment packages alongside Jihye in the `packages` array of `~/.pi/agent/settings.json`, then run `/reload`. Replace the source markers in the [example](examples/composition/settings.example.json) before merging it into existing settings. See the [composition guide](docs/design/environment-composition.md) for setup details.
+
 ## Design Notes
 
+- [Environment composition](docs/design/environment-composition.md) defines the shared-core and optional-environment package contract.
 - [Compaction](docs/design/compaction.md) maps checkpoint behavior, guidance continuity, and the open implementation questions.
 - [System context](docs/design/system-context.md) maps standing guidance, read-gated policy, skills, and their shared boundary with compaction.
 
