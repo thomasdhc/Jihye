@@ -1,0 +1,6 @@
+{
+  "packages": [
+    "../../packages/jihye",
+    "../../packages/work-environment"
+  ]
+}
