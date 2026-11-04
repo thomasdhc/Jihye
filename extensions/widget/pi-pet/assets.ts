@@ -62,7 +62,7 @@ export const DEFAULT_PI_PET_ASSETS = createPiPetModeAssets({
 	top: repeatPiPetElement([" ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "," ⋌∿∼∿⋋ "," ⋌∼∿∼⋋ "]),
 	face: CAT_FACES,
 	bottom: {
-		idle: " ⊑   ⊒ ",
+		idle: " ⊑ ▄ ⊒ ",
 		thinking: [" ⊑ 🬃 ⊒ ", " ⊑ 🬖 ⊒ ", " ⊑ 🬞 ⊒ ", " ⊑ 🬢 ⊒ "],
 		working: [" ⊑∿∼∿⊒ ", " ⊑∼∿∼⊒ "],
 		success: [" ⊑∼∻∼⊒ ", " ⊑∻∼∻⊒ "],
