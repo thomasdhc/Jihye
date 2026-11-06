@@ -229,7 +229,7 @@ test("git guidance preserves delivery and pull-request invariants", () => {
 		/cleanup candidate/i,
 		/never infer staleness from age alone/i,
 	], "git workflow invariants");
-	assert.match(git, /## Summary[\s\S]*## Why/, "default request description keeps only its semantic sections");
+	assert.match(git, /# <concise request header>[\s\S]*## Purpose[\s\S]*## Changes/, "default request description keeps its requested header and semantic sections");
 });
 
 test("persona policy remains portable", () => {

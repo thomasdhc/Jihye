@@ -36,12 +36,14 @@ Use `feat` for capabilities, `fix` for bugs, `docs` for documentation, and `ci` 
 Without a repository template, use only:
 
 ```markdown
-## Summary
+# <concise request header>
+
+## Purpose
+<brief motivation>
+
+## Changes
 - <concise change>
 - <optional second change>
-
-## Why
-<brief motivation>
 ```
 
-Keep the summary to one or two bullets. Add nothing else unless explicitly requested.
+Keep the changes to one or two bullets. Add nothing else unless explicitly requested.
