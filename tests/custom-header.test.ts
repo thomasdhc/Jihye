@@ -37,38 +37,51 @@ test("bundled template is a rectangle of single-width glyphs with painted ink co
 	}
 });
 
-const README_HEADER_PATHS = [
-	"../docs/assets/jihye-header-light.svg",
-	"../docs/assets/jihye-header-dark.svg",
-] as const;
+const README_HEADER_PATH = "../docs/assets/jihye-header.svg";
 
-test("README header SVGs match the bundled artwork glyphs and ink", () => {
-	for (const path of README_HEADER_PATHS) {
-		const svg = readFileSync(new URL(path, import.meta.url), "utf8");
-		const document = new DOMParser().parseFromString(svg, "image/svg+xml");
-		const rows = [...document.querySelectorAll("text")].map((row) => ({
-			art: row.textContent,
-			ink: [...row.querySelectorAll("tspan")].map((span) =>
-				(span.getAttribute("class") || " ").repeat([...span.textContent!].length),
-			).join(""),
-		}));
+test("README header SVG matches the bundled artwork on a fixed glyph grid", () => {
+	const svg = readFileSync(new URL(README_HEADER_PATH, import.meta.url), "utf8");
+	const document = new DOMParser().parseFromString(svg, "image/svg+xml");
+	const root = document.documentElement;
+	const cellWidth = Number(root.getAttribute("data-cell-width"));
+	const firstBaseline = Number(root.getAttribute("data-first-baseline"));
+	const rowHeight = Number(root.getAttribute("data-row-height"));
+	const width = getCustomHeaderArtWidth();
+	const rows = [...root.querySelectorAll("[data-row]")].map((row) => {
+		const rowIndex = Number(row.getAttribute("data-row"));
+		const art = Array<string>(width).fill(" ");
+		const ink = Array<string>(width).fill(" ");
 
-		assert.deepEqual(rows, CUSTOM_HEADER_ASSETS.art, `Update artwork.json and ${path} together`);
-	}
+		for (const glyph of row.querySelectorAll("use")) {
+			const column = Number(glyph.getAttribute("data-column"));
+			const character = glyph.getAttribute("data-glyph")!;
+			const paint = glyph.getAttribute("class")!;
+			const weight = paint === "f" || paint === "e" ? "b" : "r";
+			const glyphId = `#g-${weight}-${character.codePointAt(0)!.toString(16)}`;
+			const x = (column * cellWidth).toFixed(4);
+			const y = firstBaseline + rowIndex * rowHeight;
+
+			assert.equal(glyph.getAttribute("href"), glyphId);
+			assert.match(glyph.getAttribute("transform")!, new RegExp(`^translate\\(${x} ${y}\\) scale\\(`));
+			art[column] = character;
+			ink[column] = paint;
+		}
+
+		return { art: art.join(""), ink: ink.join("") };
+	});
+
+	const renderedArtwork = CUSTOM_HEADER_ASSETS.art.map((row) => ({
+		art: row.art,
+		ink: [...row.ink].map((paint, column) => row.art[column] === " " ? " " : paint).join(""),
+	}));
+	assert.equal(root.querySelectorAll("text").length, 0, "Live text allows platform font fallback to shift glyphs");
+	assert.deepEqual(rows, renderedArtwork, `Update artwork.json and ${README_HEADER_PATH} together`);
 });
 
-test("README selects static header artwork for each GitHub color mode", () => {
+test("README uses the single font-independent header asset", () => {
 	const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
-	assert.ok(readme.includes("jihye-header-light.svg#gh-light-mode-only"));
-	assert.ok(readme.includes("jihye-header-dark.svg#gh-dark-mode-only"));
-
-	const [lightPath, darkPath] = README_HEADER_PATHS;
-	const lightSvg = readFileSync(new URL(lightPath, import.meta.url), "utf8");
-	const darkSvg = readFileSync(new URL(darkPath, import.meta.url), "utf8");
-	assert.doesNotMatch(lightSvg, /prefers-color-scheme/);
-	assert.doesNotMatch(darkSvg, /prefers-color-scheme/);
-	assert.match(lightSvg, /fill: #1f2328/);
-	assert.match(darkSvg, /fill: #d4d4d4/);
+	assert.ok(readme.includes("docs/assets/jihye-header.svg"));
+	assert.doesNotMatch(readme, /jihye-header-(?:light|dark)\.svg/);
 });
 
 test("renders the configured custom header artwork without changing its glyphs", () => {
