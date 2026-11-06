@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 123 117" role="presentation" data-cell-width="7.224609375" data-first-baseline="11" data-row-height="13">
+	<!-- Fixed glyph outlines prevent platform font fallback from shifting artwork cells. -->
+	<style>
+		.f { fill: #588458; }
+		.e { fill: #5a8080; }
+		.d { fill: #767676; }
+		@media (prefers-color-scheme: dark) {
+			.f { fill: #b5bd68; }
+			.e { fill: #8abeb7; }
+			.d { fill: #666666; }
+		}
+	</style>
+	<defs>
+		<path id="g-b-2550" d="M-20 790V962H1253V790ZM-20 446V618H1253V446Z"/>
+		<path id="g-b-2551" d="M376 -512V1921H536V-512ZM696 -512V1921H856V-512Z"/>
+		<path id="g-b-2554" d="M376 -512V962H1253V790H536V-512ZM696 -512V618H1253V446H856V-512Z"/>
+		<path id="g-b-2557" d="M696 -512V790H-20V962H856V-512ZM376 -512V446H-20V618H536V-512Z"/>
+		<path id="g-b-255a" d="M696 790V1921H856V962H1253V790ZM376 446V1921H536V618H1253V446Z"/>
+		<path id="g-b-255d" d="M-20 790V962H376V1921H536V790ZM-20 446V618H696V1921H856V446Z"/>
+		<path id="g-b-2580" d="M-20 704V1920H1253V704Z"/>
+		<path id="g-b-2584" d="M-20 -512V704H1253V-512Z"/>
+		<path id="g-b-2588" d="M-20 -512V1921H1253V-512Z"/>
+		<path id="g-b-258c" d="M-20 -512V1921H616V-512Z"/>
+		<path id="g-r-2550" d="M-20 790V962H1253V790ZM-20 446V618H1253V446Z"/>
+		<path id="g-r-258c" d="M-20 -512V1921H616V-512Z"/>
+	</defs>
+	<g>
+		<g data-row="0">
+			<use href="#g-b-2554" class="f" data-column="2" data-glyph="╔" transform="translate(14.4492 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="3" data-glyph="═" transform="translate(21.6738 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="4" data-glyph="═" transform="translate(28.8984 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="5" data-glyph="═" transform="translate(36.1230 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="6" data-glyph="═" transform="translate(43.3477 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="7" data-glyph="═" transform="translate(50.5723 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="8" data-glyph="═" transform="translate(57.7969 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="9" data-glyph="═" transform="translate(65.0215 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="10" data-glyph="═" transform="translate(72.2461 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="11" data-glyph="═" transform="translate(79.4707 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="12" data-glyph="═" transform="translate(86.6953 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="13" data-glyph="═" transform="translate(93.9199 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="14" data-glyph="═" transform="translate(101.1445 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="15" data-glyph="═" transform="translate(108.3691 11) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2557" class="f" data-column="16" data-glyph="╗" transform="translate(115.5938 11) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="1">
+			<use href="#g-b-2551" class="f" data-column="2" data-glyph="║" transform="translate(14.4492 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="3" data-glyph="█" transform="translate(21.6738 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="4" data-glyph="█" transform="translate(28.8984 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="5" data-glyph="█" transform="translate(36.1230 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="6" data-glyph="█" transform="translate(43.3477 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="7" data-glyph="█" transform="translate(50.5723 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="8" data-glyph="█" transform="translate(57.7969 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="9" data-glyph="█" transform="translate(65.0215 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="10" data-glyph="█" transform="translate(72.2461 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="11" data-glyph="█" transform="translate(79.4707 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="12" data-glyph="█" transform="translate(86.6953 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="13" data-glyph="█" transform="translate(93.9199 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="14" data-glyph="█" transform="translate(101.1445 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-258c" class="f" data-column="15" data-glyph="▌" transform="translate(108.3691 24) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="f" data-column="16" data-glyph="║" transform="translate(115.5938 24) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="2">
+			<use href="#g-b-2554" class="f" data-column="1" data-glyph="╔" transform="translate(7.2246 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255d" class="f" data-column="2" data-glyph="╝" transform="translate(14.4492 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="3" data-glyph="█" transform="translate(21.6738 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="4" data-glyph="█" transform="translate(28.8984 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="5" data-glyph="█" transform="translate(36.1230 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="6" data-glyph="█" transform="translate(43.3477 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2554" class="e" data-column="7" data-glyph="╔" transform="translate(50.5723 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="8" data-glyph="═" transform="translate(57.7969 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="9" data-glyph="═" transform="translate(65.0215 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="10" data-glyph="═" transform="translate(72.2461 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="11" data-glyph="═" transform="translate(79.4707 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="12" data-glyph="═" transform="translate(86.6953 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="13" data-glyph="═" transform="translate(93.9199 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="14" data-glyph="═" transform="translate(101.1445 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="15" data-glyph="═" transform="translate(108.3691 37) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255d" class="f" data-column="16" data-glyph="╝" transform="translate(115.5938 37) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="3">
+			<use href="#g-b-2551" class="f" data-column="1" data-glyph="║" transform="translate(7.2246 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="2" data-glyph="█" transform="translate(14.4492 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="3" data-glyph="█" transform="translate(21.6738 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="4" data-glyph="█" transform="translate(28.8984 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="5" data-glyph="█" transform="translate(36.1230 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2554" class="e" data-column="6" data-glyph="╔" transform="translate(43.3477 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255d" class="e" data-column="7" data-glyph="╝" transform="translate(50.5723 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2554" class="e" data-column="9" data-glyph="╔" transform="translate(65.0215 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="10" data-glyph="═" transform="translate(72.2461 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="11" data-glyph="═" transform="translate(79.4707 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2557" class="e" data-column="12" data-glyph="╗" transform="translate(86.6953 50) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="15" data-glyph="║" transform="translate(108.3691 50) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="4">
+			<use href="#g-b-2551" class="f" data-column="1" data-glyph="║" transform="translate(7.2246 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="2" data-glyph="█" transform="translate(14.4492 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="3" data-glyph="█" transform="translate(21.6738 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="4" data-glyph="█" transform="translate(28.8984 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="5" data-glyph="█" transform="translate(36.1230 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="6" data-glyph="║" transform="translate(43.3477 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="f" data-column="9" data-glyph="║" transform="translate(65.0215 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="12" data-glyph="║" transform="translate(86.6953 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2584" class="e" data-column="13" data-glyph="▄" transform="translate(93.9199 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-258c" class="d" data-column="14" data-glyph="▌" transform="translate(101.1445 63) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="15" data-glyph="║" transform="translate(108.3691 63) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="5">
+			<use href="#g-b-2551" class="f" data-column="1" data-glyph="║" transform="translate(7.2246 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="2" data-glyph="█" transform="translate(14.4492 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="3" data-glyph="█" transform="translate(21.6738 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="4" data-glyph="█" transform="translate(28.8984 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="5" data-glyph="█" transform="translate(36.1230 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="6" data-glyph="║" transform="translate(43.3477 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="f" data-column="9" data-glyph="║" transform="translate(65.0215 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="12" data-glyph="║" transform="translate(86.6953 76) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="15" data-glyph="║" transform="translate(108.3691 76) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="6">
+			<use href="#g-b-2551" class="f" data-column="1" data-glyph="║" transform="translate(7.2246 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="2" data-glyph="█" transform="translate(14.4492 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="3" data-glyph="█" transform="translate(21.6738 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="4" data-glyph="█" transform="translate(28.8984 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="5" data-glyph="█" transform="translate(36.1230 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="6" data-glyph="║" transform="translate(43.3477 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2554" class="e" data-column="8" data-glyph="╔" transform="translate(57.7969 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255d" class="f" data-column="9" data-glyph="╝" transform="translate(65.0215 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255a" class="e" data-column="12" data-glyph="╚" transform="translate(86.6953 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="13" data-glyph="═" transform="translate(93.9199 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="14" data-glyph="═" transform="translate(101.1445 89) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255d" class="e" data-column="15" data-glyph="╝" transform="translate(108.3691 89) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="7">
+			<use href="#g-b-2551" class="f" data-column="1" data-glyph="║" transform="translate(7.2246 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2580" class="f" data-column="2" data-glyph="▀" transform="translate(14.4492 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="3" data-glyph="█" transform="translate(21.6738 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="4" data-glyph="█" transform="translate(28.8984 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2588" class="f" data-column="5" data-glyph="█" transform="translate(36.1230 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2551" class="e" data-column="6" data-glyph="║" transform="translate(43.3477 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255a" class="e" data-column="8" data-glyph="╚" transform="translate(57.7969 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="9" data-glyph="═" transform="translate(65.0215 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="10" data-glyph="═" transform="translate(72.2461 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="11" data-glyph="═" transform="translate(79.4707 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="12" data-glyph="═" transform="translate(86.6953 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="13" data-glyph="═" transform="translate(93.9199 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="e" data-column="14" data-glyph="═" transform="translate(101.1445 102) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2557" class="e" data-column="15" data-glyph="╗" transform="translate(108.3691 102) scale(0.00585938 -0.00585938)"/>
+		</g>
+		<g data-row="8">
+			<use href="#g-b-255a" class="f" data-column="1" data-glyph="╚" transform="translate(7.2246 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="2" data-glyph="═" transform="translate(14.4492 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="3" data-glyph="═" transform="translate(21.6738 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-2550" class="f" data-column="4" data-glyph="═" transform="translate(28.8984 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255d" class="f" data-column="5" data-glyph="╝" transform="translate(36.1230 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255a" class="e" data-column="6" data-glyph="╚" transform="translate(43.3477 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="7" data-glyph="═" transform="translate(50.5723 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="8" data-glyph="═" transform="translate(57.7969 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="9" data-glyph="═" transform="translate(65.0215 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="10" data-glyph="═" transform="translate(72.2461 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="11" data-glyph="═" transform="translate(79.4707 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="12" data-glyph="═" transform="translate(86.6953 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="13" data-glyph="═" transform="translate(93.9199 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-r-2550" class="d" data-column="14" data-glyph="═" transform="translate(101.1445 115) scale(0.00585938 -0.00585938)"/>
+			<use href="#g-b-255d" class="e" data-column="15" data-glyph="╝" transform="translate(108.3691 115) scale(0.00585938 -0.00585938)"/>
+		</g>
+	</g>
+</svg>

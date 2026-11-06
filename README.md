@@ -1,4 +1,4 @@
-# <img src="docs/assets/jihye-header-light.svg#gh-light-mode-only" alt="" width="64" align="absbottom"><img src="docs/assets/jihye-header-dark.svg#gh-dark-mode-only" alt="" width="64" align="absbottom">&ensp;Jihye · 지혜 · 智慧
+# <img src="docs/assets/jihye-header.svg" alt="" width="64" align="absbottom">&ensp;Jihye · 지혜 · 智慧
 
 Jihye is a configurable agent environment for [Pi](https://pi.dev), combining runtime extensions, layered behavioral policy, and reusable workflows.
 
