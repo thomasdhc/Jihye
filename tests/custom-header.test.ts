@@ -37,17 +37,38 @@ test("bundled template is a rectangle of single-width glyphs with painted ink co
 	}
 });
 
-test("README header SVG matches the bundled artwork glyphs and ink", () => {
-	const svg = readFileSync(new URL("../docs/assets/jihye-header.svg", import.meta.url), "utf8");
-	const document = new DOMParser().parseFromString(svg, "image/svg+xml");
-	const rows = [...document.querySelectorAll("text")].map((row) => ({
-		art: row.textContent,
-		ink: [...row.querySelectorAll("tspan")].map((span) =>
-			(span.getAttribute("class") || " ").repeat([...span.textContent!].length),
-		).join(""),
-	}));
+const README_HEADER_PATHS = [
+	"../docs/assets/jihye-header-light.svg",
+	"../docs/assets/jihye-header-dark.svg",
+] as const;
 
-	assert.deepEqual(rows, CUSTOM_HEADER_ASSETS.art, "Update artwork.json and the README SVG together");
+test("README header SVGs match the bundled artwork glyphs and ink", () => {
+	for (const path of README_HEADER_PATHS) {
+		const svg = readFileSync(new URL(path, import.meta.url), "utf8");
+		const document = new DOMParser().parseFromString(svg, "image/svg+xml");
+		const rows = [...document.querySelectorAll("text")].map((row) => ({
+			art: row.textContent,
+			ink: [...row.querySelectorAll("tspan")].map((span) =>
+				(span.getAttribute("class") || " ").repeat([...span.textContent!].length),
+			).join(""),
+		}));
+
+		assert.deepEqual(rows, CUSTOM_HEADER_ASSETS.art, `Update artwork.json and ${path} together`);
+	}
+});
+
+test("README selects static header artwork for each GitHub color mode", () => {
+	const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+	assert.ok(readme.includes("jihye-header-light.svg#gh-light-mode-only"));
+	assert.ok(readme.includes("jihye-header-dark.svg#gh-dark-mode-only"));
+
+	const [lightPath, darkPath] = README_HEADER_PATHS;
+	const lightSvg = readFileSync(new URL(lightPath, import.meta.url), "utf8");
+	const darkSvg = readFileSync(new URL(darkPath, import.meta.url), "utf8");
+	assert.doesNotMatch(lightSvg, /prefers-color-scheme/);
+	assert.doesNotMatch(darkSvg, /prefers-color-scheme/);
+	assert.match(lightSvg, /fill: #1f2328/);
+	assert.match(darkSvg, /fill: #d4d4d4/);
 });
 
 test("renders the configured custom header artwork without changing its glyphs", () => {
