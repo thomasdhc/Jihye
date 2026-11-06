@@ -47,9 +47,9 @@ A malformed template names the offending row and column. The extension reports t
 
 ### `web-fetch` third-party fallback
 
-`web-fetch` directly extracts public HTTP(S) content by default. Private and local network URLs are blocked, and response and tool-output sizes are bounded.
+`web-fetch` directly extracts public HTTP(S) content by default. When article extraction is unavailable or too short, it returns available page text and links with an incomplete-content notice instead of rejecting useful content. It does not execute JavaScript. Private and local network URLs are blocked, and response and tool-output sizes are bounded.
 
-The optional Jina Reader fallback sends failed public URLs to a third-party service, so it requires explicit opt-in when starting Pi:
+The optional Jina Reader fallback retries failed or incomplete public pages through a third-party service, so it requires explicit opt-in when starting Pi:
 
 ```bash
 pi --web-fetch-jina

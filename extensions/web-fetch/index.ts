@@ -205,6 +205,7 @@ export interface FetchResult {
 	title: string;
 	content: string;
 	error: string | null;
+	partial?: boolean;
 }
 
 // ── PDF Extraction ───────────────────────────────────────────────────
@@ -511,6 +512,53 @@ function extractHeadingTitle(text: string): string | null {
 	return cleaned || null;
 }
 
+export function extractHTML(html: string, url: string): FetchResult {
+	const { document } = parseHTML(html);
+	// Readability mutates its input; keep the original DOM for the fallback.
+	const reader = new Readability(document.cloneNode(true) as unknown as Document);
+	const article = reader.parse();
+	const markdown = article ? turndown.turndown(article.content).trim() : "";
+	const title = article?.title || document.title || "";
+
+	if (markdown.length >= MIN_USEFUL_CONTENT) {
+		return { url, title, content: markdown, error: null };
+	}
+
+	const rscResult = extractRSCContent(html);
+	if (rscResult) {
+		return { url, ...rscResult, error: null };
+	}
+
+	// A short or non-article page can still contain useful text and links.
+	for (const element of document.querySelectorAll(
+		'script, style, noscript, template, svg, [hidden], [aria-hidden="true"]',
+	)) {
+		element.remove();
+	}
+	const root = document.querySelector("main") ?? document.querySelector("article") ?? document.body;
+	const fallback = root?.textContent?.trim()
+		? turndown.turndown(root.innerHTML).trim()
+		: "";
+	const content = fallback.length > markdown.length ? fallback : markdown;
+
+	if (content) {
+		return {
+			url,
+			title,
+			content: "> Note: Returning available page content; it may be incomplete. JavaScript was not executed.\n\n" + content,
+			error: null,
+			partial: true,
+		};
+	}
+
+	return {
+		url, title, content: "",
+		error: isLikelyJSRendered(html)
+			? "Page appears to be JavaScript-rendered (content loads dynamically)"
+			: "Could not extract readable content from HTML structure",
+	};
+}
+
 // ── Jina Reader Fallback ─────────────────────────────────────────────
 
 async function extractWithJinaReader(
@@ -637,49 +685,7 @@ async function extractViaHttp(
 			return { url, title, content: text, error: null };
 		}
 
-		const { document } = parseHTML(text);
-		const reader = new Readability(document as unknown as Document);
-		const article = reader.parse();
-
-		if (!article) {
-			const rscResult = extractRSCContent(text);
-			if (rscResult) {
-				return {
-					url,
-					title: rscResult.title,
-					content: rscResult.content,
-					error: null,
-				};
-			}
-
-			const jsRendered = isLikelyJSRendered(text);
-			return {
-				url, title: "", content: "",
-				error: jsRendered
-					? "Page appears to be JavaScript-rendered (content loads dynamically)"
-					: "Could not extract readable content from HTML structure",
-			};
-		}
-
-		const markdown = turndown.turndown(article.content);
-
-		if (markdown.length < MIN_USEFUL_CONTENT) {
-			return {
-				url,
-				title: article.title || "",
-				content: markdown,
-				error: isLikelyJSRendered(text)
-					? "Page appears to be JavaScript-rendered (content loads dynamically)"
-					: "Extracted content appears incomplete",
-			};
-		}
-
-		return {
-			url,
-			title: article.title || "",
-			content: markdown,
-			error: null,
-		};
+		return extractHTML(text, url);
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		return { url, title: "", content: "", error: message };
@@ -710,11 +716,11 @@ async function fetchAndExtract(
 	const httpResult = await extractViaHttp(url, signal);
 	if (signal?.aborted)
 		return { url, title: "", content: "", error: "Aborted" };
-	if (!httpResult.error) return httpResult;
+	if (!httpResult.error && (!httpResult.partial || !allowJinaFallback)) return httpResult;
 
 	if (
-		httpResult.error.startsWith("Unsupported content type") ||
-		httpResult.error.startsWith("Response too large")
+		httpResult.error?.startsWith("Unsupported content type") ||
+		httpResult.error?.startsWith("Response too large")
 	) {
 		return httpResult;
 	}
@@ -725,6 +731,8 @@ async function fetchAndExtract(
 		if (signal?.aborted)
 			return { url, title: "", content: "", error: "Aborted" };
 	}
+
+	if (!httpResult.error) return httpResult;
 
 	return {
 		...httpResult,
