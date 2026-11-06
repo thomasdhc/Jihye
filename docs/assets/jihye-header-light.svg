@@ -10,12 +10,6 @@
 		.b { font-weight: 700; }
 		.d { fill: #767676; }
 
-		@media (prefers-color-scheme: dark) {
-			text { fill: #d4d4d4; }
-			.f { fill: #b5bd68; }
-			.e { fill: #8abeb7; }
-			.d { fill: #666666; }
-		}
 	</style>
 	<g xml:space="preserve">
 		<text x="0" y="11"><tspan>  </tspan><tspan class="f">╔═════════════╗</tspan></text>
