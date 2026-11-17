@@ -1,35 +1,25 @@
 ---
 name: coordinate
-description: Build and run a compact parent-side execution skeleton sized to the work, from a single delegated call to multi-stream, dependency-heavy delegation. Use before the first subagent call in every delegation, covering sequencing, collision control, isolation, and integration.
+description: Coordinate delegation with task-sized planning, safe parallel execution, and parent-owned validation. Use before the first subagent call, from a single bounded call to multi-stream work.
 ---
 
 # Coordinate
 
 Apply Context and Delegation in the main-agent context.
 
-## Build the Execution Skeleton
+## Frame the Delegation
 
-Keep the skeleton in the parent agent's working context. Do not delegate its creation.
+Choose the smallest useful delegated outcome and its acceptance invariant. Prepare a bounded brief and decide how to validate the return before launching each call.
 
-Size the skeleton to the work's depth and breadth. Record every item the work contains and nothing it does not; a single delegated call still fixes its outcome, acceptance invariant, brief, and validation before it launches.
+For a single bounded call, the brief is the plan. For multi-stream work, keep a compact dependency map with independently deliverable outcomes and delivery boundaries, required ordering, safe parallel groups, and integration and validation order.
 
-Record:
+Check approval or read gates and shared mutable resources before launch. Serialize dependent or conflicting calls; use worktree isolation when required. Record these details only when applicable.
 
-1. **Outcomes** — Separate independently deliverable outcomes and give each an acceptance invariant and delivery boundary.
-2. **Calls** — Choose the smallest useful specialist calls and the evidence each must return.
-3. **Dependencies** — Mark required ordering, unlocking evidence, and uncertainties that could change the sequence.
-4. **Safe parallel groups** — Group calls that neither depend on nor invalidate one another; put dependent calls later.
-5. **Collision controls** — Identify overlapping files, generated artifacts, services, ports, external records, and other mutable resources. Serialize conflicting access and note required worktree isolation.
-6. **Blocked work** — Mark calls waiting on an approval or read gate.
-7. **Integration and validation** — Set reconciliation order and focused checks for each outcome and the integrated result.
+## Run the Delegation
 
-Prefer a small dependency map and ready-to-run briefs over narrative planning. Revisit the skeleton only when evidence changes it.
-
-## Run the Skeleton
-
-Immediately launch the first actionable parallel group, even when it holds one call, in the same turn that establishes the skeleton. Do not return only a plan while safe work is ready.
+Launch the first actionable parallel group immediately after coordination establishes safe work, in the same turn. Do not return only a plan while safe work is ready.
 
 - When a gate blocks write work, launch useful allowed read-only work.
-- Ask for user input only when no actionable group can proceed.
-- After each group, reconcile decisive evidence, update dependencies and collision risks, and launch the next actionable group.
+- Ask for user input only when no actionable work can proceed.
+- Verify returns, reconcile decisive evidence, and adjust remaining calls when dependencies or collision risks change.
 - Stop delegating when the main-agent context already holds the evidence the remaining work would return.

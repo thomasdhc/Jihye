@@ -161,7 +161,9 @@ test("global persona preserves canonical domains, coordination gates, and parent
 		/never expose or commit secrets, credentials/i,
 		/main-agent context[^\n]*decisions[^\n]*decisive evidence[^\n]*synthesis/i,
 		/raw logs[^\n]*repetitive responses[^\n]*exploratory dead ends/i,
-		/delegate work[^\n]*main-agent context/i,
+		/delegate when[^\n]*independent work[^\n]*specialization[^\n]*context isolation/i,
+		/briefing[^\n]*startup[^\n]*verification cost/i,
+		/handle focused work directly/i,
 		/coordinate.*skill/is,
 		/before the first subagent call/i,
 		/first actionable parallel group/i,
@@ -172,6 +174,14 @@ test("global persona preserves canonical domains, coordination gates, and parent
 	], "JIHYE.md");
 	assert.doesNotMatch(persona, /\bcoordinator\b/);
 	assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, "the coordination gate admits no delegation exemption");
+});
+
+test("file-operation procedure belongs to repository development guidance", () => {
+	const persona = readPersona("JIHYE.md");
+	assert.doesNotMatch(persona, /search keywords|bound reads|precise edits/i);
+	const repository = readFileSync(join(REPO_ROOT, "AGENTS.md"), "utf8");
+	assertTerms(repository, [/search keywords/i, /bound reads/i, /precise edits/i], "development file operations");
+	assert.match(repository, /follow workspace-owned Git guidance[^\n]*publication/i);
 });
 
 test("guidance never passes a policy domain", () => {

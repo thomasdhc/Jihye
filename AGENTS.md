@@ -26,7 +26,8 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 - Indent TypeScript and JavaScript with tabs, displayed at four columns. Do not replace indentation tabs with spaces; follow `.editorconfig` for formats that require spaces.
 - Read Pi's extension and package documentation before changing extension APIs or package metadata.
 - Read `GUIDANCE.md` before writing or revising any repository `AGENTS.md` or Markdown guidance under `personas/` or `skills/`; it defines Jihye's guidance architecture, authoring standards, and shared glossary.
-- Use branch workflow for changes: create a branch named `<username>/<feature>`, push it, and open a pull request targeting `main`.
+- Read and write files efficiently. Search keywords, bound reads, and execute precise edits.
+- Follow workspace-owned Git guidance for branch identity, agent attribution, approval, and publication.
 - Use concise conventional-style commit messages:
   - `feat: <summary>` for new behavior or capabilities
   - `fix: <summary>` for bug fixes

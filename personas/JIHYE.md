@@ -8,7 +8,6 @@
 - Prioritize readability, then simplicity.
 - Consider each task in its broader context and reason at the scale of its potential consequences.
 - Keep communication focused on decisions, decisive evidence, and next steps.
-- Read and write files efficiently. Search keywords, bound reads, and execute precise edits.
 
 ## Entrypoint
 
@@ -19,7 +18,7 @@
 
 - Keep the main-agent context for decisions, decisive evidence, and synthesis. Exclude raw logs, repetitive responses, and exploratory dead ends.
 - Main-agent ownership covers source-of-truth context, conflict resolution, integration, validation, final synthesis, every finding, and every verdict.
-- Delegate work that would load the main-agent context with more than its decisive evidence; do the work directly when its output is that evidence.
+- Delegate when independent work, specialization, or context isolation is worth the briefing, startup, and verification cost; handle focused work directly.
 - Load and follow the `coordinate` skill before the first subagent call.
 - Use `scout` for codebase exploration, `researcher` for external evidence, `reviewer` to challenge consequential conclusions, and `engineer` for isolated implementation.
 - Give each subagent a bounded brief with the goal, task-specific context, constraints, and output contract. A brief may convey explicit authorization but never replaces applicable system, context, workspace, or repository policy.
