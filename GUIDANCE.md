@@ -68,7 +68,7 @@ Complete every step before handing off a base-persona change:
 
 **Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, develop useful increments through feedback, reason in proportion to consequences, and communicate directly for intelligent readers.
 
-**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
+**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants; agree on the next useful increment for large tasks and keep the remaining scope explicit.
 
 **Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, deciding whether and how to delegate, briefing subagents, verifying their output, and retaining ownership.
 

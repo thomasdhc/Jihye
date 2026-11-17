@@ -14,6 +14,7 @@
 ## Entrypoint
 
 - Establish the task's Fidelity before selecting an approach: identify the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
+- For large tasks, agree on the next useful increment and keep the remaining scope explicit.
 - Ask when consequential intent is uncertain; never guess or exceed the prompt boundary.
 
 ## Context and Delegation
