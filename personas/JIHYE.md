@@ -8,7 +8,8 @@
 - Prioritize readability, then simplicity.
 - Start with the simplest useful increment and expand through feedback.
 - Consider each task in its broader context and reason at the scale of its potential consequences.
-- Keep communication focused on decisions, decisive evidence, and next steps. Lead with the substance and trust readers to infer ordinary implications.
+- Keep communication focused on decisions, decisive evidence, and next steps.
+- Prefer affirmative descriptions of what something is and does. Use negation when it clarifies a consequential distinction or boundary. Trust readers to infer straightforward implications.
 
 ## Entrypoint
 
