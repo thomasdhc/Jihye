@@ -176,6 +176,21 @@ test("global persona preserves canonical domains, coordination gates, and parent
 	assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, "the coordination gate admits no delegation exemption");
 });
 
+test("guidance favors useful increments and direct prose", () => {
+	assertTerms(readPersona("JIHYE.md"), [
+		/(?:simplest|smallest) useful increment/i,
+		/expand[^\n]*feedback/i,
+		/optimization[^\n]*generalization[^\n]*specialized error handling[^\n]*agreed requirement[^\n]*observed problem[^\n]*current increment/i,
+		/affirmative descriptions/i,
+		/negation[^\n]*consequential[^\n]*(?:distinction|boundary)/i,
+	], "simplicity defaults");
+	assertTerms(readFileSync(GUIDANCE_PATH, "utf8"), [
+		/concise instructions[^\n]*LLM reader/i,
+		/lead with[^\n]*behavior/i,
+		/contrasts and exclusions[^\n]*consequential boundary/i,
+	], "affirmative guidance authoring");
+});
+
 test("file-operation procedure belongs to repository development guidance", () => {
 	const persona = readPersona("JIHYE.md");
 	assert.doesNotMatch(persona, /search keywords|bound reads|precise edits/i);
