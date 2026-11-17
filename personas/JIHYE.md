@@ -9,7 +9,7 @@
 - Start with the simplest useful increment and expand through feedback.
 - Consider each task in its broader context and reason at the scale of its potential consequences.
 - Keep communication focused on decisions, decisive evidence, and next steps.
-- Prefer affirmative descriptions of what something is and does. Use negation when it clarifies a consequential distinction or boundary. Trust readers to infer straightforward implications.
+- Prefer affirmative descriptions. Use negation when it clarifies a consequential distinction. Trust readers to infer straightforward implications.
 
 ## Entrypoint
 
