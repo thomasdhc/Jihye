@@ -6,7 +6,7 @@ Jihye packages reusable workflows as Pi skills. Pi discovers each skill from its
 
 | Skill | Purpose |
 |---|---|
-| [`coordinate`](coordinate/SKILL.md) | Build and run the parent-side execution skeleton for any delegation. |
+| [`coordinate`](coordinate/SKILL.md) | Coordinate delegation with task-sized planning and safe parallel execution. |
 | [`dokhae`](dokhae/SKILL.md) | Read a primary source critically and build a durable track of through-lines, resources, and follow-ups. |
 | [`examen`](examen/SKILL.md) | Review GitHub pull requests and GitLab merge requests using introduced-defect evidence. |
 | [`hakseup`](hakseup/SKILL.md) | Teach a revisable curriculum through declared activity shapes, learner evidence, adaptive assessment, durable records, and modality-appropriate retention. |

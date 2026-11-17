@@ -66,24 +66,28 @@ test("skills have valid identifying frontmatter", () => {
 	]);
 });
 
-test("coordinate preserves its execution-skeleton algorithm", () => {
+test("coordinate scales planning while preserving execution safeguards", () => {
 	const content = readFileSync(join(SKILLS_ROOT, "coordinate", "SKILL.md"), "utf8");
-	assert.deepEqual(headings(content), ["Build the Execution Skeleton", "Run the Skeleton"]);
 	assertTerms(content, [
 		/Context and Delegation/,
 		/main-agent context/i,
-		/depth and breadth/i,
 		/acceptance invariant/i,
+		/bounded brief[^\n]*validate[^\n]*before launching/i,
+		/single bounded call[^\n]*brief is the plan/i,
+		/multi-stream work[^\n]*dependency map/i,
 		/delivery boundar/i,
 		/safe parallel/i,
 		/worktree isolation/i,
 		/approval or read gate/i,
+		/serialize dependent or conflicting calls/i,
+		/record[^\n]*only when applicable/i,
 		/integration and validation/i,
-		/first actionable parallel group/i,
-		/single delegated call/i,
+		/first actionable parallel group[^\n]*after coordination establishes safe work[^\n]*same turn/i,
+		/gate blocks write work[^\n]*allowed read-only work/i,
+		/verify returns[^\n]*reconcile decisive evidence/i,
+		/stop delegating[^\n]*already holds the evidence/i,
 	], "coordinate semantics");
 	assert.doesNotMatch(content, /\bcoordinator\b/i);
-	assert.doesNotMatch(content, /\bskip\b/i, "coordinate must exempt no delegation from the skeleton");
 });
 
 test("examen preserves introduced-defect and submission semantics", () => {

@@ -5,7 +5,9 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { type AgentConfig, buildPiArgs, getAgentDirectories, loadAgentsFromDirectories } from "../extensions/subagent/index.ts";
+import type { ExtensionAPI, ToolDefinition } from "@earendil-works/pi-coding-agent";
+
+import registerSubagent, { type AgentConfig, buildPiArgs, getAgentDirectories, loadAgentsFromDirectories } from "../extensions/subagent/index.ts";
 import { loadConfig, mcpBackedTools, providerExtensionsFor } from "../extensions/subagent/config.ts";
 import { defaultWebSearchRequiresMcp } from "../extensions/web-search/config.ts";
 
@@ -26,6 +28,23 @@ function assertProhibits(prompt: string, actions: string[], subject: string): vo
 		assert.ok(prohibitions.some((line) => line.includes(action)), `${subject} must prohibit ${action}`);
 	}
 }
+
+test("subagent tool guidance routes all bundled roles without changing its API", () => {
+	let tool: ToolDefinition | undefined;
+	registerSubagent({
+		registerTool(definition) { tool = definition; },
+	} as ExtensionAPI);
+	assert.ok(tool);
+	assert.equal(tool.name, "subagent");
+	assert.deepEqual(Object.keys(tool.parameters.properties).sort(), ["agent", "cwd", "task"]);
+	const guidelines = tool.promptGuidelines ?? [];
+	for (const guideline of guidelines) assert.match(guideline, /subagent/i);
+	const routing = guidelines.join("\n");
+	for (const role of ["scout", "researcher", "reviewer", "engineer"]) {
+		assert.match(routing, new RegExp(`\\b${role}\\b`), role);
+	}
+	assert.match(routing, /independent challenge[^\n]*reviewer/i);
+});
 
 test("loads portable bundled agent model specifications", () => {
 	const bundledAgents = loadAgentsFromDirectories([BUNDLED_AGENTS_DIR]);
