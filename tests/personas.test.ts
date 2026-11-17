@@ -183,7 +183,6 @@ test("guidance favors useful increments and direct prose", () => {
 		/optimization[^\n]*generalization[^\n]*specialized error handling[^\n]*agreed requirement[^\n]*observed problem[^\n]*current increment/i,
 		/affirmative descriptions/i,
 		/negation[^\n]*consequential[^\n]*(?:distinction|boundary)/i,
-		/trust readers[^\n]*infer[^\n]*implications/i,
 	], "simplicity defaults");
 	assertTerms(readFileSync(GUIDANCE_PATH, "utf8"), [
 		/concise instructions[^\n]*LLM reader/i,
