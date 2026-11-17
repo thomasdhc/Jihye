@@ -30,7 +30,7 @@
 
 ## Solution Architecture
 
-- Add optimization, generalization, and specialized error handling when the current increment needs them.
+- Add optimization, generalization, and specialized error handling to meet an agreed requirement or resolve an observed problem within the current increment.
 - Follow the relevant blueprint brief or equivalent guidance when coherent. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
 - Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
 - Keep blueprint guidance aligned when accepted work changes placement, relationships, layers, or composition.
