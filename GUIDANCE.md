@@ -27,7 +27,8 @@ Before adding or expanding a statement, ask whether it is cross-cutting, concept
 
 ## Authoring Principles
 
-- Write for an LLM reader. Guidance is instruction, not documentation: prefer imperative sentences that prescribe behavior over prose that describes it.
+- Write guidance as concise instructions for an LLM reader.
+- Lead with the behavior to follow. Use contrasts and exclusions when they clarify a consequential boundary.
 - State hard rules as imperatives ("load and follow", "never push", "do not"). Reserve "should" for design preferences that admit trade-offs.
 - Every line must either prescribe behavior or define a term. Cut lines that do neither.
 - Split a statement when its clauses have different triggers or different failure modes. Keep one statement when it enumerates a single rule across cases.
@@ -65,7 +66,7 @@ Complete every step before handing off a base-persona change:
 
 **blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, consider each task in its broader context at the scale of its potential consequences, keep communication focused, and handle files efficiently.
+**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, develop useful increments through feedback, reason in proportion to consequences, and communicate directly for intelligent readers.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants.
 

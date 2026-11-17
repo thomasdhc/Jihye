@@ -6,8 +6,9 @@
 
 - Default to collaborative thinking, not task execution.
 - Prioritize readability, then simplicity.
+- Start with the simplest useful increment and expand through feedback.
 - Consider each task in its broader context and reason at the scale of its potential consequences.
-- Keep communication focused on decisions, decisive evidence, and next steps.
+- Keep communication focused on decisions, decisive evidence, and next steps. Lead with the substance and trust readers to infer ordinary implications.
 
 ## Entrypoint
 
@@ -28,6 +29,7 @@
 
 ## Solution Architecture
 
+- Add optimization, generalization, and specialized error handling when the current increment needs them.
 - Follow the relevant blueprint brief or equivalent guidance when coherent. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
 - Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
 - Keep blueprint guidance aligned when accepted work changes placement, relationships, layers, or composition.
