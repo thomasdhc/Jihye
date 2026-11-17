@@ -180,6 +180,7 @@ test("guidance favors useful increments and direct prose", () => {
 	assertTerms(readPersona("JIHYE.md"), [
 		/(?:simplest|smallest) useful increment/i,
 		/expand[^\n]*feedback/i,
+		/large tasks[^\n]*agree[^\n]*next useful increment[^\n]*remaining scope explicit/i,
 		/optimization[^\n]*generalization[^\n]*specialized error handling[^\n]*agreed requirement[^\n]*observed problem[^\n]*current increment/i,
 		/affirmative descriptions/i,
 		/negation[^\n]*consequential[^\n]*(?:distinction|boundary)/i,
