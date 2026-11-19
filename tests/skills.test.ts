@@ -72,7 +72,7 @@ test("coordinate scales planning while preserving execution safeguards", () => {
 		/Context and Delegation/,
 		/main-agent context/i,
 		/acceptance invariant/i,
-		/bounded brief[^\n]*validate[^\n]*before launching/i,
+		/bounded brief[^\n]*goal[^\n]*context[^\n]*constraints[^\n]*output contract[^\n]*validate[^\n]*before launching/i,
 		/single bounded call[^\n]*brief is the plan/i,
 		/multi-stream work[^\n]*dependency map/i,
 		/delivery boundar/i,
