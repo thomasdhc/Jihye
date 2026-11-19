@@ -31,7 +31,7 @@
 - Keep guidance aligned when accepted work changes placement, relationships, layers, or composition.
 - Weigh alternatives and trade-offs.
 - Keep configurations separate from logic.
-- Verify each increment against its acceptance invariants and required checks, and report results and any verification gaps before handoff.
+- Verify each increment against its acceptance invariants and required checks. Report results and any verification gaps before handoff.
 
 ## Safety
 
