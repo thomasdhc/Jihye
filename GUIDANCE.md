@@ -12,7 +12,6 @@ Read this before editing any repository `AGENTS.md` or file under `personas/` or
 
 - Constrain outcomes, boundaries, and invariants; leave execution methods to the agent.
 - Preserve deliberate interpretive space when Fidelity and the governing context can resolve the method without weakening the constraint.
-- Prefer established vocabulary. Introduce a term only when it captures a durable distinction more clearly and concisely than existing language.
 - State each concept once. Do not add fallback ladders, exhaustive edge cases, or repeated safeguards to handhold execution.
 - Put operational procedures in workspace guidance, Git guidance, subagent personas, skills, or repository guidance.
 - Keep each statement concise enough that its governing idea remains visible.
@@ -22,26 +21,22 @@ Before adding or expanding a statement, ask whether it is cross-cutting, concept
 ## Guidance Architecture
 
 - Keep each file's scope singular: repository guidance defines the blueprint and local constraints for its governed tree, a persona defines identity and standing behavior, a skill defines one workflow, and a subagent definition defines one bounded role.
-- Keep configuration and environment-specific values out of reusable guidance. Local facts belong in workspace-owned files such as `REPO.md` and `USERNAME.md`.
-- Keep maintainer rationale here and runtime behavior in its owning guidance file.
+- Keep configuration and environment-specific values in workspace-owned files such as `REPO.md` and `USERNAME.md`.
 
 ## Authoring Principles
 
 - Write guidance as concise instructions for an LLM reader.
-- Lead with the behavior to follow. Use contrasts and exclusions when they clarify a consequential boundary.
-- State hard rules as imperatives ("load and follow", "never push", "do not"). Reserve "should" for design preferences that admit trade-offs.
+- State hard rules and gates as imperatives ("load and follow", "never push", "do not"); advisory phrasing weakens a gate into a suggestion agents skip under pressure. Reserve "should" for design preferences that admit trade-offs.
 - Every line must either prescribe behavior or define a term. Cut lines that do neither.
 - Split a statement when its clauses have different triggers or different failure modes. Keep one statement when it enumerates a single rule across cases.
-- Keep gates imperative. Advisory phrasing ("should refer to") weakens a gate into a suggestion; agents skip suggestions under pressure.
-- Echo glossary terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file. Do not paraphrase a glossary term where the term itself fits.
 
 ## Language and Vocabulary
 
-- Use the glossary below as a controlled vocabulary. When a glossary term applies, use it; do not coin a synonym.
+- Use the glossary below as a controlled vocabulary and echo its terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file.
 - Where a term lists qualified kinds, use the qualified form ("approval gate", "delivery boundary"). Use the bare term only for the general concept.
 - Name a bundled subagent role in backticks and qualify it as a `<role>` subagent on its first use in a file. Never leave a bare role word where a platform, human, or document sense can be read; name that sense explicitly.
 - Match the verb to the term's kind. Apply a domain; never pass one. Pass a gate you must satisfy, and apply a gate to the work you are evaluating. State an invariant as a condition that holds rather than a step to complete.
-- Extend the glossary sparingly. A word earns an entry when it packs unique meaning, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review, not ad hoc in a single file.
+- Extend the glossary sparingly. A term earns an entry when it captures a durable distinction more clearly than existing language, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review.
 - Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
 
 ## Changing the Base Persona
@@ -60,21 +55,21 @@ Complete every step before handing off a base-persona change:
 
 **main-agent context** — the primary agent's loaded runtime context and working memory. It holds universal Jihye policy, source-of-truth task state, decisions, decisive evidence, and final synthesis; a subagent receives independently loaded policy and its bounded brief, not this context.
 
-**Fidelity** — the project-wide invariant: preserve the established outcome, intent, prompt boundary, source-of-truth context, acceptance invariants, and required behavior throughout the work.
+**Fidelity** — the project-wide invariant that the established task holds throughout the work; `JIHYE.md` enumerates what it preserves.
 
 **blueprint** — the maintained, evidence-backed architectural model of a repository or scoped system: its placement within a larger whole, the relationships and contracts connecting its parts, the layers separating responsibilities, and the composition rules by which features are assembled and extended. Blueprints nest by scope. Distinguish an existing blueprint from an explicitly intended target blueprint.
 
 **blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, develop useful increments through feedback, reason in proportion to consequences, and describe affirmatively.
+**Principles** — the main-agent's standing posture toward collaboration, prose, increments, and consequences.
 
-**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity and surface consequential assumptions; agree on the next increment for large tasks and keep the remaining scope explicit.
+**Entrypoint** — the main-agent framing of a request before selecting an approach: Fidelity, consequential assumptions, and increment scope.
 
 **Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, retaining ownership, deciding whether to delegate, routing delegation through the `coordinate` skill and subagent roles, and bounding brief authority.
 
 **Solution Architecture** — the main-agent criteria for selecting and shaping a solution: blueprint sourcing, blueprint coherence, surfacing stale guidance and necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
-**Validation** — the main-agent policy for verifying work: run commands from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant through automated tests or explicit manual checks, and report each check, its result, and anything that could not run.
+**Validation** — the main-agent policy for verifying work and reporting what was checked.
 
 **Safety** — the standing main-agent protections against exposing or committing secrets, credentials, environment files, workstation authentication material, or other protected data.
 
@@ -104,5 +99,4 @@ Complete every step before handing off a base-persona change:
 
 - Distinguish instruction-mediated behavioral policy from runtime-enforced safeguards; do not describe model compliance as mechanical enforcement.
 - Distinguish structural guidance checks from behavioral evaluation; file and term assertions do not demonstrate agent adherence.
-- Test structure and semantics, not phrasing: files exist, required sections are present, and hard invariants hold.
-- Do not pin guidance prose word-for-word in tests. Wording changes with every revision; pull-request review is the write-protection gate for guidance wording.
+- Test structure and semantics: files exist, required sections are present, and hard invariants hold. Pull-request review is the write-protection gate for guidance wording.

@@ -77,9 +77,9 @@ test("personas include the global and workspace guidance chain", () => {
 		/jihye-setup/i,
 		/workspace_directory\/REPO\.md[^\n]*repositories[^\n]*environment activation[^\n]*worktree locations/i,
 		/workspace_directory\/USERNAME\.md[^\n]*branch[^\n]*agent commit command[^\n]*handing off a command/i,
-		/personas_directory\/GIT\.md[^\n]*before loading repository guidance/i,
+		/personas_directory\/GIT\.md[^\n]*gates loading repository guidance/i,
 		/reusable repository index/i,
-		/project todo[^\n]*before planning or changing repository files/i,
+		/project todo[^\n]*gates planning or changing repository files/i,
 		/first tool call/i,
 		/nature of the action[^\n]*never its size or obviousness/i,
 		/after compaction[^\n]*re-pass a read gate[^\n]*guidance still applies[^\n]*next action[^\n]*governs/i,
@@ -185,9 +185,8 @@ test("guidance favors useful increments and direct prose", () => {
 	], "simplicity defaults");
 	assertTerms(readFileSync(GUIDANCE_PATH, "utf8"), [
 		/concise instructions[^\n]*LLM reader/i,
-		/lead with[^\n]*behavior/i,
-		/contrasts and exclusions[^\n]*consequential boundary/i,
-	], "affirmative guidance authoring");
+		/hard rules and gates as imperatives/i,
+	], "imperative guidance authoring");
 });
 
 test("file-operation procedure belongs to repository development guidance", () => {

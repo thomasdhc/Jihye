@@ -20,8 +20,7 @@ Bundled definitions select `model_tier: standard` or `model_tier: deep` instead 
 
 Pi packages do not install context files automatically. Use the two symlink commands in the root [`README.md`](../README.md).
 
-- Verify that both destinations do not exist before linking.
-- Inspect and remove obsolete symlinks first; never overwrite a regular context file.
+- Link only into empty destinations: remove obsolete symlinks first, and never overwrite a regular context file.
 - Run `/jihye-setup` after linking. Confirm that both guidance locations are managed and loaded, `workspace_profile` is `standard`, and the two local environment files are listed.
 
 After both links resolve, remove obsolete workspace links to `CLAUDE.md`, `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md`, plus any separately installed personas skill link. Keep these machine-local configuration files as regular files at the workspace root:
@@ -31,17 +30,16 @@ REPO.md
 USERNAME.md
 ```
 
-Initialize them from `templates/` when needed. Never link machine-specific configuration into Jihye.
+Initialize them from `templates/` when needed.
 
 ## Guidance Resolution
 
-Pi loads global and workspace context independently; neither persona imports the other. `JIHYE.md` defines Jihye's universal behavioral policy. The workspace and workflow files add only their environment- or task-specific deltas.
+Pi loads global and workspace context independently; Markdown links do not import Pi context, so each profile opens its own read gates explicitly.
 
 - Treat the **workspace root** as the location of local `REPO.md` and `USERNAME.md` configuration.
 - Treat the **policy directory** as the location of the workspace profile and its sibling `GIT.md` workflow file.
-- Treat subagent task briefs as task-specific context and authorization, never as replacement policy; bundled roles rely on applicable system and loaded context guidance.
 
-The `jihye-setup` extension supplies these locations as `workspace_directory` and `personas_directory`. Profiles use those facts directly rather than resolving symlink paths. Markdown links do not import Pi context; each profile opens its own read gates explicitly.
+The `jihye-setup` extension supplies these locations as `workspace_directory` and `personas_directory`. Profiles use those facts directly rather than resolving symlink paths.
 
 ## Skills
 

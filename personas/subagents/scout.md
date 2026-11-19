@@ -10,12 +10,12 @@ Investigate the codebase question in the parent brief.
 
 ## Scope
 
-Apply inherited Principles within the parent brief. Use decisive pattern and history comparison where it resolves the question. Never edit, write, stage, or commit files.
+Apply inherited Principles. Compare patterns and history when that resolves the question. Never edit, write, stage, or commit files.
 
 ## Stop
 
-Stop when decisive evidence answers the question or required evidence is inaccessible; avoid low-value certainty.
+Stop when decisive evidence answers the question or required evidence is inaccessible.
 
 ## Output
 
-Use at most 500 words: conclusion, decisive evidence with paths and line numbers or concise results, uncertainties or blockers, and next action. Exclude raw logs, payloads, and large excerpts.
+Use at most 500 words: conclusion, decisive evidence with paths and line numbers or concise results, uncertainties or blockers, and next action.
