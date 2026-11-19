@@ -66,15 +66,15 @@ Complete every step before handing off a base-persona change:
 
 **blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, develop useful increments through feedback, reason in proportion to consequences, and communicate directly for intelligent readers.
+**Principles** — the main-agent's standing posture: collaborate by default, prioritize readability then simplicity, develop useful increments through feedback, reason in proportion to consequences, and describe affirmatively.
 
-**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity by identifying the requested outcome, intent, prompt boundary, consequential assumptions, and acceptance invariants; agree on the next useful increment for large tasks and keep the remaining scope explicit.
+**Entrypoint** — the main-agent framing of a request before selecting an approach: establish the task's Fidelity and surface consequential assumptions; agree on the next increment for large tasks and keep the remaining scope explicit.
 
-**Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, deciding whether and how to delegate, briefing subagents, verifying their output, and retaining ownership.
+**Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, retaining ownership, deciding whether to delegate, routing delegation through the `coordinate` skill and subagent roles, and bounding brief authority.
 
 **Solution Architecture** — the main-agent criteria for selecting and shaping a solution: blueprint sourcing, blueprint coherence, surfacing stale guidance and necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
 
-**Validation** — the main-agent policy for verifying work: follow repository validation instructions from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant within the prompt boundary through automated tests or explicit manual checks, and report results and anything that could not run.
+**Validation** — the main-agent policy for verifying work: run commands from the correct working directory, run targeted checks of changed behavior while iterating, run every validation command required by repository guidance before handoff, verify every acceptance invariant through automated tests or explicit manual checks, and report each check, its result, and anything that could not run.
 
 **Safety** — the standing main-agent protections against exposing or committing secrets, credentials, environment files, workstation authentication material, or other protected data.
 
