@@ -149,10 +149,10 @@ test("global persona preserves canonical domains, coordination gates, and parent
 	assertTerms(persona, [
 		/\bFidelity\b/,
 		/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
-		/broader context[^\n]*scale of its potential consequences/i,
-		/blueprint brief[^\n]*equivalent guidance/i,
-		/blueprint guidance aligned[^\n]*placement[^\n]*relationships[^\n]*layers[^\n]*composition/i,
-		/derive only the task-relevant blueprint[^\n]*source-of-truth evidence/i,
+		/broader context/i,
+		/surface stale or contradictory guidance[^\n]*suggest refactors[^\n]*inefficient or unsound/i,
+		/keep guidance aligned[^\n]*placement[^\n]*relationships[^\n]*layers[^\n]*composition/i,
+		/configurations separate from logic/i,
 		/alternatives and trade-offs/i,
 		/targeted check[^\n]*changed behavior/i,
 		/every validation command[^\n]*required by repository guidance/i,
@@ -174,12 +174,13 @@ test("global persona preserves canonical domains, coordination gates, and parent
 	assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, "the coordination gate admits no delegation exemption");
 });
 
-test("guidance favors useful increments and direct prose", () => {
+test("guidance favors small increments and direct prose", () => {
 	assertTerms(readPersona("JIHYE.md"), [
-		/(?:simplest|smallest) useful increment/i,
+		/prioritize readability and simplicity/i,
+		/smallest increment/i,
 		/expand[^\n]*feedback/i,
 		/large tasks[^\n]*agree[^\n]*next increment[^\n]*remaining scope explicit/i,
-		/optimization[^\n]*generalization[^\n]*specialized error handling[^\n]*agreed requirement[^\n]*observed problem[^\n]*current increment/i,
+		/optimization[^\n]*generalization[^\n]*specialized error handling[^\n]*scoped to the current increment/i,
 		/affirmative descriptions/i,
 		/negation[^\n]*consequential[^\n]*(?:distinction|boundary)/i,
 	], "simplicity defaults");

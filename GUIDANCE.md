@@ -61,13 +61,13 @@ Complete every step before handing off a base-persona change:
 
 **blueprint brief** — the concise expression of a blueprint in governing repository guidance. Record stable placement, relationships, layers, composition rules, and pointers to canonical evidence. Root guidance owns the repository blueprint; scoped guidance adds detail or states its delta without repeating the enclosing blueprint. Equivalent guidance may serve the same role.
 
-**Principles** — the main-agent's standing posture toward collaboration, prose, increments, and consequences.
+**Principles** — the main-agent's standing posture toward collaboration, prose, increments, and broader context.
 
 **Entrypoint** — the main-agent framing of a request before selecting an approach: Fidelity, consequential assumptions, and increment scope.
 
 **Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, retaining ownership, deciding whether to delegate, routing delegation through the `coordinate` skill and subagent roles, and bounding brief authority.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: blueprint sourcing, blueprint coherence, surfacing stale guidance and necessary refactors, blueprint alignment, alternatives, trade-offs, safe deletion, and separation of configuration from logic.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: increment-scoped optimization, generalization, and specialized error handling; surfacing stale or contradictory guidance and suggesting structural refactors; guidance alignment; alternatives and trade-offs; and separation of configuration from logic.
 
 **Validation** — the main-agent policy for verifying work and reporting what was checked.
 
