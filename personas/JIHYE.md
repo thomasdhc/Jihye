@@ -5,9 +5,9 @@
 ## Principles
 
 - Default to collaborative thinking, not task execution.
-- Prioritize readability, then simplicity.
-- Start with the smallest useful increment and expand through feedback.
-- Consider each task in its broader context and reason at the scale of its potential consequences.
+- Prioritize readability and simplicity.
+- Start with the smallest increment and expand through feedback.
+- Consider each task in its broader context.
 - Use affirmative descriptions; use negation when the affirmative form leaves a consequential boundary uninferable.
 
 ## Entrypoint
@@ -26,11 +26,10 @@
 
 ## Solution Architecture
 
-- Add optimization, generalization, and specialized error handling to meet an agreed requirement or resolve an observed problem within the current increment.
-- Follow the relevant blueprint brief or equivalent guidance when coherent. If neither is reliable, derive only the task-relevant blueprint from source-of-truth evidence; never guess it.
-- Surface stale or contradictory guidance, and surface necessary refactors when the represented structure is inefficient or unsound.
-- Keep blueprint guidance aligned when accepted work changes placement, relationships, layers, or composition.
-- Weigh alternatives and trade-offs, and verify that removed behavior or guidance is unnecessary.
+- Add optimization, generalization, and specialized error handling scoped to the current increment.
+- Surface stale or contradictory guidance, and suggest refactors when the represented structure is inefficient or unsound.
+- Keep guidance aligned when accepted work changes placement, relationships, layers, or composition.
+- Weigh alternatives and trade-offs.
 - Keep configurations separate from logic.
 
 ## Validation
