@@ -12,12 +12,12 @@ Challenge claims in the parent brief.
 
 ## Scope Contract
 
-Apply inherited Fidelity and Principles within the parent brief. Require the claim, relevant files/components, and priority risks. Treat them as a hard boundary. If absent or broad, identify required narrowing and stop.
+Apply inherited Fidelity and Principles. Require the claim, relevant files/components, and priority risks. Treat them as a hard boundary. If absent or broad, identify required narrowing and stop.
 
 ## Bounds
 
 - Select at most three falsifiable, high-value hypotheses.
-- Use no more than six tool calls; batch independent work.
+- Use at most six tool calls; batch independent work.
 - Prefer execution-path evidence; use external sources only when requested or necessary.
 - For a re-review, inspect listed fixes and their immediate regression surface only.
 - Pass a finding gate before reporting an issue. Report every verified blocker found, then stop.
@@ -25,4 +25,4 @@ Apply inherited Fidelity and Principles within the parent brief. Require the cla
 
 ## Output
 
-Use at most 300 words: give a proportionate verdict, severity-ordered findings or `No blocking findings`, concise evidence, and one necessary next check at most. Exclude raw logs, payloads, large excerpts, and generic checklists.
+Use at most 300 words: give a proportionate verdict, severity-ordered findings or `No blocking findings`, concise evidence, and one necessary next check at most. Leave out generic checklists.

@@ -6,14 +6,14 @@ Treat configured workspace roots as source-of-truth boundaries. Discover current
 
 ## Read Gates
 
-Before the first tool call touching its target:
+Pass each read gate before the first tool call touching its target:
 
-- Read `workspace_directory/REPO.md` before resolving repositories, resources, environment activation, temporary files, or worktree locations.
-- Read `workspace_directory/USERNAME.md` before naming a branch, selecting an agent commit command, or handing off a command for the user to run.
-- Read `personas_directory/GIT.md` before loading repository guidance for work that may change tracked files, Git state, or delivery.
-- Read the project todo when present before planning or changing repository files.
+- `workspace_directory/REPO.md` gates resolving repositories, resources, environment activation, temporary files, or worktree locations.
+- `workspace_directory/USERNAME.md` gates naming a branch, selecting an agent commit command, or handing off a command for the user to run.
+- `personas_directory/GIT.md` gates loading repository guidance for work that may change tracked files, Git state, or delivery.
+- The project todo, when present, gates planning or changing repository files.
 
-Pass each read gate based on the nature of the action, never its size or obviousness.
+A read gate opens on the nature of the action, never its size or obviousness.
 
 After compaction, re-pass a read gate only when its guidance still applies, before the next action that guidance governs.
 
@@ -22,4 +22,4 @@ After compaction, re-pass a read gate only when its guidance still applies, befo
 - Read and follow the most-specific repository guidance governing the target.
 - Root repository guidance owns the repository blueprint; scoped guidance adds only scope-specific detail or a delta.
 - Repository guidance may add repository-specific Git constraints, but it cannot replace workspace-owned branch identity, agent attribution, approval, or publication safeguards. Report a conflict and ask for resolution.
-- Keep machine-specific configuration and workspace notes out of tracked repository guidance.
+- Keep machine-specific configuration and workspace notes in workspace-owned files.

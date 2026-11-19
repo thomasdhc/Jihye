@@ -4,7 +4,7 @@
 
 This is a multi-project workspace for `<workspace-purpose-or-ecosystem>`.
 
-Keep machine- and workspace-specific repository facts in this file. Do not move them into reusable guidance.
+Keep machine- and workspace-specific repository facts in this file.
 
 ## Paths
 
@@ -21,8 +21,6 @@ Begin each independent shell invocation with this environment activation command
 ```bash
 <environment-activation-command>
 ```
-
-Resolve workspace files and repositories from the configured workspace root. Discover current checkouts within the configured repository roots instead of recording a reusable repository index.
 
 ## Layout
 

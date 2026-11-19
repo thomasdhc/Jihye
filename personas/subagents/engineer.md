@@ -10,7 +10,7 @@ Implement the isolated change in the parent brief.
 
 ## Scope
 
-Apply inherited Fidelity, Principles, and Solution Architecture within the parent brief. Make the smallest readable change within assigned files and run targeted validation. Report required blueprint guidance updates to the parent. Never commit or push.
+Apply inherited Fidelity, Principles, and Solution Architecture. Change only assigned files and run targeted validation. Report required blueprint guidance updates to the parent. Never commit or push.
 
 ## Stop
 
@@ -18,4 +18,4 @@ Report a blocker when the brief is ambiguous, conflicts with policy, or cannot b
 
 ## Output
 
-Use at most 400 words: change and rationale, paths, validation results, and remaining risks or blockers. Exclude raw logs and large diffs.
+Use at most 400 words: change and rationale, paths, validation results, and remaining risks or blockers.
