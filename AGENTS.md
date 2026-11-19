@@ -4,13 +4,13 @@ Portable Pi extensions, skills, agents, and reusable guidance packaged for compo
 
 ## Blueprint Brief
 
-Jihye is an installable Pi toolkit. The package manifest loads runtime integrations from `extensions/` and on-demand workflows from `skills/`. `personas/` supplies standing policy through the separately installed guidance chain, while the `subagent` extension loads its bundled agent definitions directly from `personas/subagents/`. Tests pin behavioral contracts across those layers.
+Jihye is an installable Pi toolkit. The package manifest loads runtime integrations from `extensions/` and on-demand workflows from `skills/`. `guidance/` supplies standing policy through the separately installed guidance chain, while the `subagent` extension loads its bundled agent definitions directly from `guidance/subagents/`. Tests pin behavioral contracts across those layers.
 
-Place each capability in its owning layer: extensions integrate with Pi runtime APIs, skills own bounded workflows, and personas own inherited policy and agent definitions. Keep cross-layer relationships explicit and compose shared behavior through defined contracts rather than bypassing layer ownership.
+Place each capability in its owning layer: extensions integrate with Pi runtime APIs, skills own bounded workflows, and guidance owns inherited policy and agent definitions. Keep cross-layer relationships explicit and compose shared behavior through defined contracts rather than bypassing layer ownership.
 
 Keep Jihye independently usable as the global baseline. Put environment-specific integrations and workflows in separate Pi packages, selected through each machine's global settings. Keep machine-specific configuration local.
 
-Canonical evidence: `package.json`, `README.md`, `extensions/README.md`, `skills/README.md`, `personas/README.md`, `docs/design/environment-composition.md`, `examples/composition/`, and `tests/`.
+Canonical evidence: `package.json`, `README.md`, `extensions/README.md`, `skills/README.md`, `guidance/README.md`, `docs/design/environment-composition.md`, `examples/composition/`, and `tests/`.
 
 ## Install / Local Setup
 
@@ -25,7 +25,7 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 
 - Indent TypeScript and JavaScript with tabs, displayed at four columns. Do not replace indentation tabs with spaces; follow `.editorconfig` for formats that require spaces.
 - Read Pi's extension and package documentation before changing extension APIs or package metadata.
-- Read `GUIDANCE.md` before writing or revising any repository `AGENTS.md` or Markdown guidance under `personas/` or `skills/`; it defines Jihye's guidance architecture, authoring standards, and shared glossary.
+- Read `docs/guidance-architecture.md` before writing or revising any repository `AGENTS.md` or Markdown guidance under `guidance/` or `skills/`; it defines Jihye's guidance architecture, authoring standards, and shared glossary.
 - Read and write files efficiently. Search keywords, bound reads, and execute precise edits.
 - Follow workspace-owned Git guidance for branch identity, agent attribution, approval, and publication.
 - Use concise conventional-style commit messages:
@@ -34,7 +34,8 @@ Run `/reload` in any existing Pi session after installing or changing extensions
   - `docs: <summary>` for documentation-only changes
   - `ci: <summary>` for CI, release, or automation changes
   - Scoped forms are allowed when useful, e.g. `fix(ci): <summary>` or `feat(subagent): <summary>`
-- Bump the `package.json` version once in any branch that changes `personas/JIHYE.md`, before opening the pull request. Prefer `patch` for wording and clarification and `minor` for adding, removing, or renaming a domain, gate, or invariant.
+- Bump the `package.json` version once in any branch that changes `guidance/JIHYE.md`, before opening the pull request. Prefer `patch` for wording and clarification and `minor` for adding, removing, or renaming a domain, gate, or invariant.
+- Update `CHANGELOG.md` whenever the package version changes. Keep newest versions first, summarize user-visible changes, and include migration steps for breaking paths, setup contracts, or behavior.
 - Tag each version that lands on `main` with an annotated tag named `v<version>` matching `package.json`, with the message `Jihye v<version>`, placed on the merge commit. Tag only the version `main` ends on, never an intermediate bump. Publishing a tag follows the same push handoff as a branch.
 - Keep each extension focused and independently testable.
 - Keep policy configuration separate from interception logic.
@@ -48,7 +49,7 @@ Run `/reload` in any existing Pi session after installing or changing extensions
 ## Layout
 
 - `extensions/` — Pi extensions loaded by the package manifest.
-- `personas/` — Global and workspace guidance, local-configuration templates, and portable default subagent definitions.
+- `guidance/` — Global and workspace guidance, local-configuration templates, and portable default subagent definitions.
 - `skills/` — Pi skills loaded by the package manifest.
 - `examples/` — Portable package-declaration examples.
 - `docs/design/` — Maintainer design notes and composition contracts.

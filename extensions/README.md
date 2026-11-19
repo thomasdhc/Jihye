@@ -8,7 +8,7 @@ Jihye packages focused Pi extensions that register tools and commands, enforce s
 |---|---|
 | [`bash-guard`](bash-guard/) | Interactive prompt for destructive commands and Git publication boundaries; headless hard-block in subagents. |
 | [`custom-header`](custom-header/) | Custom Pi startup header rendered from an editable artwork template. |
-| [`jihye-setup`](jihye-setup/) | Resolve Jihye package, personas, and workspace paths and hand them to the agent as facts. |
+| [`jihye-setup`](jihye-setup/) | Resolve Jihye package, guidance, and workspace paths and hand them to the agent as facts. |
 | [`subagent`](subagent/) | Run Pi subagents as tools with portable bundled definitions and per-user overrides. |
 | [`terminal-notify`](terminal-notify.ts) | Send a native desktop alert when Pi is ready for input. |
 | [`voice`](voice/) | Record speech and send it to the agent as a transcribed user message. |
@@ -67,7 +67,7 @@ cp extensions/web-search/auth.example.json extensions/web-search/auth.json
 
 ### `subagent` agent definitions
 
-Portable default definitions are tracked in [`../personas/subagents/`](../personas/subagents/). They declare baseline and optional alternate capability tiers instead of fixed models:
+Portable default definitions are tracked in [`../guidance/subagents/`](../guidance/subagents/). They declare baseline and optional alternate capability tiers instead of fixed models:
 
 | Agent | Baseline tier | Opt-in alternate tier | Thinking |
 |---|---|---|---|
@@ -120,17 +120,17 @@ The same workstation config may override model maps. Existing providers may over
 }
 ```
 
-Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `personas/subagents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `personas/subagents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
+Package-local overrides in untracked `.pi/agents/` replace the portable bundled definitions in `guidance/subagents/` for this checkout. Create a definition with the same frontmatter `name` in `~/.pi/agent/agents/` to override bundled agents outside this package policy. Agent directories are merged in order: bundled `guidance/subagents/`, user-global `~/.pi/agent/agents/`, then package-local `.pi/agents/`. Later definitions replace the complete earlier definition, including prompt, tools, model, and thinking level. Remove the later definition to return to the previous one. User-only and package-only agent names are also loaded.
 
 ### `jihye-setup` facts
 
-The `jihye-setup` extension resolves the installed package root, its `personas/` directory, the active global persona, and the nearest workspace root, then appends those paths to the system prompt each turn. Guidance files can therefore name `workspace_directory` and `personas_directory` without asking an agent to run `readlink` and `dirname` first. The package version stays out of the prompt. Instead, setup records an invisible `jihye-runtime` session entry when the Jihye version, persona profile, or Pi version changes, and a session-start card repeats the current summary in the terminal only. Neither entry enters the conversation.
+The `jihye-setup` extension resolves the installed package root, its `guidance/` directory, the active global profile, and the nearest workspace root, then appends those paths to the system prompt each turn. Guidance files can therefore name `workspace_directory` and `guidance_directory` without asking an agent to run `readlink` and `dirname` first. The package version stays out of the prompt. Instead, setup records an invisible `jihye-runtime` session entry when the Jihye version, guidance profile, or Pi version changes, and a session-start card repeats the current summary in the terminal only. Neither entry enters the conversation.
 
 ```text
 /jihye-setup            # resolved paths, guidance health, legacy leftovers
 ```
 
-Workspace roots are discovered by walking up from the working directory, looking for a context file linked into `personas/` or a directory holding `REPO.md` and `USERNAME.md`. Override discovery, or hide the card, in `~/.pi/agent/jihye-setup.json` (or `$PI_CODING_AGENT_DIR/jihye-setup.json`):
+Workspace roots are discovered by walking up from the working directory, looking for a context file linked into `guidance/` or a directory holding `REPO.md` and `USERNAME.md`. Override discovery, or hide the card, in `~/.pi/agent/jihye-setup.json` (or `$PI_CODING_AGENT_DIR/jihye-setup.json`):
 
 ```json
 {

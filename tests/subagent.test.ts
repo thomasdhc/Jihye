@@ -12,7 +12,7 @@ import { loadConfig, mcpBackedTools, providerExtensionsFor } from "../extensions
 import { defaultWebSearchRequiresMcp } from "../extensions/web-search/config.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const BUNDLED_AGENTS_DIR = join(REPO_ROOT, "personas", "subagents");
+const BUNDLED_AGENTS_DIR = join(REPO_ROOT, "guidance", "subagents");
 
 function extensionArgs(args: string[]): string[] {
 	const paths: string[] = [];

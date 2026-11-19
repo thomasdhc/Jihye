@@ -18,7 +18,7 @@ import type { ExtensionConfig } from "./types.ts";
 const EXT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSIONS_DIR = path.dirname(EXT_DIR);
 const PACKAGE_ROOT = path.dirname(EXTENSIONS_DIR);
-export const PACKAGE_AGENTS_DIR = path.join(PACKAGE_ROOT, "personas", "subagents");
+export const PACKAGE_AGENTS_DIR = path.join(PACKAGE_ROOT, "guidance", "subagents");
 export const PACKAGE_LOCAL_AGENTS_DIR = path.join(PACKAGE_ROOT, ".pi", "agents");
 export const USER_AGENTS_DIR = path.join(getAgentDir(), "agents");
 const TOOLS_DIR = path.join(EXT_DIR, "tools");

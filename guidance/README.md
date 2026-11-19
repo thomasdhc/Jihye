@@ -1,6 +1,6 @@
-# Jihye Personas
+# Jihye Guidance
 
-The `personas/` tree distributes reusable global guidance, workspace policy, local-configuration templates, and portable subagent definitions.
+The `guidance/` tree distributes reusable global guidance, workspace policy, local-configuration templates, and portable subagent definitions.
 
 ## Layout
 
@@ -12,18 +12,18 @@ The `personas/` tree distributes reusable global guidance, workspace policy, loc
 | `templates/` | Provide factual templates for local `REPO.md` and `USERNAME.md`. |
 | `subagents/` | Define portable, bounded roles that inherit loaded policy. |
 
-Treat `personas/subagents/` as the single canonical source for bundled subagent definitions. The extension reads this directory directly; do not install a duplicate definition set.
+Treat `guidance/subagents/` as the single canonical source for bundled subagent definitions. The extension reads this directory directly; do not install a duplicate definition set.
 
 Bundled definitions select `model_tier: standard` or `model_tier: deep` instead of pinning a provider-specific model. Read the root [`README.md`](../README.md) for tier maps and override precedence. Use `model:` only in an override that must pin one exact model.
 
 ## Install the Guidance Chain
 
-Pi packages do not install context files automatically. Use the two symlink commands in the root [`README.md`](../README.md).
+Pi packages do not install context files automatically. Use the two symlink commands in the root [`README.md`](../README.md). For upgrades from `personas/`, follow the migration guide in [`CHANGELOG.md`](../CHANGELOG.md#0110).
 
 - Link only into empty destinations: remove obsolete symlinks first, and never overwrite a regular context file.
 - Run `/jihye-setup` after linking. Confirm that both guidance locations are managed and loaded, `workspace_profile` is `standard`, and the two local environment files are listed.
 
-After both links resolve, remove obsolete workspace links to `CLAUDE.md`, `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md`, plus any separately installed personas skill link. Keep these machine-local configuration files as regular files at the workspace root:
+After both links resolve, remove obsolete workspace links to `CLAUDE.md`, `DEVELOPMENT.md`, `ENVIRONMENT.md`, and `GIT.md`, plus any separately installed legacy `personas` skill link. Keep these machine-local configuration files as regular files at the workspace root:
 
 ```text
 REPO.md
@@ -39,7 +39,7 @@ Pi loads global and workspace context independently; Markdown links do not impor
 - Treat the **workspace root** as the location of local `REPO.md` and `USERNAME.md` configuration.
 - Treat the **policy directory** as the location of the workspace profile and its sibling `GIT.md` workflow file.
 
-The `jihye-setup` extension supplies these locations as `workspace_directory` and `personas_directory`. Profiles use those facts directly rather than resolving symlink paths.
+The `jihye-setup` extension supplies these locations as `workspace_directory` and `guidance_directory`. Profiles use those facts directly rather than resolving symlink paths.
 
 ## Skills
 

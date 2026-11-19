@@ -1,6 +1,6 @@
 # Workspace
 
-Use `workspace_directory` and `personas_directory` supplied by `jihye-setup`; ask when either is missing or unresolved.
+Use `workspace_directory` and `guidance_directory` supplied by `jihye-setup`; ask when either is missing or unresolved.
 
 Treat configured workspace roots as source-of-truth boundaries. Discover current checkouts within them rather than keeping a reusable repository index.
 
@@ -10,7 +10,7 @@ Pass each read gate before the first tool call touching its target:
 
 - `workspace_directory/REPO.md` gates resolving repositories, resources, environment activation, temporary files, or worktree locations.
 - `workspace_directory/USERNAME.md` gates naming a branch, selecting an agent commit command, or handing off a command for the user to run.
-- `personas_directory/GIT.md` gates loading repository guidance for work that may change tracked files, Git state, or delivery.
+- `guidance_directory/GIT.md` gates loading repository guidance for work that may change tracked files, Git state, or delivery.
 - The project todo, when present, gates planning or changing repository files.
 
 A read gate opens on the nature of the action, never its size or obviousness.

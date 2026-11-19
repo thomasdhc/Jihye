@@ -21,7 +21,7 @@ The [declaration example](../../examples/composition/settings.example.json) show
 
 Relative local sources resolve from the directory containing the settings file. Prepare local checkouts and their dependencies according to each package's instructions. Each machine manages its sources and versions independently.
 
-Start Pi at the workspace root and configure the [persona guidance chain](../../README.md#configure-persona) separately. Connections, authentication, and extension-specific settings follow their documented setup and precedence.
+Start Pi at the workspace root and configure the [guidance chain](../../README.md#configure-guidance) separately. Connections, authentication, and extension-specific settings follow their documented setup and precedence.
 
 ## Attachment Lifecycle
 

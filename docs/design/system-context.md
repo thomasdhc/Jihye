@@ -5,7 +5,7 @@ This note separates Jihye's context organization from conversation compaction. T
 ## Current Layers
 
 - **Standing context:** Pi loads the global `JIHYE.md` and workspace `WORKSPACE.md` guidance through its context-file chain. This content is part of the system prompt and remains independent of compacted session messages.
-- **Read-gated guidance:** `REPO.md`, `USERNAME.md`, `personas/GIT.md`, and repository or scoped guidance are read only when their gates apply. Those reads become session tool results and can cross a compaction boundary.
+- **Read-gated guidance:** `REPO.md`, `USERNAME.md`, `guidance/GIT.md`, and repository or scoped guidance are read only when their gates apply. Those reads become session tool results and can cross a compaction boundary.
 - **Skills:** Procedural workflows are loaded on demand and should own bounded processes rather than standing policy.
 - **Task state:** Outcomes, decisions, evidence, file state, and next actions belong to the session and its checkpoints.
 

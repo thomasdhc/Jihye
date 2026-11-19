@@ -1,7 +1,7 @@
 /**
  * Jihye Setup Extension
  *
- * Resolves where Jihye's package, personas, and workspace guidance live, then
+ * Resolves where Jihye's package and workspace guidance live, then
  * hands those paths to the agent as facts. Guidance files previously asked the
  * agent to derive them with `readlink`/`dirname` at the start of a session,
  * which is deterministic work an extension can do once and get right.
@@ -53,7 +53,7 @@ function collectWarnings(facts: JihyeSetupFacts, legacyExtensions: string[]): st
 	if (facts.profile === "missing") {
 		warnings.push(`No global context file at ${path.join(facts.agentDirectory, "AGENTS.md")}`);
 	} else if (facts.profile === "unmanaged") {
-		warnings.push(`Global context file is not a Jihye persona: ${path.join(facts.agentDirectory, "AGENTS.md")}`);
+		warnings.push(`Global context file is not managed Jihye guidance: ${path.join(facts.agentDirectory, "AGENTS.md")}`);
 	}
 
 	if (!facts.workspaceDirectory) {
@@ -105,7 +105,7 @@ function formatStatus(
 		`Jihye version: ${jihyeVersion ?? "unresolved"}`,
 		`Pi version: ${VERSION}`,
 		`Package: ${facts.packageRoot}`,
-		`Personas: ${facts.personasDirectory}`,
+		`Guidance directory: ${facts.guidanceDirectory}`,
 		`Workspace: ${facts.workspaceDirectory ?? "unresolved"}`,
 		...describeGuidance(facts, true).map((entry) => `Guidance: ${entry}`),
 		...facts.localEnvironmentFiles.map((file) => `Local environment: ${file}`),

@@ -8,7 +8,7 @@ Extensions provide capabilities, skills define workflows, and layered `AGENTS.md
 
 - [Extensions](extensions/README.md) — subagent orchestration, security safeguards, UI features, and other tools and runtime integrations.
 - [Skills](skills/README.md) — structured workflows for subagent delegation, code and guidance review, repository analysis, learning, planning, and preserving session knowledge.
-- [Personas](personas/README.md) — layered global and workspace guidance installed through `AGENTS.md`, subagent definitions, and local-configuration templates.
+- [Guidance](guidance/README.md) — layered global and workspace guidance installed through `AGENTS.md`, subagent definitions, and local-configuration templates.
 
 ## Requirements
 
@@ -36,7 +36,7 @@ Pull future package updates with:
 pi update --extensions
 ```
 
-Run `/reload` in an existing Pi session after installing or updating.
+Check the [changelog](CHANGELOG.md) for migration steps before updating. Run `/reload` in an existing Pi session after installing or updating and completing any migration.
 
 ### From a local checkout
 
@@ -49,7 +49,7 @@ pi install .
 
 A local-path installation loads changes directly from the checkout; run `/reload` after editing. Run `npm install` in the checkout before loading the package.
 
-## Configure Persona
+## Configure Guidance
 
 Pi packages do not install context files automatically, so configure two symlinks after installing Jihye. The commands below expect both destinations not to exist; inspect and remove obsolete symlinks first, and never overwrite a regular context file.
 
@@ -57,13 +57,13 @@ Pi packages do not install context files automatically, so configure two symlink
 JIHYE=/path/to/Jihye
 WORKSPACE=/path/to/workspace
 
-ln -s "$JIHYE/personas/JIHYE.md" ~/.pi/agent/AGENTS.md
-ln -s "$JIHYE/personas/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
+ln -s "$JIHYE/guidance/JIHYE.md" ~/.pi/agent/AGENTS.md
+ln -s "$JIHYE/guidance/WORKSPACE.md" "$WORKSPACE/AGENTS.md"
 ```
 
-The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `jihye-setup` extension resolves the package, personas, and workspace locations behind those symlinks, so guidance can reference sibling `GIT.md` policy without an agent deriving any path by hand.
+The workspace root keeps machine-local `REPO.md` and `USERNAME.md` files. The `jihye-setup` extension resolves the package, guidance, and workspace locations behind those symlinks, so guidance can reference sibling `GIT.md` policy without an agent deriving any path by hand.
 
-Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard`, and the two local environment files should be listed. See the [personas guide](personas/README.md) for local-configuration templates.
+Verify the chain with `/jihye-setup`: both guidance locations should report as managed and loaded, `workspace_profile` should read `standard`, and the two local environment files should be listed. See the [guidance guide](guidance/README.md) for local-configuration templates.
 
 ## Compose an Environment
 
@@ -81,7 +81,7 @@ Add optional environment packages alongside Jihye in the `packages` array of `~/
 
 ## Development
 
-Read the [Guidance Architecture and Authoring Standards](GUIDANCE.md) before changing repository guidance, personas, skills, or their governing vocabulary.
+Read the [Guidance Architecture and Authoring Standards](docs/guidance-architecture.md) before changing repository guidance, standing policy, skills, or their governing vocabulary.
 
 Requires a Node.js version that supports type stripping.
 

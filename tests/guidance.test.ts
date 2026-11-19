@@ -16,8 +16,8 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const PERSONAS_ROOT = join(REPO_ROOT, "personas");
-const GUIDANCE_PATH = join(REPO_ROOT, "GUIDANCE.md");
+const GUIDANCE_ROOT = join(REPO_ROOT, "guidance");
+const GUIDANCE_PATH = join(REPO_ROOT, "docs", "guidance-architecture.md");
 
 const POLICY_FILES = [
 	"JIHYE.md",
@@ -28,8 +28,8 @@ const POLICY_FILES = [
 	"templates/USERNAME.md",
 ];
 
-function readPersona(path: string): string {
-	return readFileSync(join(PERSONAS_ROOT, path), "utf8");
+function readGuidance(path: string): string {
+	return readFileSync(join(GUIDANCE_ROOT, path), "utf8");
 }
 
 function headings(content: string): string[] {
@@ -42,7 +42,7 @@ function assertTerms(content: string, terms: RegExp[], subject: string): void {
 }
 
 test("the two-link installation resolves the complete policy topology", () => {
-	const root = mkdtempSync(join(tmpdir(), "jihye-personas-"));
+	const root = mkdtempSync(join(tmpdir(), "jihye-guidance-"));
 	const agentDir = join(root, "home", ".pi", "agent");
 	const workspaceRoot = join(root, "workspace");
 	mkdirSync(agentDir, { recursive: true });
@@ -51,11 +51,11 @@ test("the two-link installation resolves the complete policy topology", () => {
 	try {
 		const globalContext = join(agentDir, "AGENTS.md");
 		const workspaceContext = join(workspaceRoot, "AGENTS.md");
-		symlinkSync(join(PERSONAS_ROOT, "JIHYE.md"), globalContext);
-		symlinkSync(join(PERSONAS_ROOT, "WORKSPACE.md"), workspaceContext);
+		symlinkSync(join(GUIDANCE_ROOT, "JIHYE.md"), globalContext);
+		symlinkSync(join(GUIDANCE_ROOT, "WORKSPACE.md"), workspaceContext);
 
-		assert.equal(realpathSync(globalContext), join(PERSONAS_ROOT, "JIHYE.md"));
-		assert.equal(realpathSync(workspaceContext), join(PERSONAS_ROOT, "WORKSPACE.md"));
+		assert.equal(realpathSync(globalContext), join(GUIDANCE_ROOT, "JIHYE.md"));
+		assert.equal(realpathSync(workspaceContext), join(GUIDANCE_ROOT, "WORKSPACE.md"));
 
 		const policyRoot = dirname(realpathSync(workspaceContext));
 		for (const path of ["GIT.md"]) {
@@ -66,10 +66,12 @@ test("the two-link installation resolves the complete policy topology", () => {
 	}
 });
 
-test("personas include the global and workspace guidance chain", () => {
-	for (const path of POLICY_FILES) assert.ok(existsSync(join(PERSONAS_ROOT, path)), path);
+test("guidance includes the global and workspace policy chain", () => {
+	for (const path of POLICY_FILES) assert.ok(existsSync(join(GUIDANCE_ROOT, path)), path);
+	assert.equal(existsSync(join(REPO_ROOT, "personas")), false);
+	assert.equal(existsSync(join(REPO_ROOT, "GUIDANCE.md")), false);
 
-	const workspace = readPersona("WORKSPACE.md");
+	const workspace = readGuidance("WORKSPACE.md");
 	for (const path of ["REPO.md", "USERNAME.md", "GIT.md"]) {
 		assert.match(workspace, new RegExp(`\\b${path.replace(".", "\\.")}\\b`), path);
 	}
@@ -77,7 +79,7 @@ test("personas include the global and workspace guidance chain", () => {
 		/jihye-setup/i,
 		/workspace_directory\/REPO\.md[^\n]*repositories[^\n]*environment activation[^\n]*worktree locations/i,
 		/workspace_directory\/USERNAME\.md[^\n]*branch[^\n]*agent commit command[^\n]*handing off a command/i,
-		/personas_directory\/GIT\.md[^\n]*gates loading repository guidance/i,
+		/guidance_directory\/GIT\.md[^\n]*gates loading repository guidance/i,
 		/reusable repository index/i,
 		/project todo[^\n]*gates planning or changing repository files/i,
 		/first tool call/i,
@@ -124,28 +126,28 @@ test("guidance standards define Jihye's architecture and canonical policy domain
 		/\*\*Solution Architecture\*\*\s+—/,
 		/\*\*Context and Delegation\*\*\s+—/,
 		/\*\*Safety\*\*\s+—/,
-		/downstream personas and skills[^\n]*exact capitalized term/i,
+		/downstream guidance and skills[^\n]*exact capitalized term/i,
 		/subagent role in backticks/i,
 		/different triggers or different failure modes/i,
-		/## Core Persona Standard/,
+		/## Core Guidance Standard/,
 		/base policy layer/i,
 		/cross-cutting behavioral constraint/i,
 		/execution (?:methods|mechanics|procedures)/i,
 		/(?:interpretive space|execution discretion)/i,
 		/operational (?:procedures|details|mechanics)/i,
-		/## Changing the Base Persona/,
-		/tests\/personas\.test\.ts/,
+		/## Changing the Base Guidance/,
+		/tests\/guidance\.test\.ts/,
 	], "Jihye guidance standards");
 
 	for (const path of ["AGENTS.md", "README.md"]) {
-		assert.match(readFileSync(join(REPO_ROOT, path), "utf8"), /\bGUIDANCE\.md\b/, path);
+		assert.match(readFileSync(join(REPO_ROOT, path), "utf8"), /docs\/guidance-architecture\.md/, path);
 	}
 });
 
-test("global persona preserves canonical domains, coordination gates, and parent ownership", () => {
-	const persona = readPersona("JIHYE.md");
-	assert.deepEqual(headings(persona), ["Principles", "Entrypoint", "Context and Delegation", "Solution Architecture", "Safety"]);
-	assertTerms(persona, [
+test("global guidance preserves canonical domains, coordination gates, and parent ownership", () => {
+	const policy = readGuidance("JIHYE.md");
+	assert.deepEqual(headings(policy), ["Principles", "Entrypoint", "Context and Delegation", "Solution Architecture", "Safety"]);
+	assertTerms(policy, [
 		/\bFidelity\b/,
 		/established outcome[^\n]*source-of-truth context[^\n]*required behavior/i,
 		/broader context/i,
@@ -165,14 +167,14 @@ test("global persona preserves canonical domains, coordination gates, and parent
 		/validation/i,
 		/final synthesis/i,
 	], "JIHYE.md");
-	const architecture = persona.split("## Solution Architecture\n")[1]!.split("\n## ")[0]!;
+	const architecture = policy.split("## Solution Architecture\n")[1]!.split("\n## ")[0]!;
 	assert.match(architecture, /verify each increment[^\n]*acceptance invariants[^\n]*required checks[^\n]*report results[^\n]*verification gaps[^\n]*before handoff/i);
-	assert.doesNotMatch(persona, /\bcoordinator\b/);
-	assert.doesNotMatch(persona, /skip[^\n]*coordinat/i, "the coordination gate admits no delegation exemption");
+	assert.doesNotMatch(policy, /\bcoordinator\b/);
+	assert.doesNotMatch(policy, /skip[^\n]*coordinat/i, "the coordination gate admits no delegation exemption");
 });
 
 test("guidance favors small increments and direct prose", () => {
-	assertTerms(readPersona("JIHYE.md"), [
+	assertTerms(readGuidance("JIHYE.md"), [
 		/prioritize readability and simplicity/i,
 		/smallest increment/i,
 		/expand[^\n]*feedback/i,
@@ -188,8 +190,8 @@ test("guidance favors small increments and direct prose", () => {
 });
 
 test("file-operation procedure belongs to repository development guidance", () => {
-	const persona = readPersona("JIHYE.md");
-	assert.doesNotMatch(persona, /search keywords|bound reads|precise edits/i);
+	const policy = readGuidance("JIHYE.md");
+	assert.doesNotMatch(policy, /search keywords|bound reads|precise edits/i);
 	const repository = readFileSync(join(REPO_ROOT, "AGENTS.md"), "utf8");
 	assertTerms(repository, [/search keywords/i, /bound reads/i, /precise edits/i], "development file operations");
 	assert.match(repository, /follow workspace-owned Git guidance[^\n]*publication/i);
@@ -199,8 +201,8 @@ test("guidance never passes a policy domain", () => {
 	const skillRoot = join(REPO_ROOT, "skills");
 	const files = [
 		GUIDANCE_PATH,
-		...POLICY_FILES.map((path) => join(PERSONAS_ROOT, path)),
-		...readdirSync(join(PERSONAS_ROOT, "subagents")).map((entry) => join(PERSONAS_ROOT, "subagents", entry)),
+		...POLICY_FILES.map((path) => join(GUIDANCE_ROOT, path)),
+		...readdirSync(join(GUIDANCE_ROOT, "subagents")).map((entry) => join(GUIDANCE_ROOT, "subagents", entry)),
 		...readdirSync(skillRoot).map((entry) => join(skillRoot, entry, "SKILL.md")),
 	].filter((path) => existsSync(path) && path.endsWith(".md"));
 
@@ -213,9 +215,9 @@ test("guidance never passes a policy domain", () => {
 	}
 });
 
-test("downstream personas invoke canonical main-agent domains", () => {
-	assertTerms(readPersona("GIT.md"), [/\bSolution Architecture\b/], "Git policy domains");
-	assertTerms(readFileSync(join(PERSONAS_ROOT, "subagents", "engineer.md"), "utf8"), [
+test("downstream guidance invokes canonical main-agent domains", () => {
+	assertTerms(readGuidance("GIT.md"), [/\bSolution Architecture\b/], "Git policy domains");
+	assertTerms(readFileSync(join(GUIDANCE_ROOT, "subagents", "engineer.md"), "utf8"), [
 		/\bFidelity\b/,
 		/\bPrinciples\b/,
 		/\bSolution Architecture\b/,
@@ -228,7 +230,7 @@ test("downstream personas invoke canonical main-agent domains", () => {
 		["reviewer.md", [/\bFidelity\b/, /\bPrinciples\b/]],
 	] as const) {
 		assertTerms(
-			readFileSync(join(PERSONAS_ROOT, "subagents", definition), "utf8"),
+			readFileSync(join(GUIDANCE_ROOT, "subagents", definition), "utf8"),
 			[...terms],
 			`${definition} policy domains`,
 		);
@@ -236,7 +238,7 @@ test("downstream personas invoke canonical main-agent domains", () => {
 });
 
 test("git guidance preserves delivery and pull-request invariants", () => {
-	const git = readPersona("GIT.md");
+	const git = readGuidance("GIT.md");
 	assert.deepEqual(headings(git), ["Safety and Branching", "Staging, Commits, and Pushing", "Commit Messages", "Merge Requests and Pull Requests"]);
 	assertTerms(git, [
 		/approval gate/i,
@@ -253,23 +255,23 @@ test("git guidance preserves delivery and pull-request invariants", () => {
 	assert.match(git, /# <concise request header>[\s\S]*## Purpose[\s\S]*## Changes/, "default request description keeps its requested header and semantic sections");
 });
 
-test("persona policy remains portable", () => {
+test("guidance policy remains portable", () => {
 	for (const path of POLICY_FILES) {
-		const content = readPersona(path);
+		const content = readGuidance(path);
 		assert.doesNotMatch(content, /\/(?:Users|home)\/[^\s`]+/, path);
-		assert.doesNotMatch(content, /repo\/personas/, path);
+		assert.doesNotMatch(content, /repo\/guidance/, path);
 		assert.doesNotMatch(content, /pi-extensio/, path);
 	}
 });
 
-test("persona agents are the single current bundled definition set", () => {
-	const agentRoot = join(PERSONAS_ROOT, "subagents");
+test("guidance agents are the single current bundled definition set", () => {
+	const agentRoot = join(GUIDANCE_ROOT, "subagents");
 	const files = readdirSync(agentRoot).filter((entry) => entry.endsWith(".md")).sort();
 	assert.deepEqual(files, ["engineer.md", "researcher.md", "reviewer.md", "scout.md"]);
 	assert.equal(lstatSync(agentRoot).isSymbolicLink(), false);
 	assert.equal(existsSync(join(REPO_ROOT, "agents")), false);
-	assert.equal(existsSync(join(PERSONAS_ROOT, "agents")), false);
-	assert.equal(existsSync(join(PERSONAS_ROOT, "subagent")), false);
+	assert.equal(existsSync(join(GUIDANCE_ROOT, "agents")), false);
+	assert.equal(existsSync(join(GUIDANCE_ROOT, "subagent")), false);
 
 	for (const file of files) {
 		assert.equal(lstatSync(join(agentRoot, file)).isSymbolicLink(), false);
