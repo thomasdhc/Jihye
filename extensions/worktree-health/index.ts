@@ -47,10 +47,10 @@ export function createWorktreeHealthExtension(dependencies: WorktreeHealthExtens
 		}
 
 		const inspect = dependencies.inspect ?? (async (ctx: ExtensionContext): Promise<WorktreeHealthReport> => {
-			const { personasDirectory } = resolvePackagePaths(EXTENSION_DIR);
+			const { guidanceDirectory } = resolvePackagePaths(EXTENSION_DIR);
 			const workspaceDirectory = findWorkspaceDirectory({
 				cwd: ctx.cwd,
-				personasDirectory,
+				guidanceDirectory,
 				workspaceRoots: config.workspaceRoots,
 			});
 			const configuredWorktrees = workspaceDirectory

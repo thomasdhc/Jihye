@@ -18,9 +18,9 @@ export const CONTEXT_FILE_NAME = "AGENTS.md";
 export const LOCAL_ENVIRONMENT_FILES = ["REPO.md", "USERNAME.md"] as const;
 
 /**
- * Which global persona backs `~/.pi/agent/AGENTS.md`.
+ * Which global guidance backs `~/.pi/agent/AGENTS.md`.
  *
- * - `standard`: the Jihye persona is installed.
+ * - `standard`: Jihye's standard guidance is installed.
  * - `unmanaged`: a context file exists but does not come from this package.
  * - `missing`: no global context file at all.
  */
@@ -30,9 +30,9 @@ export type WorkspaceProfile = "standard" | "unmanaged" | "missing";
 export interface GuidanceLink {
 	/** Where Pi looks for the context file. */
 	path: string;
-	/** Resolved persona file, when the location is a link into this package. */
+	/** Resolved guidance file, when the location is a link into this package. */
 	target?: string;
-	/** True when the location resolves into this package's `personas/`. */
+	/** True when the location resolves into this package's `guidance/`. */
 	managed: boolean;
 	/** True when Pi already loaded this file into the system prompt. */
 	loaded: boolean;
@@ -40,7 +40,7 @@ export interface GuidanceLink {
 
 export interface JihyeSetupFacts {
 	packageRoot: string;
-	personasDirectory: string;
+	guidanceDirectory: string;
 	agentDirectory: string;
 	/** Nearest managed workspace root, when one was resolved. */
 	workspaceDirectory?: string;
@@ -82,23 +82,23 @@ function realpathOrResolve(target: string): string {
 }
 
 /**
- * The persona `contextFile` links to, when it lands inside `personasDirectory`.
+ * The guidance `contextFile` links to, when it lands inside `guidanceDirectory`.
  *
  * Both sides are resolved before comparison. Pi installs guidance as symlinks,
  * and the package itself can sit behind a symlinked ancestor (macOS `/var` ->
  * `/private/var`, a symlinked home, a linked checkout). Comparing a resolved
  * target against a raw parent misreads managed guidance as unmanaged.
  *
- * The result is reported under the caller's `personasDirectory` so every fact
+ * The result is reported under the caller's `guidanceDirectory` so every fact
  * the agent receives stays in one path family.
  */
-function resolveManagedPersona(contextFile: string, personasDirectory: string): string | undefined {
+function resolveManagedGuidance(contextFile: string, guidanceDirectory: string): string | undefined {
 	const resolved = realpathOrUndefined(contextFile);
 	if (!resolved) return undefined;
 
-	const root = realpathOrResolve(personasDirectory);
+	const root = realpathOrResolve(guidanceDirectory);
 	if (!isWithin(root, resolved)) return undefined;
-	return path.join(personasDirectory, path.relative(root, resolved));
+	return path.join(guidanceDirectory, path.relative(root, resolved));
 }
 
 function isFile(target: string): boolean {
@@ -115,10 +115,10 @@ export function isWithin(parent: string, candidate: string): boolean {
 	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
-/** `personas/` of the checkout or installed package this extension came from. */
-export function resolvePackagePaths(extensionDirectory: string): { packageRoot: string; personasDirectory: string } {
+/** `guidance/` of the checkout or installed package this extension came from. */
+export function resolvePackagePaths(extensionDirectory: string): { packageRoot: string; guidanceDirectory: string } {
 	const packageRoot = path.dirname(path.dirname(extensionDirectory));
-	return { packageRoot, personasDirectory: path.join(packageRoot, "personas") };
+	return { packageRoot, guidanceDirectory: path.join(packageRoot, "guidance") };
 }
 
 /** Ancestor chain of `from`, nearest first, including `from` itself. */
@@ -135,11 +135,11 @@ function ancestors(from: string): string[] {
 
 /**
  * A directory is a managed workspace root when its context file links into this
- * package's personas, or when it holds the local environment files.
+ * package's guidance, or when it holds the local environment files.
  */
-function isWorkspaceRoot(directory: string, personasDirectory: string): boolean {
+function isWorkspaceRoot(directory: string, guidanceDirectory: string): boolean {
 	const contextFile = path.join(directory, CONTEXT_FILE_NAME);
-	if (resolveManagedPersona(contextFile, personasDirectory)) return true;
+	if (resolveManagedGuidance(contextFile, guidanceDirectory)) return true;
 	return LOCAL_ENVIRONMENT_FILES.every((file) => isFile(path.join(directory, file)));
 }
 
@@ -152,7 +152,7 @@ function isWorkspaceRoot(directory: string, personasDirectory: string): boolean 
  */
 export function findWorkspaceDirectory(input: {
 	cwd: string;
-	personasDirectory: string;
+	guidanceDirectory: string;
 	workspaceRoots?: string[];
 }): string | undefined {
 	const roots = input.workspaceRoots ?? [];
@@ -167,17 +167,17 @@ export function findWorkspaceDirectory(input: {
 	}
 
 	for (const directory of ancestors(input.cwd)) {
-		if (isWorkspaceRoot(directory, input.personasDirectory)) return directory;
+		if (isWorkspaceRoot(directory, input.guidanceDirectory)) return directory;
 	}
 	return undefined;
 }
 
-/** Classify the persona installed as Pi's global context file. */
-export function resolveProfile(agentDirectory: string, personasDirectory: string): WorkspaceProfile {
+/** Classify the guidance installed as Pi's global context file. */
+export function resolveProfile(agentDirectory: string, guidanceDirectory: string): WorkspaceProfile {
 	const contextFile = path.join(agentDirectory, CONTEXT_FILE_NAME);
 	if (!isFile(contextFile)) return "missing";
 
-	const resolved = resolveManagedPersona(contextFile, personasDirectory);
+	const resolved = resolveManagedGuidance(contextFile, guidanceDirectory);
 	if (!resolved) return "unmanaged";
 
 	const name = path.basename(resolved);
@@ -185,9 +185,9 @@ export function resolveProfile(agentDirectory: string, personasDirectory: string
 	return "unmanaged";
 }
 
-function describeGuidanceLink(contextFile: string, personasDirectory: string, loaded: Set<string>): GuidanceLink {
+function describeGuidanceLink(contextFile: string, guidanceDirectory: string, loaded: Set<string>): GuidanceLink {
 	const resolved = realpathOrUndefined(contextFile);
-	const target = resolveManagedPersona(contextFile, personasDirectory);
+	const target = resolveManagedGuidance(contextFile, guidanceDirectory);
 	return {
 		path: contextFile,
 		target,
@@ -198,10 +198,10 @@ function describeGuidanceLink(contextFile: string, personasDirectory: string, lo
 
 /** Collect every fact the agent would otherwise have to derive by hand. */
 export function resolveJihyeSetupFacts(input: ResolveFactsInput): JihyeSetupFacts {
-	const { packageRoot, personasDirectory } = resolvePackagePaths(input.extensionDirectory);
+	const { packageRoot, guidanceDirectory } = resolvePackagePaths(input.extensionDirectory);
 	const workspaceDirectory = findWorkspaceDirectory({
 		cwd: input.cwd,
-		personasDirectory,
+		guidanceDirectory,
 		workspaceRoots: input.workspaceRoots,
 	});
 
@@ -212,9 +212,9 @@ export function resolveJihyeSetupFacts(input: ResolveFactsInput): JihyeSetupFact
 		if (resolved) loaded.add(resolved);
 	}
 
-	const guidance = [describeGuidanceLink(path.join(input.agentDirectory, CONTEXT_FILE_NAME), personasDirectory, loaded)];
+	const guidance = [describeGuidanceLink(path.join(input.agentDirectory, CONTEXT_FILE_NAME), guidanceDirectory, loaded)];
 	if (workspaceDirectory) {
-		guidance.push(describeGuidanceLink(path.join(workspaceDirectory, CONTEXT_FILE_NAME), personasDirectory, loaded));
+		guidance.push(describeGuidanceLink(path.join(workspaceDirectory, CONTEXT_FILE_NAME), guidanceDirectory, loaded));
 	}
 
 	const localEnvironmentFiles: string[] = [];
@@ -229,10 +229,10 @@ export function resolveJihyeSetupFacts(input: ResolveFactsInput): JihyeSetupFact
 
 	return {
 		packageRoot,
-		personasDirectory,
+		guidanceDirectory,
 		agentDirectory: input.agentDirectory,
 		workspaceDirectory,
-		profile: resolveProfile(input.agentDirectory, personasDirectory),
+		profile: resolveProfile(input.agentDirectory, guidanceDirectory),
 		localEnvironmentFiles,
 		missingLocalEnvironmentFiles,
 		guidance,
@@ -269,7 +269,7 @@ export function formatFactBlock(facts: JihyeSetupFacts): string {
 		"## Jihye Setup (resolved paths — use directly, do not re-derive)",
 		"",
 		`- jihye_package: ${facts.packageRoot}`,
-		`- personas_directory: ${facts.personasDirectory}`,
+		`- guidance_directory: ${facts.guidanceDirectory}`,
 		`- workspace_profile: ${facts.profile}`,
 	];
 

@@ -28,7 +28,7 @@ Jihye currently warns at 50% context use and calls `ctx.compact()` at 65% from `
 
 ## Guidance Continuity
 
-Standing context files such as Jihye's global and workspace guidance remain in Pi's system prompt independently of session compaction. Guidance loaded through read gates—including `REPO.md`, `USERNAME.md`, `personas/GIT.md`, and repository or scoped instructions—enters the session as tool results and can fall before the retained boundary. Pi's default read-file list preserves paths, not the governing instructions.
+Standing context files such as Jihye's global and workspace guidance remain in Pi's system prompt independently of session compaction. Guidance loaded through read gates—including `REPO.md`, `USERNAME.md`, `guidance/GIT.md`, and repository or scoped instructions—enters the session as tool results and can fall before the retained boundary. Pi's default read-file list preserves paths, not the governing instructions.
 
 A checkpoint must never record a read gate as passed after discarding the information that made it valid. It must either preserve allowlisted guidance exactly, or invalidate the receipt and require the canonical file to be reread before another governed operation. An LLM paraphrase alone is not authoritative. Arbitrary tool output must not be pinned because it may be bulky or sensitive.
 

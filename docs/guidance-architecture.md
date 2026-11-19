@@ -4,23 +4,23 @@
 
 Use this document as the source of truth for Jihye's guidance architecture, authoring standards, and shared vocabulary. Evolve these standards when evidence supports a better principle, vocabulary, or structure, and keep affected guidance and tests aligned.
 
-Read this before editing any repository `AGENTS.md` or file under `personas/` or `skills/`. This is on-demand maintainer context, not standing runtime context: load it when maintaining Jihye or authoring guidance, then express resulting behavior in its owning runtime guidance.
+Read this before editing any repository `AGENTS.md` or file under `guidance/` or `skills/`. This is on-demand maintainer context, not standing runtime context: load it when maintaining Jihye or authoring guidance, then express resulting behavior in its owning runtime guidance.
 
-## Core Persona Standard
+## Core Guidance Standard
 
 `JIHYE.md` is Jihye's base policy layer. Its sections are policy domains, and each statement expresses a durable, cross-cutting behavioral constraint rather than a procedure for handling individual cases.
 
 - Constrain outcomes, boundaries, and invariants; leave execution methods to the agent.
 - Preserve deliberate interpretive space when Fidelity and the governing context can resolve the method without weakening the constraint.
 - State each concept once. Do not add fallback ladders, exhaustive edge cases, or repeated safeguards to handhold execution.
-- Put operational procedures in workspace guidance, Git guidance, subagent personas, skills, or repository guidance.
+- Put operational procedures in workspace guidance, Git guidance, subagent definitions, skills, or repository guidance.
 - Keep each statement concise enough that its governing idea remains visible.
 
 Before adding or expanding a statement, ask whether it is cross-cutting, conceptual, and irreducible. Route it to a more specific owner when any answer is no.
 
 ## Guidance Architecture
 
-- Keep each file's scope singular: repository guidance defines the blueprint and local constraints for its governed tree, a persona defines identity and standing behavior, a skill defines one workflow, and a subagent definition defines one bounded role.
+- Keep each file's scope singular: repository guidance defines the blueprint and local constraints for its governed tree, standing guidance defines identity and behavior, a skill defines one workflow, and a subagent definition defines one bounded role.
 - Keep configuration and environment-specific values in workspace-owned files such as `REPO.md` and `USERNAME.md`.
 
 ## Authoring Principles
@@ -32,23 +32,23 @@ Before adding or expanding a statement, ask whether it is cross-cutting, concept
 
 ## Language and Vocabulary
 
-- Use the glossary below as a controlled vocabulary and echo its terms verbatim across files. Cross-file term echo is how the model links a persona trigger to a skill description to a policy file.
+- Use the glossary below as a controlled vocabulary and echo its terms verbatim across files. Cross-file term echo is how the model links a guidance trigger to a skill description to a policy file.
 - Where a term lists qualified kinds, use the qualified form ("approval gate", "delivery boundary"). Use the bare term only for the general concept.
 - Name a bundled subagent role in backticks and qualify it as a `<role>` subagent on its first use in a file. Never leave a bare role word where a platform, human, or document sense can be read; name that sense explicitly.
 - Match the verb to the term's kind. Apply a domain; never pass one. Pass a gate you must satisfy, and apply a gate to the work you are evaluating. State an invariant as a condition that holds rather than a step to complete.
 - Extend the glossary sparingly. A term earns an entry when it captures a durable distinction more clearly than existing language, is useful across multiple files, and drift in its usage would change agent behavior. Propose additions through review.
-- Treat Jihye section terms as named policy domains in the main-agent context. Downstream personas and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
+- Treat Jihye section terms as named policy domains in the main-agent context. Downstream guidance and skills must invoke the exact capitalized term instead of restating universal policy; state only their scope-specific delta.
 
-## Changing the Base Persona
+## Changing the Base Guidance
 
-`JIHYE.md` defines Jihye's universal behavioral policy. Every downstream persona, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
+`JIHYE.md` defines Jihye's universal behavioral policy. Every downstream guidance file, skill, and subagent definition inherits its domains, and installed chains reach it through a symlink, so an edit takes effect in every session at the next startup with no install step and no diff shown to the user. Treat an edit to it as a change to the whole distribution.
 
-Complete every step before handing off a base-persona change:
+Complete every step before handing off a base-guidance change:
 
 1. Add, revise, or remove the glossary entry when the edit adds, renames, or redefines a domain.
-2. Update the pinned headings and term assertions in `tests/personas.test.ts` when the edit changes structure or asserted semantics.
+2. Update the pinned headings and term assertions in `tests/guidance.test.ts` when the edit changes structure or asserted semantics.
 3. Give a new domain at least one downstream invoker; a domain no file invokes has not earned its place.
-4. Refresh the `personas/README.md` layout row when a file's ownership changes.
+4. Refresh the `guidance/README.md` layout row when a file's ownership changes.
 5. Bump the package version as the root `AGENTS.md` version rule directs.
 
 ## Policy Glossary

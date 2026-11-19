@@ -36,30 +36,30 @@ const REPO_VERSION = (JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "
 
 /**
  * Build a fixture that mirrors a real installation: a package checkout with
- * personas, an agent directory, and a workspace root linked to the personas.
+ * guidance, an agent directory, and a workspace root linked to the guidance.
  */
 function createFixture(options: { profile?: "standard" | "unmanaged"; localEnvironment?: boolean } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "jihye-setup-"));
 	const packageRoot = join(root, "package");
-	const personasDirectory = join(packageRoot, "personas");
+	const guidanceDirectory = join(packageRoot, "guidance");
 	const extensionDirectory = join(packageRoot, "extensions", "jihye-setup");
 	const agentDirectory = join(root, "agent");
 	const workspaceDirectory = join(root, "workspace");
 	const repositoryDirectory = join(workspaceDirectory, "project", "src");
 
-	mkdirSync(personasDirectory, { recursive: true });
+	mkdirSync(guidanceDirectory, { recursive: true });
 	mkdirSync(extensionDirectory, { recursive: true });
 	mkdirSync(agentDirectory, { recursive: true });
 	mkdirSync(repositoryDirectory, { recursive: true });
 
 	writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: "jihye-fixture", version: "9.8.7" }));
-	writeFileSync(join(personasDirectory, "JIHYE.md"), "# Jihye\n");
-	writeFileSync(join(personasDirectory, "WORKSPACE.md"), "# Workspace\n");
-	symlinkSync(join(personasDirectory, "WORKSPACE.md"), join(workspaceDirectory, "AGENTS.md"));
+	writeFileSync(join(guidanceDirectory, "JIHYE.md"), "# Jihye\n");
+	writeFileSync(join(guidanceDirectory, "WORKSPACE.md"), "# Workspace\n");
+	symlinkSync(join(guidanceDirectory, "WORKSPACE.md"), join(workspaceDirectory, "AGENTS.md"));
 
 	const profile = options.profile ?? "standard";
 	if (profile === "unmanaged") writeFileSync(join(agentDirectory, "AGENTS.md"), "# Local rules\n");
-	else symlinkSync(join(personasDirectory, "JIHYE.md"), join(agentDirectory, "AGENTS.md"));
+	else symlinkSync(join(guidanceDirectory, "JIHYE.md"), join(agentDirectory, "AGENTS.md"));
 
 	if (options.localEnvironment !== false) {
 		writeFileSync(join(workspaceDirectory, "REPO.md"), "# Repos\n");
@@ -69,7 +69,7 @@ function createFixture(options: { profile?: "standard" | "unmanaged"; localEnvir
 	return {
 		root,
 		packageRoot,
-		personasDirectory,
+		guidanceDirectory,
 		extensionDirectory,
 		agentDirectory,
 		workspaceDirectory,
@@ -78,11 +78,11 @@ function createFixture(options: { profile?: "standard" | "unmanaged"; localEnvir
 	};
 }
 
-test("derives package and personas paths from the extension location", () => {
+test("derives package and guidance paths from the extension location", () => {
 	const paths = resolvePackagePaths(EXTENSION_DIR);
 
 	assert.equal(paths.packageRoot, REPO_ROOT);
-	assert.equal(paths.personasDirectory, join(REPO_ROOT, "personas"));
+	assert.equal(paths.guidanceDirectory, join(REPO_ROOT, "guidance"));
 	assert.equal(loadJihyePackageVersion(REPO_ROOT), REPO_VERSION);
 });
 
@@ -171,7 +171,7 @@ test("discovers the workspace root above the working directory", () => {
 	const fixture = createFixture();
 	try {
 		assert.equal(
-			findWorkspaceDirectory({ cwd: fixture.repositoryDirectory, personasDirectory: fixture.personasDirectory }),
+			findWorkspaceDirectory({ cwd: fixture.repositoryDirectory, guidanceDirectory: fixture.guidanceDirectory }),
 			fixture.workspaceDirectory,
 		);
 	} finally {
@@ -184,7 +184,7 @@ test("discovers a workspace root from its local environment files alone", () => 
 	try {
 		rmSync(join(fixture.workspaceDirectory, "AGENTS.md"));
 		assert.equal(
-			findWorkspaceDirectory({ cwd: fixture.repositoryDirectory, personasDirectory: fixture.personasDirectory }),
+			findWorkspaceDirectory({ cwd: fixture.repositoryDirectory, guidanceDirectory: fixture.guidanceDirectory }),
 			fixture.workspaceDirectory,
 		);
 	} finally {
@@ -196,7 +196,7 @@ test("leaves the workspace root unresolved outside any managed directory", () =>
 	const fixture = createFixture();
 	try {
 		assert.equal(
-			findWorkspaceDirectory({ cwd: fixture.packageRoot, personasDirectory: fixture.personasDirectory }),
+			findWorkspaceDirectory({ cwd: fixture.packageRoot, guidanceDirectory: fixture.guidanceDirectory }),
 			undefined,
 		);
 	} finally {
@@ -211,7 +211,7 @@ test("prefers configured workspace roots over discovery", () => {
 		assert.equal(
 			findWorkspaceDirectory({
 				cwd: fixture.repositoryDirectory,
-				personasDirectory: fixture.personasDirectory,
+				guidanceDirectory: fixture.guidanceDirectory,
 				workspaceRoots: [configured, fixture.workspaceDirectory],
 			}),
 			fixture.workspaceDirectory,
@@ -219,7 +219,7 @@ test("prefers configured workspace roots over discovery", () => {
 		assert.equal(
 			findWorkspaceDirectory({
 				cwd: fixture.packageRoot,
-				personasDirectory: fixture.personasDirectory,
+				guidanceDirectory: fixture.guidanceDirectory,
 				workspaceRoots: [configured],
 			}),
 			configured,
@@ -228,7 +228,7 @@ test("prefers configured workspace roots over discovery", () => {
 		assert.equal(
 			findWorkspaceDirectory({
 				cwd: fixture.packageRoot,
-				personasDirectory: fixture.personasDirectory,
+				guidanceDirectory: fixture.guidanceDirectory,
 				workspaceRoots: [configured, fixture.workspaceDirectory],
 			}),
 			undefined,
@@ -239,11 +239,11 @@ test("prefers configured workspace roots over discovery", () => {
 	}
 });
 
-test("classifies the installed global persona", () => {
+test("classifies the installed global guidance", () => {
 	for (const [profile, expected] of [["standard", "standard"], ["unmanaged", "unmanaged"]] as const) {
 		const fixture = createFixture({ profile });
 		try {
-			assert.equal(resolveProfile(fixture.agentDirectory, fixture.personasDirectory), expected);
+			assert.equal(resolveProfile(fixture.agentDirectory, fixture.guidanceDirectory), expected);
 		} finally {
 			fixture.cleanup();
 		}
@@ -252,7 +252,7 @@ test("classifies the installed global persona", () => {
 	const fixture = createFixture();
 	try {
 		rmSync(join(fixture.agentDirectory, "AGENTS.md"));
-		assert.equal(resolveProfile(fixture.agentDirectory, fixture.personasDirectory), "missing");
+		assert.equal(resolveProfile(fixture.agentDirectory, fixture.guidanceDirectory), "missing");
 	} finally {
 		fixture.cleanup();
 	}
@@ -269,7 +269,8 @@ test("resolves the full fact set with guidance load state", () => {
 		});
 
 		assert.equal(facts.packageRoot, fixture.packageRoot);
-		assert.equal(facts.personasDirectory, fixture.personasDirectory);
+		assert.equal(facts.guidanceDirectory, fixture.guidanceDirectory);
+		assert.equal("personasDirectory" in facts, false);
 		assert.equal(facts.workspaceDirectory, fixture.workspaceDirectory);
 		assert.equal(facts.profile, "standard");
 		assert.deepEqual(facts.localEnvironmentFiles, [
@@ -280,11 +281,48 @@ test("resolves the full fact set with guidance load state", () => {
 
 		const [globalLink, workspaceLink] = facts.guidance;
 		assert.equal(globalLink?.path, join(fixture.agentDirectory, "AGENTS.md"));
-		assert.equal(globalLink?.target, join(fixture.personasDirectory, "JIHYE.md"));
+		assert.equal(globalLink?.target, join(fixture.guidanceDirectory, "JIHYE.md"));
 		assert.equal(globalLink?.managed, true);
 		assert.equal(globalLink?.loaded, false);
-		assert.equal(workspaceLink?.target, join(fixture.personasDirectory, "WORKSPACE.md"));
+		assert.equal(workspaceLink?.target, join(fixture.guidanceDirectory, "WORKSPACE.md"));
 		assert.equal(workspaceLink?.loaded, true, "a loaded symlink counts as loaded guidance");
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("requires dangling personas links to be replaced with guidance links", () => {
+	const fixture = createFixture();
+	const globalContext = join(fixture.agentDirectory, "AGENTS.md");
+	const workspaceContext = join(fixture.workspaceDirectory, "AGENTS.md");
+	try {
+		rmSync(globalContext);
+		rmSync(workspaceContext);
+		symlinkSync(join(fixture.packageRoot, "personas", "JIHYE.md"), globalContext);
+		symlinkSync(join(fixture.packageRoot, "personas", "WORKSPACE.md"), workspaceContext);
+
+		const legacyFacts = resolveJihyeSetupFacts({
+			extensionDirectory: fixture.extensionDirectory,
+			agentDirectory: fixture.agentDirectory,
+			cwd: fixture.repositoryDirectory,
+		});
+		assert.equal(legacyFacts.profile, "missing");
+		assert.equal(legacyFacts.guidance[0]?.managed, false);
+		assert.equal(legacyFacts.guidance[1]?.managed, false);
+
+		rmSync(globalContext);
+		rmSync(workspaceContext);
+		symlinkSync(join(fixture.guidanceDirectory, "JIHYE.md"), globalContext);
+		symlinkSync(join(fixture.guidanceDirectory, "WORKSPACE.md"), workspaceContext);
+
+		const migratedFacts = resolveJihyeSetupFacts({
+			extensionDirectory: fixture.extensionDirectory,
+			agentDirectory: fixture.agentDirectory,
+			cwd: fixture.repositoryDirectory,
+			loadedContextFiles: [globalContext, workspaceContext],
+		});
+		assert.equal(migratedFacts.profile, "standard");
+		assert.equal(migratedFacts.guidance.every((link) => link.managed && link.loaded), true);
 	} finally {
 		fixture.cleanup();
 	}
@@ -323,6 +361,8 @@ test("formats facts as declarative system prompt lines", () => {
 
 		assert.match(block, /^## Jihye Setup \(resolved paths — use directly, do not re-derive\)$/m);
 		assert.match(block, new RegExp(`^- jihye_package: ${fixture.packageRoot}$`, "m"));
+		assert.match(block, new RegExp(`^- guidance_directory: ${fixture.guidanceDirectory}$`, "m"));
+		assert.doesNotMatch(block, /^- personas_directory:/m);
 		assert.match(block, new RegExp(`^- workspace_directory: ${fixture.workspaceDirectory}$`, "m"));
 		assert.match(block, /^- workspace_profile: standard$/m);
 		assert.match(block, /\[loaded\]/);
@@ -334,7 +374,7 @@ test("formats facts as declarative system prompt lines", () => {
 	}
 });
 
-test("classifies a persona reached through a symlinked package ancestor", () => {
+test("classifies guidance reached through a symlinked package ancestor", () => {
 	// A real install can sit behind a symlinked ancestor: macOS resolves tmpdir()
 	// through /private/var, and linked homes or checkouts do the same elsewhere.
 	// The link below reproduces that on every platform.
@@ -342,12 +382,12 @@ test("classifies a persona reached through a symlinked package ancestor", () => 
 	try {
 		const aliasRoot = join(fixture.root, "alias");
 		symlinkSync(fixture.packageRoot, aliasRoot);
-		const aliasPersonas = join(aliasRoot, "personas");
+		const aliasGuidance = join(aliasRoot, "guidance");
 
 		assert.equal(
-			resolveProfile(fixture.agentDirectory, aliasPersonas),
+			resolveProfile(fixture.agentDirectory, aliasGuidance),
 			"standard",
-			"a symlinked personas path still resolves the managed persona",
+			"a symlinked guidance path still resolves managed guidance",
 		);
 
 		const facts = resolveJihyeSetupFacts({
@@ -361,8 +401,8 @@ test("classifies a persona reached through a symlinked package ancestor", () => 
 		assert.equal(facts.guidance[0]?.managed, true);
 		assert.equal(
 			facts.guidance[0]?.target,
-			join(aliasPersonas, "JIHYE.md"),
-			"the target is reported under the personas path the caller supplied",
+			join(aliasGuidance, "JIHYE.md"),
+			"the target is reported under the guidance path the caller supplied",
 		);
 	} finally {
 		fixture.cleanup();
