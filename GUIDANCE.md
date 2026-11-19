@@ -67,9 +67,7 @@ Complete every step before handing off a base-persona change:
 
 **Context and Delegation** — the main-agent policy for keeping the main-agent context high-signal, retaining ownership, deciding whether to delegate, routing delegation through the `coordinate` skill and subagent roles, and bounding brief authority.
 
-**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: increment-scoped optimization, generalization, and specialized error handling; surfacing stale or contradictory guidance and suggesting structural refactors; guidance alignment; alternatives and trade-offs; and separation of configuration from logic.
-
-**Validation** — the main-agent policy for verifying work and reporting what was checked.
+**Solution Architecture** — the main-agent criteria for selecting and shaping a solution: increment-scoped optimization, generalization, and specialized error handling; surfacing stale or contradictory guidance and suggesting structural refactors; guidance alignment; alternatives and trade-offs; separation of configuration from logic; and verification against acceptance invariants and required checks, with results and gaps reported before handoff.
 
 **Safety** — the standing main-agent protections against exposing or committing secrets, credentials, environment files, workstation authentication material, or other protected data.
 
