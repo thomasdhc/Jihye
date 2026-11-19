@@ -31,13 +31,7 @@
 - Keep guidance aligned when accepted work changes placement, relationships, layers, or composition.
 - Weigh alternatives and trade-offs.
 - Keep configurations separate from logic.
-
-## Validation
-
-- Run commands from the repository root or specify the working directory.
-- While iterating, run the most targeted check that directly exercises the changed behavior.
-- Before handoff, run every validation command required by repository guidance and verify every acceptance invariant through automated tests or explicit manual checks.
-- Report each check, its result, and anything that could not be run.
+- Verify each increment against its acceptance invariants and required checks, and report results and any verification gaps before handoff.
 
 ## Safety
 
